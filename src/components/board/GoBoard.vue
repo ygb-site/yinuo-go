@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import type { Point, StoneColor, ThemeType, BoardSize, StoneGroup } from '../../engine/types';
 import { GoGame } from '../../engine/GoGame';
 import { useUserStore } from '../../stores/useUserStore';
@@ -51,7 +51,36 @@ const selectedStonePoint = ref<Point | null>(null);
 const isShaking = ref(false);
 const boardVersion = ref(0);
 
-const size = computed(() => props.game.size || 9);
+const size = computed(() => props.game?.size || 9);
+
+// 100% Guaranteed Reactive Stone List calculation
+const renderedStones = computed(() => {
+  void boardVersion.value;
+  void props.lastMove;
+  void props.game?.history?.length;
+  const s = size.value;
+  const list: { r: number; c: number; color: StoneColor }[] = [];
+  if (!props.game) return list;
+
+  for (let r = 0; r < s; r++) {
+    for (let c = 0; c < s; c++) {
+      const cell = props.game.getCell(r, c);
+      if (cell !== null) {
+        list.push({ r, c, color: cell });
+      }
+    }
+  }
+  return list;
+});
+
+// Watch for any external game mutations, moves, passes, resets
+watch(
+  () => [props.game, props.lastMove, props.game?.history?.length, props.editMode],
+  () => {
+    boardVersion.value++;
+  },
+  { deep: true }
+);
 
 // Star points (Hoshi / 星位)
 const starPoints = computed<Point[]>(() => {
@@ -107,11 +136,12 @@ const rowNumbers = computed(() => {
 // Calculate liberties for all groups
 const libertiesMap = computed(() => {
   const map = new Map<string, number>();
-  if (!props.showLiberties) return map;
+  if (!props.showLiberties || !props.game) return map;
+  void boardVersion.value;
   const groups = props.game.getAllGroups();
   for (const g of groups) {
     for (const st of g.stones) {
-      map.set(`${st.r},${st.c}`, g.libertyCount);
+      map.set(st.r + ',' + st.c, g.libertyCount);
     }
   }
   return map;
@@ -120,11 +150,12 @@ const libertiesMap = computed(() => {
 // Atari alert stones
 const atariAlertPoints = computed<Set<string>>(() => {
   const set = new Set<string>();
-  if (!props.showAtari) return set;
+  if (!props.showAtari || !props.game) return set;
+  void boardVersion.value;
   const ataris = props.game.checkAtari();
   for (const at of ataris) {
     for (const st of at.group.stones) {
-      set.add(`${st.r},${st.c}`);
+      set.add(st.r + ',' + st.c);
     }
   }
   return set;
@@ -132,13 +163,15 @@ const atariAlertPoints = computed<Set<string>>(() => {
 
 // Active selected stone liberties highlight
 const activeSelectedLiberties = computed<Point[]>(() => {
-  if (!selectedStonePoint.value) return [];
+  if (!selectedStonePoint.value || !props.game) return [];
+  void boardVersion.value;
   return props.game.getLibertiesOf(selectedStonePoint.value.r, selectedStonePoint.value.c);
 });
 
 // Territory evaluation map
 const territoryMap = computed(() => {
-  if (!props.showTerritory) return null;
+  if (!props.showTerritory || !props.game) return null;
+  void boardVersion.value;
   return props.game.calculateScore().territoryMap;
 });
 
@@ -156,7 +189,7 @@ const isLastMovePoint = (r: number, c: number) => {
   if (props.lastMove) {
     return props.lastMove.r === r && props.lastMove.c === c;
   }
-  const hist = props.game.history;
+  const hist = props.game?.history;
   if (hist && hist.length > 0) {
     const last = hist[hist.length - 1];
     return last.point !== null && last.point.r === r && last.point.c === c;
@@ -180,7 +213,7 @@ const handleCellClick = (r: number, c: number) => {
     return;
   }
 
-  if (props.readonly) return;
+  if (props.readonly || !props.game) return;
 
   // Handle Edit Mode (placing Black, White, or Erasing directly)
   if (props.editMode) {
@@ -200,6 +233,7 @@ const handleCellClick = (r: number, c: number) => {
   if (props.manualMove) {
     emit('play', { r, c });
     emit('move', { r, c }, props.game.turn);
+    boardVersion.value++;
     return;
   }
 
@@ -302,7 +336,7 @@ const coordTextColor = computed(() => {
   <div
     class="relative rounded-3xl p-3 sm:p-6 border-4 sm:border-[6px] transition-all select-none mx-auto max-w-full cursor-pointer"
     :class="[themeContainerClass, { 'animate-shake': isShaking }]"
-    :style="{ width: `min(100%, ${sizePx}px)` }"
+    :style="{ width: 'min(100%, ' + sizePx + 'px)' }"
     @click.capture="handleBoardContainerClick"
   >
     <!-- Top Coordinates (Letters) -->
@@ -310,7 +344,7 @@ const coordTextColor = computed(() => {
       v-if="showCoordinates"
       class="grid grid-flow-col text-center font-black text-[9px] sm:text-xs mb-1.5 px-3 sm:px-4"
       :class="coordTextColor"
-      :style="{ gridTemplateColumns: `repeat(${size}, 1fr)` }"
+      :style="{ gridTemplateColumns: 'repeat(' + size + ', 1fr)' }"
     >
       <span v-for="letter in columnLetters" :key="letter">{{ letter }}</span>
     </div>
@@ -330,7 +364,7 @@ const coordTextColor = computed(() => {
       <div class="relative w-full aspect-square cursor-pointer touch-manipulation">
         <svg
           class="w-full h-full overflow-visible"
-          :viewBox="`0 0 ${size * 100} ${size * 100}`"
+          :viewBox="'0 0 ' + (size * 100) + ' ' + (size * 100)"
           xmlns="http://www.w3.org/2000/svg"
         >
           <!-- Defs for Stone Gradients & Shadows -->
@@ -366,7 +400,7 @@ const coordTextColor = computed(() => {
             <!-- Horizontal Lines -->
             <line
               v-for="r in size"
-              :key="`h-${r}`"
+              :key="'h-' + r"
               :x1="50"
               :y1="(r - 1) * 100 + 50"
               :x2="(size - 1) * 100 + 50"
@@ -375,7 +409,7 @@ const coordTextColor = computed(() => {
             <!-- Vertical Lines -->
             <line
               v-for="c in size"
-              :key="`v-${c}`"
+              :key="'v-' + c"
               :x1="(c - 1) * 100 + 50"
               :y1="50"
               :x2="(c - 1) * 100 + 50"
@@ -387,7 +421,7 @@ const coordTextColor = computed(() => {
           <g :fill="gridLineColor">
             <circle
               v-for="sp in starPoints"
-              :key="`star-${sp.r}-${sp.c}`"
+              :key="'star-' + sp.r + '-' + sp.c"
               :cx="sp.c * 100 + 50"
               :cy="sp.r * 100 + 50"
               :r="size >= 13 ? 7.5 : 6.5"
@@ -396,8 +430,8 @@ const coordTextColor = computed(() => {
 
           <!-- Territory Shading Overlay -->
           <g v-if="showTerritory && territoryMap">
-            <template v-for="r in size" :key="`terr-r-${r}`">
-              <template v-for="c in size" :key="`terr-c-${c}`">
+            <template v-for="r in size" :key="'terr-r-' + r">
+              <template v-for="c in size" :key="'terr-c-' + c">
                 <rect
                   v-if="territoryMap[r - 1] && territoryMap[r - 1][c - 1] === 'B'"
                   :x="(c - 1) * 100 + 25"
@@ -428,7 +462,7 @@ const coordTextColor = computed(() => {
 
           <!-- External Highlight / Hint Target Indicators -->
           <g>
-            <template v-for="p in highlightPoints" :key="`hl-${p.r}-${p.c}`">
+            <template v-for="p in highlightPoints" :key="'hl-' + p.r + '-' + p.c">
               <circle
                 :cx="p.c * 100 + 50"
                 :cy="p.r * 100 + 50"
@@ -451,7 +485,7 @@ const coordTextColor = computed(() => {
 
           <!-- Selected Stone's Adjacent Active Liberties Dots -->
           <g v-if="activeSelectedLiberties.length > 0">
-            <template v-for="lp in activeSelectedLiberties" :key="`lib-${lp.r}-${lp.c}`">
+            <template v-for="lp in activeSelectedLiberties" :key="'lib-' + lp.r + '-' + lp.c">
               <circle
                 :cx="lp.c * 100 + 50"
                 :cy="lp.r * 100 + 50"
@@ -471,121 +505,118 @@ const coordTextColor = computed(() => {
             </template>
           </g>
 
-          <!-- Stones on Board -->
+          <!-- Stones on Board (100% Reactive renderedStones) -->
           <g>
-            <template v-for="r in size" :key="`stone-r-${r}`">
-              <template v-for="c in size" :key="`stone-c-${c}`">
-                <g
-                  v-if="game.getCell(r - 1, c - 1) !== null"
-                  :transform="`translate(${(c - 1) * 100 + 50}, ${(r - 1) * 100 + 50})`"
-                  class="transition-transform duration-150"
-                  pointer-events="none"
-                >
-                  <!-- Atari Pulsing Aura Ring (叫吃呼吸红光) -->
+            <template v-for="stone in renderedStones" :key="'stone-' + stone.r + '-' + stone.c + '-' + stone.color + '-' + boardVersion">
+              <g
+                :transform="'translate(' + (stone.c * 100 + 50) + ', ' + (stone.r * 100 + 50) + ')'"
+                class="transition-transform duration-150"
+                pointer-events="none"
+              >
+                <!-- Atari Pulsing Aura Ring (叫吃呼吸红光) -->
+                <circle
+                  v-if="atariAlertPoints.has(stone.r + ',' + stone.c)"
+                  cx="0"
+                  cy="0"
+                  r="48"
+                  fill="none"
+                  stroke="#EF4444"
+                  stroke-width="4"
+                  stroke-dasharray="6,4"
+                  class="animate-pulse-fast"
+                />
+
+                <!-- Selected Stone Ring Indicator -->
+                <circle
+                  v-if="selectedStonePoint && selectedStonePoint.r === stone.r && selectedStonePoint.c === stone.c"
+                  cx="0"
+                  cy="0"
+                  r="47"
+                  fill="none"
+                  stroke="#10B981"
+                  stroke-width="4"
+                />
+
+                <!-- Black Stone -->
+                <circle
+                  v-if="stone.color === 'B'"
+                  cx="0"
+                  cy="0"
+                  r="44"
+                  fill="url(#blackStoneGrad)"
+                  filter="url(#stoneShadow)"
+                />
+
+                <!-- White Stone -->
+                <circle
+                  v-else-if="stone.color === 'W'"
+                  cx="0"
+                  cy="0"
+                  r="44"
+                  fill="url(#whiteStoneGrad)"
+                  filter="url(#stoneShadow)"
+                  stroke="#E2E8F0"
+                  stroke-width="1.5"
+                />
+
+                <!-- Last Move Marker (最后一手标记) -->
+                <g v-if="isLastMovePoint(stone.r, stone.c)">
                   <circle
-                    v-if="atariAlertPoints.has(`${r - 1},${c - 1}`)"
                     cx="0"
                     cy="0"
-                    r="48"
-                    fill="none"
-                    stroke="#EF4444"
-                    stroke-width="4"
-                    stroke-dasharray="6,4"
-                    class="animate-pulse-fast"
+                    r="13"
+                    :fill="stone.color === 'B' ? '#FF6B6B' : '#3B82F6'"
+                    stroke="#FFFFFF"
+                    stroke-width="2.5"
                   />
-
-                  <!-- Selected Stone Ring Indicator -->
                   <circle
-                    v-if="selectedStonePoint && selectedStonePoint.r === r - 1 && selectedStonePoint.c === c - 1"
                     cx="0"
                     cy="0"
-                    r="47"
-                    fill="none"
-                    stroke="#10B981"
-                    stroke-width="4"
+                    r="5"
+                    fill="#FFFFFF"
                   />
+                </g>
 
-                  <!-- Black Stone -->
+                <!-- Atari Danger Flame Badge -->
+                <g v-if="atariAlertPoints.has(stone.r + ',' + stone.c)">
                   <circle
-                    v-if="game.getCell(r - 1, c - 1) === 'B'"
-                    cx="0"
-                    cy="0"
-                    r="44"
-                    fill="url(#blackStoneGrad)"
-                    filter="url(#stoneShadow)"
+                    cx="25"
+                    cy="-25"
+                    r="16"
+                    fill="#DC2626"
+                    stroke="#FFFFFF"
+                    stroke-width="2.5"
+                    class="shadow"
                   />
-
-                  <!-- White Stone -->
-                  <circle
-                    v-else-if="game.getCell(r - 1, c - 1) === 'W'"
-                    cx="0"
-                    cy="0"
-                    r="44"
-                    fill="url(#whiteStoneGrad)"
-                    filter="url(#stoneShadow)"
-                    stroke="#E2E8F0"
-                    stroke-width="1.5"
-                  />
-
-                  <!-- Last Move Marker (最后一手标记) -->
-                  <g v-if="isLastMovePoint(r - 1, c - 1)">
-                    <circle
-                      cx="0"
-                      cy="0"
-                      r="13"
-                      :fill="game.getCell(r - 1, c - 1) === 'B' ? '#FF6B6B' : '#3B82F6'"
-                      stroke="#FFFFFF"
-                      stroke-width="2.5"
-                    />
-                    <circle
-                      cx="0"
-                      cy="0"
-                      r="5"
-                      fill="#FFFFFF"
-                    />
-                  </g>
-
-                  <!-- Atari Danger Flame Badge -->
-                  <g v-if="atariAlertPoints.has(`${r - 1},${c - 1}`)">
-                    <circle
-                      cx="25"
-                      cy="-25"
-                      r="16"
-                      fill="#DC2626"
-                      stroke="#FFFFFF"
-                      stroke-width="2.5"
-                      class="shadow"
-                    />
-                    <text
-                      x="25"
-                      y="-20"
-                      text-anchor="middle"
-                      fill="#FFFFFF"
-                      font-size="14"
-                      font-weight="900"
-                    >
-                      !
-                    </text>
-                  </g>
-
-                  <!-- Liberty Count Text Badge -->
                   <text
-                    v-if="showLiberties && libertiesMap.has(`${r - 1},${c - 1}`)"
-                    cx="0"
-                    cy="0"
-                    x="0"
-                    y="7"
+                    x="25"
+                    y="-20"
                     text-anchor="middle"
-                    :fill="game.getCell(r - 1, c - 1) === 'B' ? '#FFD43B' : '#1E293B'"
-                    :font-size="size >= 13 ? 24 : 22"
+                    fill="#FFFFFF"
+                    font-size="14"
                     font-weight="900"
-                    font-family="sans-serif"
-                    class="pointer-events-none"
                   >
-                    {{ libertiesMap.get(`${r - 1},${c - 1}`) }}
+                    !
                   </text>
                 </g>
-              </template>
+
+                <!-- Liberty Count Text Badge -->
+                <text
+                  v-if="showLiberties && libertiesMap.has(stone.r + ',' + stone.c)"
+                  cx="0"
+                  cy="0"
+                  x="0"
+                  y="7"
+                  text-anchor="middle"
+                  :fill="stone.color === 'B' ? '#FFD43B' : '#1E293B'"
+                  :font-size="size >= 13 ? 24 : 22"
+                  font-weight="900"
+                  font-family="sans-serif"
+                  class="pointer-events-none"
+                >
+                  {{ libertiesMap.get(stone.r + ',' + stone.c) }}
+                </text>
+              </g>
             </template>
           </g>
 
@@ -594,10 +625,10 @@ const coordTextColor = computed(() => {
             v-if="
               !readonly &&
               hoverPoint &&
-              game.getCell(hoverPoint.r, hoverPoint.c) === null &&
-              game.isLegalMove(hoverPoint.r, hoverPoint.c, game.turn).legal
+              game?.getCell(hoverPoint.r, hoverPoint.c) === null &&
+              game?.isLegalMove(hoverPoint.r, hoverPoint.c, game.turn).legal
             "
-            :transform="`translate(${hoverPoint.c * 100 + 50}, ${hoverPoint.r * 100 + 50})`"
+            :transform="'translate(' + (hoverPoint.c * 100 + 50) + ', ' + (hoverPoint.r * 100 + 50) + ')'"
             opacity="0.6"
             class="pointer-events-none"
           >
@@ -614,8 +645,8 @@ const coordTextColor = computed(() => {
 
           <!-- Interactive Click Target Hitboxes -->
           <g>
-            <template v-for="r in size" :key="`hitbox-r-${r}`">
-              <template v-for="c in size" :key="`hitbox-c-${c}`">
+            <template v-for="r in size" :key="'hitbox-r-' + r">
+              <template v-for="c in size" :key="'hitbox-c-' + c">
                 <rect
                   :x="(c - 1) * 100"
                   :y="(r - 1) * 100"
@@ -650,7 +681,7 @@ const coordTextColor = computed(() => {
       v-if="showCoordinates"
       class="grid grid-flow-col text-center font-black text-[9px] sm:text-xs mt-1.5 px-3 sm:px-4"
       :class="coordTextColor"
-      :style="{ gridTemplateColumns: `repeat(${size}, 1fr)` }"
+      :style="{ gridTemplateColumns: 'repeat(' + size + ', 1fr)' }"
     >
       <span v-for="letter in columnLetters" :key="letter">{{ letter }}</span>
     </div>
@@ -678,4 +709,3 @@ const coordTextColor = computed(() => {
   animation: pingOnce 0.3s cubic-bezier(0, 0, 0.2, 1);
 }
 </style>
-
