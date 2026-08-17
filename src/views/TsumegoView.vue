@@ -90,16 +90,19 @@ const handlePlay = (point: Point) => {
   const p = currentPuzzle.value;
   const { r, c } = point;
 
-  // Check branch response if applicable
+  // Check branch response if applicable (Step 2)
   if (waitingForNextStep.value && p.botBranchMoves) {
     if (point.r === p.botBranchMoves.nextValidMove.r && point.c === p.botBranchMoves.nextValidMove.c) {
+      const moveRes = board.value.playMove(r, c, p.playerColor);
+      sound.playStoneSound();
+      if (moveRes.capturedStones.length > 0) sound.playCaptureSound();
       lastMove.value = point;
       triggerPuzzleSolve(p.botBranchMoves.winComment);
       return;
     } else {
       sound.playErrorSound();
       mascotMood.value = 'comforting';
-      mascotMessage.value = '差一点点，注意这一步的致命反击！';
+      mascotMessage.value = '差一点点，注意白棋的反扑方向！';
       return;
     }
   }
@@ -108,6 +111,9 @@ const handlePlay = (point: Point) => {
   const isCorrect = p.correctMoves.some(cm => cm.r === r && cm.c === c);
 
   if (isCorrect) {
+    const moveRes = board.value.playMove(r, c, p.playerColor);
+    sound.playStoneSound();
+    if (moveRes.capturedStones.length > 0) sound.playCaptureSound();
     lastMove.value = point;
     highlightPoints.value = [];
 
@@ -115,7 +121,7 @@ const handlePlay = (point: Point) => {
     if (p.botBranchMoves) {
       isBotThinking.value = true;
       mascotMood.value = 'thinking';
-      mascotMessage.value = '白棋正在思考如何反抗...';
+      mascotMessage.value = '白棋正在思考如何反扑...';
 
       setTimeout(() => {
         if (p.botBranchMoves) {

@@ -84,12 +84,12 @@ export const CHAPTERS_DATA: Chapter[] = [
         storyDialogues: [
           '你好呀！我是小诺~ 欢迎来到神奇的围棋王国！',
           '请看棋盘：棋子不是放在方格子里，而是放在线与线相交的【交叉点】上哦！',
-          '棋盘正中间那个最亮的大黑点，叫做【天元】（Tengen）。快在天元 (2, 2) 落下你的第一颗黑子吧！'
+          '棋盘正中间那个最亮的大黑点，叫做【天元】（Tengen）。快在正中心的天元 C3 交叉点（第 C 列第 3 行）落下你的第一颗黑子吧！'
         ],
         boardSize: 5,
         initialStones: [],
         playerColor: 'B',
-        goalText: '点击棋盘正中心的天元点 (2, 2) 放置黑子！',
+        goalText: '点击棋盘正中心的天元星位（C3 交叉点）放置黑子！',
         goalTextEn: 'Click the center Tengen point (2,2) to place your stone!',
         targetHighlight: [{ r: 2, c: 2 }],
         puzzleRoot: [
@@ -99,7 +99,7 @@ export const CHAPTERS_DATA: Chapter[] = [
             isCorrect: true
           }
         ],
-        hint: '请点击正中间闪闪发光的天元星位 (2, 2)。',
+        hint: '请点击正中间闪闪发光的天元星位 C3。',
         explanation: '围棋棋盘由纵横各若干条直线组成，棋子下在交叉点上。棋盘中心的特殊标记点称为“天元”，四角和边上的标记点称为“星位”。',
         bilingualTerm: {
           chinese: '天元 / 星位',
@@ -120,12 +120,12 @@ export const CHAPTERS_DATA: Chapter[] = [
         storyDialogues: [
           '小黑子也是要呼吸的哦！',
           '与它直接连着横线和竖线的 4 个空交叉点，就是它的【气】（Liberties）！',
-          '点击小黑子右侧的 (2, 3) 给它找一个小伙伴，手拉手气会变得更多！'
+          '点击小黑子右侧的 D3 交叉点给它找一个小伙伴，手拉手气会变得更多！'
         ],
         boardSize: 5,
         initialStones: [{ r: 2, c: 2, color: 'B' }],
         playerColor: 'B',
-        goalText: '点击右侧相邻空位 (2, 3) 与黑子连接！',
+        goalText: '点击小黑子右侧的 D3 交叉点与黑子相连！',
         goalTextEn: 'Place stone at (2,3) to connect and expand liberties!',
         targetHighlight: [{ r: 2, c: 3 }, { r: 2, c: 1 }, { r: 1, c: 2 }, { r: 3, c: 2 }],
         puzzleRoot: [
@@ -135,7 +135,7 @@ export const CHAPTERS_DATA: Chapter[] = [
             isCorrect: true
           }
         ],
-        hint: '点击黑子上下左右 4 个呼吸孔之一，推荐右边 (2, 3)。',
+        hint: '点击黑子上下左右 4 个呼吸孔之一，推荐点击右边的 D3 交叉点。',
         explanation: '与棋子直接相邻的空交叉点称为“气”。中央单子有 4 气，边上 3 气，角上 2 气。同色棋子相连形成连通块（Group），共享所有外围气。',
         bilingualTerm: {
           chinese: '气',
@@ -154,8 +154,8 @@ export const CHAPTERS_DATA: Chapter[] = [
         subtitle: '当白子只剩 1 口气，一举吃掉它！',
         description: '当对方棋子被包围到只剩 1 口气时称为“叫吃”，堵住最后一口气即可提子！',
         storyDialogues: [
-          '警报响起！白子被三颗黑子包围，只剩 (2, 3) 这一根吸管啦！',
-          '这种危险状态叫【叫吃】（Atari）！快下在 (2, 3) 提走它！'
+          '警报响起！白子被三颗黑子包围，只剩右侧 D3 交叉点这一根吸管啦！',
+          '这种危险状态叫【叫吃】（Atari）！快下在右侧 D3 交叉点提走它！'
         ],
         boardSize: 5,
         initialStones: [
@@ -165,7 +165,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 2, c: 1, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在 (2, 3) 落子，提吃这颗只剩 1 口气的白子！',
+        goalText: '在右侧 D3 交叉点落子，提吃这颗只剩 1 口气的白子！',
         goalTextEn: 'Play at (2,3) to capture the white stone in Atari!',
         targetHighlight: [{ r: 2, c: 3 }],
         puzzleRoot: [
@@ -175,7 +175,7 @@ export const CHAPTERS_DATA: Chapter[] = [
             isCorrect: true
           }
         ],
-        hint: '看右侧闪烁的红圈 (2, 3)，点它就能完成提子！',
+        hint: '点击右侧闪烁的高亮红圈 D3 即可完成提子！',
         explanation: '当对方棋子只剩最后 1 气时称为“叫吃”（打吃/Atari）。下在最后一口气上，将死子拿离棋盘的动作称为“提子”（Capture）。',
         bilingualTerm: {
           chinese: '叫吃 / 提子',
@@ -194,9 +194,9 @@ export const CHAPTERS_DATA: Chapter[] = [
         subtitle: '没有气又不能吃子的地方不能下！',
         description: '下下去后自己没有气，而且又不能提吃对方任何棋子的位置，属于禁着点（自杀步）！',
         storyDialogues: [
-          '请看！中间 (2, 2) 被四颗白子严密合围！',
-          '如果黑子下在 (2, 2)，自己立刻零气而且吃不掉白子，这是违规的【禁着点】！',
-          '请小棋手把黑子下在左上角开阔的安全基地 (0, 0)！'
+          '请看！中间 C3 交叉点（天元）被四颗白子严密合围！',
+          '如果黑子下在中间 C3，自己立刻零气而且吃不掉白子，这是违规的【禁着点】！',
+          '请小棋手把黑子下在左上角开阔的安全基地 A5 黄金角位！'
         ],
         boardSize: 5,
         initialStones: [
@@ -206,7 +206,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 2, c: 3, color: 'W' }
         ],
         playerColor: 'B',
-        goalText: '避开自杀禁着点，在安全开阔的角部 (0, 0) 筑建基地！',
+        goalText: '避开自杀禁着点，在安全开阔的角部（A5 交叉点）筑建基地！',
         goalTextEn: 'Avoid illegal suicide move at (2,2) and play at the corner (0,0)!',
         targetHighlight: [{ r: 0, c: 0 }],
         puzzleRoot: [
@@ -216,7 +216,7 @@ export const CHAPTERS_DATA: Chapter[] = [
             isCorrect: true
           }
         ],
-        hint: '不要自投罗网点 (2, 2)，请点击左上角的黄金角位 (0, 0)！',
+        hint: '不要自投罗网点中间 C3，请点击左上角的黄金角位 A5！',
         explanation: '禁着点（Suicide Move）：任何落子后自身连通块气数为0且不能提掉对方任何棋子的点均为非法禁着点，围棋规则禁止自杀。',
         bilingualTerm: {
           chinese: '禁着点 / 自杀步',
@@ -250,7 +250,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         description: '从外侧迎头叫吃，像张开双臂一样把白子抱进己方大本营！',
         storyDialogues: [
           '白子想要往开阔的右边逃跑！',
-          '小棋手，我们要从右边 (2, 3) 堵住它，把它往左边黑子的大怀抱里赶！'
+          '小棋手，我们要从右边 D3 交叉点堵住它，把它往左边黑子的大怀抱里赶！'
         ],
         boardSize: 5,
         initialStones: [
@@ -261,7 +261,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 3, c: 2, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在 (2, 3) 迎头叫吃，抱住逃跑的白子！',
+        goalText: '在右侧 D3 交叉点迎头叫吃，抱住逃跑的白子！',
         goalTextEn: 'Play at (2,3) to embrace and trap the runner!',
         targetHighlight: [{ r: 2, c: 3 }],
         puzzleRoot: [
@@ -271,7 +271,7 @@ export const CHAPTERS_DATA: Chapter[] = [
             isCorrect: true
           }
         ],
-        hint: '从右侧 (2, 3) 挡住它逃跑的方向！',
+        hint: '从右侧 D3 交叉点挡住它逃跑的方向！',
         explanation: '抱吃（Embrace Capture）：顺应对方逃跑方向迎头阻击，将对方弱子逼向己方已有重兵防守的厚势方向。',
         bilingualTerm: {
           chinese: '抱吃',
@@ -291,7 +291,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         description: '利用两颗并立的黑子如同两扇门框，在正前方插上门栓！',
         storyDialogues: [
           '白子想从黑子两扇门柱之间钻过去！',
-          '快下在 (2, 1) 把大门紧紧关上，关门打敌人！'
+          '快下在正前方 B3 交叉点把大门紧紧关上，关门打敌人！'
         ],
         boardSize: 5,
         initialStones: [
@@ -301,7 +301,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 2, c: 0, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在正前方 (2, 1) 关上大门，叫吃白子！',
+        goalText: '在正前方 B3 交叉点关上大门，叫吃白子！',
         goalTextEn: 'Play at (2,1) like closing the gate to capture the intruder!',
         targetHighlight: [{ r: 2, c: 1 }],
         puzzleRoot: [
@@ -311,7 +311,7 @@ export const CHAPTERS_DATA: Chapter[] = [
             isCorrect: true
           }
         ],
-        hint: '点在两扇门中间的正前方 (2, 1)！',
+        hint: '点在两扇门中间的正前方 B3 交叉点！',
         explanation: '门吃（Gate Capture）：利用两颗同色棋子形成的门户形状，在敌方前进道路上关门拦截并完成叫吃。',
         bilingualTerm: {
           chinese: '门吃',
@@ -331,7 +331,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         description: '像走楼梯一样左右交替叫吃，逼迫白子走 Z 字形直到撞墙！',
         storyDialogues: [
           '这是围棋中最壮观的追击手筋——征吃（扭羊头）！',
-          '白子在 (1, 1)，我们下在 (2, 1) 向上叫吃，逼迫它向斜上方逃窜！'
+          '白子在 (1, 1)，我们下在下方 B3 交叉点向上叫吃，逼迫它向斜上方逃窜！'
         ],
         boardSize: 5,
         initialStones: [
@@ -340,7 +340,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 1, c: 0, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在 (2, 1) 连续发动征吃追击！',
+        goalText: '在下方 B3 交叉点连续发动征吃追击！',
         goalTextEn: 'Play at (2,1) to start the zigzag Ladder chase!',
         targetHighlight: [{ r: 2, c: 1 }],
         puzzleRoot: [
@@ -381,7 +381,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         description: '在斜角处轻轻下一子像张开捕鱼网，敌方无论怎么逃都会自投罗网！',
         storyDialogues: [
           '白子 (2, 2) 想要突围！',
-          '我们不需要贴着它叫吃，只要在斜上方 (3, 3) 织一张“飞枷大网”！'
+          '我们不需要贴着它叫吃，只要在右下方 D2 交叉点织一张“飞枷大网”！'
         ],
         boardSize: 5,
         initialStones: [
@@ -390,7 +390,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 2, c: 1, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在 (3, 3) 下出飞枷，隔空罩住白子！',
+        goalText: '在 D2 交叉点下出飞枷，隔空罩住白子！',
         goalTextEn: 'Play the Geta Net move at (3,3) to trap White from a distance!',
         targetHighlight: [{ r: 3, c: 3 }],
         puzzleRoot: [
@@ -430,7 +430,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         subtitle: '故意送吃一子，然后原位反提大批敌子！',
         description: '围棋中最神奇的反转大招：舍弃一子诱敌深入，随后瞬间回提！',
         storyDialogues: [
-          '看准这个虎口 (2, 2)！',
+          '看准正中间这个虎口（C3 天元）！',
           '勇敢把一颗黑子送给白棋吃！白棋贪吃提掉后，整块白棋气数紧缩，我们可以原位反提！'
         ],
         boardSize: 5,
@@ -447,7 +447,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 2, c: 4, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '勇敢点在 (2, 2) 投入诱饵黑子！',
+        goalText: '勇敢点在正中心 C3 虎口投入诱饵黑子！',
         goalTextEn: 'Throw your bait stone into (2,2) for the Snapback!',
         targetHighlight: [{ r: 2, c: 2 }],
         puzzleRoot: [
@@ -468,7 +468,7 @@ export const CHAPTERS_DATA: Chapter[] = [
             ]
           }
         ],
-        hint: '不要害怕送吃，勇敢下在 (2, 2) 虎口中！',
+        hint: '不要害怕送吃，勇敢下在 C3 虎口中！',
         explanation: '倒扑（Snapback）：故意将己方一子送入敌方虎口，诱使对方提子后气数被压缩为 1 气，随后立刻在原位反提敌方整块棋子。',
         bilingualTerm: {
           chinese: '倒扑',
@@ -502,8 +502,8 @@ export const CHAPTERS_DATA: Chapter[] = [
         description: '被己方棋子完全包围的空交叉点称为“眼”。对方无法单子落入眼内！',
         storyDialogues: [
           '欢迎来到死活城堡！在围棋里，棋子如何才能永远不死呢？',
-          '看！黑棋四颗子在 (1, 1) 围出了一个小空地，这就是【眼位】（Eye）！',
-          '白棋无法单独下在 (1, 1)，因为那是自杀！请点击 (1, 3) 帮黑棋扩大城堡外墙！'
+          '看！黑棋四颗子在 B4 交叉点围出了一个小空地，这就是【眼位】（Eye）！',
+          '白棋无法单独下在 (1, 1)，因为那是自杀！请点击 D4 交叉点帮黑棋扩大城堡外墙！'
         ],
         boardSize: 5,
         initialStones: [
@@ -513,7 +513,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 1, c: 2, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '点击 (1, 3) 扩展黑棋的坚固外墙！',
+        goalText: '点击 D4 交叉点扩展黑棋的坚固外墙！',
         goalTextEn: 'Click (1,3) to reinforce the castle wall around the eye!',
         targetHighlight: [{ r: 1, c: 3 }],
         puzzleRoot: [
@@ -542,9 +542,9 @@ export const CHAPTERS_DATA: Chapter[] = [
         subtitle: '坚固的金刚眼 vs 漏气的假眼',
         description: '角部连接不牢固时会被对方分断破眼（假眼），必须补强关键对角交叉点！',
         storyDialogues: [
-          '注意！黑棋在 (2, 2) 看似有一个眼位！',
+          '注意！黑棋在 C3 看似有一个眼位！',
           '但右下角的斜角 (3, 3) 还没连好！如果白棋占领 (3, 3)，黑棋的眼就会漏气变成【假眼】！',
-          '快下在 (3, 3) 补牢对角，把假眼变成固若金汤的【真眼】！'
+          '快下在右下角 D2 补牢对角，把假眼变成固若金汤的【真眼】！'
         ],
         boardSize: 5,
         initialStones: [
@@ -556,7 +556,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 3, c: 1, color: 'W' }
         ],
         playerColor: 'B',
-        goalText: '在斜对角 (3, 3) 补强连通，固化真眼！',
+        goalText: '在右下斜对角（D2 交叉点）补强连通，固化真眼！',
         goalTextEn: 'Play at (3,3) to secure the diagonal and make a Real Eye!',
         targetHighlight: [{ r: 3, c: 3 }],
         puzzleRoot: [
@@ -587,7 +587,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         storyDialogues: [
           '这是围棋中最神圣的铁律：【两眼活棋】！',
           '黑棋中间有一块长条空地 (2, 1)、(2, 2)、(2, 3)（直三）！',
-          '快下在正中间 (2, 2) 一分为二，立刻做出左右两只独立的真眼！'
+          '快下在直三正中间（C3 天元）一分为二，立刻做出左右两只独立的真眼！'
         ],
         boardSize: 5,
         initialStones: [
@@ -601,7 +601,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 2, c: 4, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '下在中间要害 (2, 2)，做出两只真眼做活！',
+        goalText: '下在中间要害（C3 天元），做出两只真眼做活！',
         goalTextEn: 'Play at the vital center point (2,2) to divide into Two Real Eyes!',
         targetHighlight: [{ r: 2, c: 2 }],
         puzzleRoot: [
@@ -611,7 +611,7 @@ export const CHAPTERS_DATA: Chapter[] = [
             isCorrect: true
           }
         ],
-        hint: '点在三颗空点正中间的 (2, 2)！',
+        hint: '点在直三正中间的 C3 交叉点（天元）！',
         explanation: '两眼活棋（Two Eyes for Life）：因为对手不能同时在两个眼位同时落子，且单落一子即为无气禁着点，因此拥有两个独立真眼的连通块将永久存活。',
         bilingualTerm: {
           chinese: '两眼活棋',
@@ -632,7 +632,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         storyDialogues: [
           '白棋也想做出两只眼活命！',
           '白棋肚子里有 (2, 1)、(2, 2)、(2, 3) 三个空位！如果白棋抢到 (2, 2) 就会做活！',
-          '小黑棋，快抢先下在 (2, 2) 进行【点杀】，彻底粉碎白棋做眼的梦想！'
+          '小黑棋，快抢先下在直三正中心（C3 天元）进行【点杀】，彻底粉碎白棋做眼的梦想！'
         ],
         boardSize: 5,
         initialStones: [
@@ -648,7 +648,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 4, c: 2, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '抢占中心要害 (2, 2) 点杀白棋直三！',
+        goalText: '抢占中心要害（C3 交叉点）点杀白棋直三！',
         goalTextEn: 'Strike at the vital center (2,2) to prevent White from making two eyes!',
         targetHighlight: [{ r: 2, c: 2 }],
         puzzleRoot: [
@@ -658,7 +658,7 @@ export const CHAPTERS_DATA: Chapter[] = [
             isCorrect: true
           }
         ],
-        hint: '“敌之要点即我之要点”，抢在 (2, 2) 落子！',
+        hint: '“敌之要点即我之要点”，抢在中心 C3 交叉点落子！',
         explanation: '死活要害（Vital Point）：直三、弯三的中央点是做活与杀棋的唯一关键点。攻方占领该点即可破眼杀棋，守方占领该点即可做活。',
         bilingualTerm: {
           chinese: '点杀 / 要害',
@@ -692,7 +692,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         description: '围棋谚语“棋从断处生”——切断对方的联系，对方就会出现薄弱破绽！',
         storyDialogues: [
           '白棋两颗子斜斜相交在 (1, 2) 和 (2, 3)！',
-          '它们之间看似连在一起，其实只要黑棋下在交叉口 (2, 2)，就能将它们彻底【分断】（Cut）！'
+          '它们之间看似连在一起，其实只要黑棋下在交叉口 C3（天元），就能将它们彻底【分断】（Cut）！'
         ],
         boardSize: 5,
         initialStones: [
@@ -702,7 +702,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 2, c: 1, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在 (2, 2) 落下关键分断手，切开两颗白子！',
+        goalText: '在交叉口（C3 交叉点）落下关键分断手，切开两颗白子！',
         goalTextEn: 'Play at (2,2) to execute the decisive Cut between enemy stones!',
         targetHighlight: [{ r: 2, c: 2 }],
         puzzleRoot: [
@@ -732,7 +732,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         description: '落下一颗子，同时让对方两个不同的棋子都陷入 1 气的绝境，必得其一！',
         storyDialogues: [
           '观察白棋：(1, 2) 和 (2, 3) 两处白子都只有 2 口气！',
-          '只要黑棋下在它们的交汇气孔 (1, 3)，就能同时叫吃两边的白棋！白棋顾此失彼！'
+          '只要黑棋下在它们的交汇气孔 D4，就能同时叫吃两边的白棋！白棋顾此失彼！'
         ],
         boardSize: 5,
         initialStones: [
@@ -744,7 +744,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 2, c: 4, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在 (1, 3) 发动震撼的【双叫吃】！',
+        goalText: '在交汇气孔（D4 交叉点）发动震撼的双叫吃！',
         goalTextEn: 'Play at (1,3) to launch the Double Atari strike!',
         targetHighlight: [{ r: 1, c: 3 }],
         puzzleRoot: [
@@ -785,7 +785,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         description: '对方棋子虽然试图手拉手逃跑，但连上后气数依然只有 1 气，直接被一锅端！',
         storyDialogues: [
           '看白棋 (1, 2) 只剩 1 口气！它旁边还有一颗孤单的 (1, 4)！',
-          '黑棋下在 (1, 3) 发起致命一击，白棋就算连上也是 1 气，这就是经典的【接不归】！'
+          '黑棋下在连接点 D4 发起致命一击，白棋就算连上也是 1 气，这就是经典的【接不归】！'
         ],
         boardSize: 5,
         initialStones: [
@@ -799,7 +799,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 1, c: 1, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在 (1, 3) 落子，完成接不归绝杀！',
+        goalText: '在关键连接点（D4 交叉点）落子，完成接不归绝杀！',
         goalTextEn: 'Play at (1,3) to trigger the Connect-and-Die capture!',
         targetHighlight: [{ r: 1, c: 3 }],
         puzzleRoot: [
@@ -830,7 +830,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         storyDialogues: [
           '激烈的对杀爆发了！',
           '黑棋两颗子 (2, 1)、(2, 2) 只有 2 气；白棋两颗子 (2, 3)、(2, 4) 也只有 2 气！',
-          '轮到黑棋先走，必须果断收紧白棋的外气 (1, 3)，抢先一步叫吃白棋！'
+          '轮到黑棋先走，必须果断收紧白棋的外气（D4 交叉点），抢先一步叫吃白棋！'
         ],
         boardSize: 5,
         initialStones: [
@@ -844,7 +844,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 0, c: 4, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在 (1, 3) 抢先收紧白棋外气！',
+        goalText: '在上方外气（D4 交叉点）抢先收紧白棋！',
         goalTextEn: 'Play at (1,3) to tighten the capturing race liberties first!',
         targetHighlight: [{ r: 1, c: 3 }],
         puzzleRoot: [
@@ -900,12 +900,12 @@ export const CHAPTERS_DATA: Chapter[] = [
         storyDialogues: [
           '围棋的最终胜负不是比谁吃子多，而是比谁围的【地盘】（Territory）更大！',
           '古人总结“金角银边草肚皮”——在角上圈地最省力！',
-          '在 7 路大棋盘上，点击左上角的黄金角位 (1, 1) 建立你的第一座城堡吧！'
+          '在 7 路大棋盘上，点击左上角的黄金星位（B6 交叉点）建立你的第一座城堡吧！'
         ],
         boardSize: 7,
         initialStones: [],
         playerColor: 'B',
-        goalText: '点击左上角黄金星位 (1, 1) 开疆拓土！',
+        goalText: '点击左上角黄金星位（B6 交叉点）开疆拓土！',
         goalTextEn: 'Play at the golden corner (1,1) to establish your base!',
         targetHighlight: [{ r: 1, c: 1 }],
         puzzleRoot: [
@@ -935,7 +935,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         description: '当双方地盘接近时，必须堵住边境上的缺口，防止敌人潜入偷袭！',
         storyDialogues: [
           '黑棋在左半边筑起了宏伟的城堡，白棋在右半边！',
-          '但在边界 (3, 3) 出现了一个大缺口！白棋正虎视眈眈想要钻进来！',
+          '但在边界 D4 出现了一个大缺口！白棋正虎视眈眈想要钻进来！',
           '快下在 (3, 3) 筑起城墙，完美封锁边界！'
         ],
         boardSize: 7,
@@ -955,7 +955,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 6, c: 4, color: 'W' }
         ],
         playerColor: 'B',
-        goalText: '在 (3, 3) 挡住缺口，完成边界封锁！',
+        goalText: '在边界缺口（D4 交叉点）挡住白棋，完成封锁！',
         goalTextEn: 'Play at (3,3) to seal the boundary gap in the endgame!',
         targetHighlight: [{ r: 3, c: 3 }],
         puzzleRoot: [
@@ -986,7 +986,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         storyDialogues: [
           '白棋刚在 (2, 2) 提了黑棋一子！',
           '根据围棋神圣的【劫争规则】（Ko Rule），黑棋不能立刻在 (2, 2) 反提！',
-          '黑棋在上方 (0, 2) 发动了一次强大的威胁，白棋在 (0, 1) 应答了！现在黑棋可以回到 (2, 2) 提劫了！'
+          '黑棋在上方 (0, 2) 发动了一次强大的威胁，白棋在 (0, 1) 应答了！现在黑棋可以回到中心 C3（天元）提劫了！'
         ],
         boardSize: 5,
         initialStones: [
@@ -1000,7 +1000,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 2, c: 2, color: 'W' }
         ],
         playerColor: 'B',
-        goalText: '在 (2, 2) 提掉白子，赢下劫争！',
+        goalText: '在中心 C3 交叉点（天元）提掉白子，赢下劫争！',
         goalTextEn: 'Play at (2,2) to recapture the Ko stone!',
         targetHighlight: [{ r: 2, c: 2 }],
         puzzleRoot: [
@@ -1030,7 +1030,7 @@ export const CHAPTERS_DATA: Chapter[] = [
         description: '终局时，己方领地内已经无法做活的敌方棋子属于死子，清理后计算领地总目数！',
         storyDialogues: [
           '整盘棋即将结束！黑棋占领了左边大片领地！',
-          '在黑棋大本营角落 (0, 0) 里有一颗死掉的孤单白子！',
+          '在黑棋大本营角落 A5 里有一颗死掉的孤单白子！',
           '在 (0, 0) 把它提吃清理干净，清点黑棋满满的胜利果实吧！'
         ],
         boardSize: 5,
@@ -1048,7 +1048,7 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 4, c: 2, color: 'W' }
         ],
         playerColor: 'B',
-        goalText: '在 (0, 0) 提吃并清理白方死子！',
+        goalText: '在左上角（A5 交叉点）提吃并清理死子！',
         goalTextEn: 'Play at (0,0) to capture and remove the dead stone from your territory!',
         targetHighlight: [{ r: 0, c: 0 }],
         puzzleRoot: [
