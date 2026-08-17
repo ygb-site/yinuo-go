@@ -189,21 +189,21 @@ const toggleFavorite = () => {
     <div class="max-w-7xl mx-auto space-y-6">
 
       <!-- Header Banner -->
-      <div class="bg-white rounded-3xl p-6 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="space-y-1 text-center md:text-left">
-          <div class="inline-flex items-center gap-1.5 bg-rose-100 text-rose-800 text-xs font-black px-3 py-1 rounded-full">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+        <div class="space-y-2 text-center md:text-left z-10">
+          <div class="inline-flex items-center gap-2 bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-xs font-black">
             <Puzzle class="w-3.5 h-3.5" />
             <span>每日死活实战题库 (Daily Tsumego)</span>
           </div>
-          <h1 class="text-2xl sm:text-3xl font-black text-gray-900">
+          <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
             死活妙手与手筋大本营
           </h1>
-          <p class="text-xs sm:text-sm text-gray-600 font-medium">
+          <p class="text-xs sm:text-sm text-gray-600 font-medium max-w-xl">
             下围棋就像做算术题，每日攻克几道死活题，棋力突飞猛进！
           </p>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 z-10">
           <div class="bg-rose-50 border border-rose-200 px-4 py-2.5 rounded-2xl text-center">
             <div class="text-[11px] font-bold text-rose-700">已攻克题数</div>
             <div class="text-2xl font-black text-rose-900">
@@ -396,4 +396,3 @@ const toggleFavorite = () => {
     </div>
   </div>
 </template>
-

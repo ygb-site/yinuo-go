@@ -258,7 +258,7 @@ const handleBackToMap = () => {
           <div class="text-[10px] sm:text-xs font-black text-orange-600 uppercase tracking-wide">
             {{ currentLesson.type === 'story' ? '📖 互动讲解模式' : '🧩 死活实战模式' }}
           </div>
-          <h1 class="text-base sm:text-xl font-black text-gray-900">
+          <h1 class="text-base sm:text-2xl font-cartoon font-bold text-gray-900 tracking-wide">
             {{ currentLesson.title }}
           </h1>
         </div>
@@ -401,4 +401,3 @@ const handleBackToMap = () => {
     />
   </div>
 </template>
-

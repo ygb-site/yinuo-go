@@ -80,22 +80,22 @@ const resetDemoBoard = () => {
     <div class="max-w-7xl mx-auto space-y-6">
 
       <!-- Header Banner -->
-      <div class="bg-white rounded-3xl p-6 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="space-y-1 text-center md:text-left">
-          <div class="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 text-xs font-black px-3 py-1 rounded-full">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+        <div class="space-y-2 text-center md:text-left z-10">
+          <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-black">
             <BookMarked class="w-3.5 h-3.5" />
             <span>少儿围棋双语小字典 (Go Dictionary)</span>
           </div>
-          <h1 class="text-2xl sm:text-3xl font-black text-gray-900">
+          <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
             围棋核心术语中英双解
           </h1>
-          <p class="text-xs sm:text-sm text-gray-600 font-medium">
+          <p class="text-xs sm:text-sm text-gray-600 font-medium max-w-xl">
             天元星位、四大黄金线、气、叫吃、手筋、死活全收录，配有生动童趣比喻与微型实战小黑板！
           </p>
         </div>
 
         <!-- Search Bar -->
-        <div class="relative w-full md:w-72">
+        <div class="relative w-full md:w-72 z-10">
           <Search class="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
           <input
             v-model="searchQuery"

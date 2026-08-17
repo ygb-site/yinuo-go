@@ -145,22 +145,22 @@ const importSGF = () => {
     <div class="max-w-7xl mx-auto space-y-6">
 
       <!-- Header Banner -->
-      <div class="bg-white rounded-3xl p-6 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="space-y-1 text-center md:text-left">
-          <div class="inline-flex items-center gap-1.5 bg-blue-100 text-blue-800 text-xs font-black px-3 py-1 rounded-full">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+        <div class="space-y-2 text-center md:text-left z-10">
+          <div class="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-black">
             <Grid class="w-3.5 h-3.5" />
             <span>自由打谱台与沙盒 (Sandbox & SGF)</span>
           </div>
-          <h1 class="text-2xl sm:text-3xl font-black text-gray-900">
+          <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
             自由对弈 · 摆棋复盘 · 棋谱导出
           </h1>
-          <p class="text-xs sm:text-sm text-gray-600 font-medium">
+          <p class="text-xs sm:text-sm text-gray-600 font-medium max-w-xl">
             双人面对面下棋、自由摆设死活局、导出专属 SGF 棋谱永久珍藏！
           </p>
         </div>
 
         <!-- Mode Toggle & SGF Buttons -->
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 z-10">
           <button
             @click="mode = 'play'"
             class="px-4 py-2 rounded-2xl border-2 transition font-black text-xs flex items-center gap-1.5 active:scale-95"
@@ -438,4 +438,3 @@ const importSGF = () => {
     />
   </div>
 </template>
-

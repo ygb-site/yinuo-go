@@ -113,9 +113,12 @@ const confirmReset = () => {
             </div>
 
             <div class="space-y-1.5">
+              <div class="inline-flex items-center gap-1.5 bg-purple-100 text-purple-800 px-3 py-0.5 rounded-full text-xs font-black mb-1">
+                <span>🏆 宝贝个人成长成就中心</span>
+              </div>
               <div class="flex items-center gap-2 justify-center sm:justify-start">
                 <div v-if="!isEditingName" class="flex items-center gap-2">
-                  <h1 class="text-2xl sm:text-3xl font-black text-gray-900">{{ userStore.nickname }}</h1>
+                  <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">{{ userStore.nickname }}</h1>
                   <button @click="isEditingName = true" class="p-1 text-gray-400 hover:text-orange-500" title="修改昵称">
                     <Edit2 class="w-4 h-4" />
                   </button>
@@ -358,4 +361,3 @@ const confirmReset = () => {
     </div>
   </div>
 </template>
-

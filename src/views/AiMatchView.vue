@@ -245,22 +245,22 @@ const endGame = () => {
     <div class="max-w-7xl mx-auto space-y-6">
 
       <!-- Header Banner -->
-      <div class="bg-white rounded-3xl p-6 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="space-y-1 text-center md:text-left">
-          <div class="inline-flex items-center gap-1.5 bg-indigo-100 text-indigo-800 text-xs font-black px-3 py-1 rounded-full">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+        <div class="space-y-2 text-center md:text-left z-10">
+          <div class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-black">
             <Bot class="w-3.5 h-3.5" />
             <span>智能人机对弈场 (AI Arena)</span>
           </div>
-          <h1 class="text-2xl sm:text-3xl font-black text-gray-900">
+          <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
             挑战萌宠围棋大师
           </h1>
-          <p class="text-xs sm:text-sm text-gray-600 font-medium">
+          <p class="text-xs sm:text-sm text-gray-600 font-medium max-w-xl">
             选择不同棋力的对手，开启辅助提示，在实战中磨砺棋艺！
           </p>
         </div>
 
         <!-- Bot Selector Buttons -->
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 z-10">
           <button
             v-for="(bot, key) in AI_BOTS"
             :key="key"
@@ -488,4 +488,3 @@ const endGame = () => {
     />
   </div>
 </template>
-
