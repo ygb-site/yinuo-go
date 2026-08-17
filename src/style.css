@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#FDFBF7] text-[#2D3748] font-sans antialiased select-none;
+    touch-action: manipulation;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F1E6D0;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: #D4A373;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #BC8A5F;
+}
+
+/* Wood board texture effect */
+.wood-pattern {
+  background-color: #E6B870;
+  background-image: 
+    radial-gradient(ellipse at 50% 50%, rgba(255, 230, 180, 0.4) 0%, rgba(180, 120, 50, 0.25) 100%),
+    repeating-linear-gradient(45deg, transparent, transparent 15px, rgba(160, 100, 40, 0.05) 15px, rgba(160, 100, 40, 0.05) 30px);
+}
+
+.candy-pattern {
+  background-color: #FCE7F3;
+  background-image: radial-gradient(#F472B6 0.75px, transparent 0.75px), radial-gradient(#60A5FA 0.75px, #FCE7F3 0.75px);
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+}
+
+.neon-pattern {
+  background-color: #0F172A;
+  background-image: linear-gradient(to right, #1E293B 1px, transparent 1px), linear-gradient(to bottom, #1E293B 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Cartoon 3D button utility */
+.btn-cartoon {
+  @apply transition-all duration-150 active:translate-y-1 active:shadow-none font-bold rounded-2xl cursor-pointer;
+}
+
