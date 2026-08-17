@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { GoBoard } from '../engine/GoBoard';
 import { SGFParser } from '../engine/sgfParser';
-import type { Point, StoneColor, ScoreBreakdown } from '../engine/types';
+import type { Point, ScoreBreakdown } from '../engine/types';
 import { useUserStore } from '../stores/userStore';
 import { sound } from '../utils/sound';
 import GoBoardComponent from '../components/GoBoard.vue';
@@ -39,16 +39,10 @@ const copyFeedback = ref(false);
 const scoreResult = ref<ScoreBreakdown | null>(null);
 const showScoreModal = ref(false);
 
-// History Replay
-const historyStep = ref<number>(0);
-const fullHistoryMoves = ref<{ point: Point | null; color: StoneColor }[]>([]);
-
 const initBoard = (size = boardSize.value) => {
   boardSize.value = size;
   board.value = new GoBoard(size);
   lastMove.value = null;
-  historyStep.value = 0;
-  fullHistoryMoves.value = [];
   scoreResult.value = null;
   showScoreModal.value = false;
 };
@@ -58,6 +52,11 @@ onMounted(() => {
 });
 
 const handlePlay = (point: Point) => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
+
   const { r, c } = point;
 
   if (mode.value === 'edit') {
@@ -82,10 +81,13 @@ const handlePlay = (point: Point) => {
   sound.playStoneSound();
   if (res.capturedStones.length > 0) sound.playCaptureSound();
   lastMove.value = point;
-  historyStep.value = board.value.history.length;
 };
 
 const handlePass = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   sound.playButtonSound();
   const ends = board.value.pass();
   if (ends) {
@@ -94,24 +96,35 @@ const handlePass = () => {
 };
 
 const handleUndo = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   sound.playButtonSound();
   if (board.value.undo()) {
     lastMove.value = board.value.history.length > 0 ? board.value.history[board.value.history.length - 1].point : null;
-    historyStep.value = board.value.history.length;
   }
 };
 
 const calculateScore = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   sound.playWinSound();
   scoreResult.value = board.value.calculateScore();
   showScoreModal.value = true;
 };
 
 const exportSGF = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   sound.playButtonSound();
   sgfText.value = SGFParser.exportToSGF(board.value, {
     gameName: '一诺围棋练习谱',
-    blackPlayer: '小棋手',
+    blackPlayer: userStore.nickname || '小棋手',
     whitePlayer: '好友'
   });
   sgfModalOpen.value = true;
@@ -125,6 +138,10 @@ const copySGF = () => {
 };
 
 const importSGF = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   if (!sgfText.value.trim()) return;
   try {
     const parsed = SGFParser.parseSGF(sgfText.value);
@@ -387,49 +404,51 @@ const importSGF = () => {
     </div>
 
     <!-- SGF Export / Import Modal -->
-    <div
-      v-if="sgfModalOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-    >
-      <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border-4 border-amber-300 space-y-4">
-        <h3 class="text-xl font-black text-gray-900 flex items-center gap-2">
-          <span>📜 SGF 围棋棋谱</span>
-        </h3>
-        <p class="text-xs text-gray-500 font-medium">
-          可直接复制以下 SGF 代码保存，或粘贴外部棋谱进行导入：
-        </p>
+    <Teleport to="body">
+      <div
+        v-if="sgfModalOpen"
+        class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md select-none animate-fade-in"
+      >
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border-4 border-amber-300 space-y-4 animate-pop-in">
+          <h3 class="text-xl font-black text-gray-900 flex items-center gap-2">
+            <span>📜 SGF 围棋棋谱</span>
+          </h3>
+          <p class="text-xs text-gray-500 font-medium">
+            可直接复制以下 SGF 代码保存，或粘贴外部棋谱进行导入：
+          </p>
 
-        <textarea
-          v-model="sgfText"
-          rows="6"
-          class="w-full font-mono text-xs p-3 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
-          placeholder="粘贴标准 SGF 文本..."
-        ></textarea>
+          <textarea
+            v-model="sgfText"
+            rows="6"
+            class="w-full font-mono text-xs p-3 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-400"
+            placeholder="粘贴标准 SGF 文本..."
+          ></textarea>
 
-        <div class="flex gap-2">
-          <button
-            @click="copySGF"
-            class="flex-1 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
-          >
-            <Copy class="w-4 h-4" />
-            <span>{{ copyFeedback ? '已复制到剪贴板！' : '复制棋谱' }}</span>
-          </button>
-          <button
-            @click="importSGF"
-            class="flex-1 py-2.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
-          >
-            <Upload class="w-4 h-4" />
-            <span>导入棋盘</span>
-          </button>
-          <button
-            @click="sgfModalOpen = false"
-            class="px-4 py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs"
-          >
-            关闭
-          </button>
+          <div class="flex gap-2">
+            <button
+              @click="copySGF"
+              class="flex-1 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
+            >
+              <Copy class="w-4 h-4" />
+              <span>{{ copyFeedback ? '已复制到剪贴板！' : '复制棋谱' }}</span>
+            </button>
+            <button
+              @click="importSGF"
+              class="flex-1 py-2.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
+            >
+              <Upload class="w-4 h-4" />
+              <span>导入棋盘</span>
+            </button>
+            <button
+              @click="sgfModalOpen = false"
+              class="px-4 py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs"
+            >
+              关闭
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
 
     <!-- Score Breakdown Modal -->
     <ScoreModal
@@ -442,5 +461,4 @@ const importSGF = () => {
     />
   </div>
 </template>
-
 

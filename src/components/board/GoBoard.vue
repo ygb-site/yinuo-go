@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import type { Point, StoneColor, ThemeType, BoardSize, StoneGroup } from '../../engine/types';
 import { GoGame } from '../../engine/GoGame';
+import { useUserStore } from '../../stores/useUserStore';
 import { playStoneSound, playCaptureSound, playErrorSound } from '../../lib/audio';
 
 const props = withDefaults(
@@ -33,16 +34,19 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'move', point: Point, color: StoneColor): void;
+  (e: 'play', point: Point): void;
   (e: 'capture', capturedStones: Point[]): void;
   (e: 'illegalMove', point: Point, reason: string): void;
   (e: 'selectStone', point: Point | null, group: StoneGroup | null): void;
 }>();
 
+const userStore = useUserStore();
+
 const hoverPoint = ref<Point | null>(null);
 const selectedStonePoint = ref<Point | null>(null);
 const isShaking = ref(false);
 
-const size = computed(() => props.game.size);
+const size = computed(() => props.game.size || 9);
 
 // Star points (Hoshi / 星位)
 const starPoints = computed<Point[]>(() => {
@@ -81,7 +85,7 @@ const starPoints = computed<Point[]>(() => {
   return [];
 });
 
-// External coordinates letters & numbers (A-J excluding I)
+// External coordinates letters & numbers (A-T excluding I)
 const columnLetters = computed(() => {
   const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T'];
   return letters.slice(0, size.value);
@@ -148,15 +152,29 @@ const isLastMovePoint = (r: number, c: number) => {
     return props.lastMove.r === r && props.lastMove.c === c;
   }
   const hist = props.game.history;
-  if (hist.length > 0) {
+  if (hist && hist.length > 0) {
     const last = hist[hist.length - 1];
     return last.point !== null && last.point.r === r && last.point.c === c;
   }
   return false;
 };
 
+// Global Board Click Interceptor
+const handleBoardContainerClick = (e: MouseEvent) => {
+  if (!userStore.hasProfile) {
+    e.stopPropagation();
+    e.preventDefault();
+    userStore.openProfileModal();
+  }
+};
+
 // Handle Intersect Click
 const handleCellClick = (r: number, c: number) => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
+
   if (props.readonly) return;
 
   const existingStone = props.game.getCell(r, c);
@@ -191,6 +209,7 @@ const handleCellClick = (r: number, c: number) => {
   if (res.success) {
     playStoneSound();
     emit('move', { r, c }, turnColor);
+    emit('play', { r, c });
 
     if (res.capturedStones.length > 0) {
       playCaptureSound();
@@ -254,14 +273,15 @@ const coordTextColor = computed(() => {
 
 <template>
   <div
-    class="relative rounded-3xl p-3 sm:p-6 border-4 sm:border-[6px] transition-all select-none mx-auto max-w-full"
+    class="relative rounded-3xl p-3 sm:p-6 border-4 sm:border-[6px] transition-all select-none mx-auto max-w-full cursor-pointer"
     :class="[themeContainerClass, { 'animate-shake': isShaking }]"
     :style="{ width: `min(100%, ${sizePx}px)` }"
+    @click.capture="handleBoardContainerClick"
   >
     <!-- Top Coordinates (Letters) -->
     <div
       v-if="showCoordinates"
-      class="grid grid-flow-col text-center font-black text-[10px] sm:text-xs mb-1.5 px-4"
+      class="grid grid-flow-col text-center font-black text-[9px] sm:text-xs mb-1.5 px-3 sm:px-4"
       :class="coordTextColor"
       :style="{ gridTemplateColumns: `repeat(${size}, 1fr)` }"
     >
@@ -273,7 +293,7 @@ const coordTextColor = computed(() => {
       <!-- Left Coordinates (Numbers) -->
       <div
         v-if="showCoordinates"
-        class="flex flex-col justify-around h-full text-center font-black text-[10px] sm:text-xs mr-1.5 w-4"
+        class="flex flex-col justify-around h-full text-center font-black text-[9px] sm:text-xs mr-1 sm:mr-1.5 w-3 sm:w-4"
         :class="coordTextColor"
       >
         <span v-for="num in rowNumbers" :key="num">{{ num }}</span>
@@ -343,7 +363,7 @@ const coordTextColor = computed(() => {
               :key="`star-${sp.r}-${sp.c}`"
               :cx="sp.c * 100 + 50"
               :cy="sp.r * 100 + 50"
-              r="6.5"
+              :r="size >= 13 ? 7.5 : 6.5"
             />
           </g>
 
@@ -352,7 +372,7 @@ const coordTextColor = computed(() => {
             <template v-for="r in size" :key="`terr-r-${r}`">
               <template v-for="c in size" :key="`terr-c-${c}`">
                 <rect
-                  v-if="territoryMap[r - 1][c - 1] === 'B'"
+                  v-if="territoryMap[r - 1] && territoryMap[r - 1][c - 1] === 'B'"
                   :x="(c - 1) * 100 + 25"
                   :y="(r - 1) * 100 + 25"
                   width="50"
@@ -364,7 +384,7 @@ const coordTextColor = computed(() => {
                   stroke-width="1.5"
                 />
                 <rect
-                  v-else-if="territoryMap[r - 1][c - 1] === 'W'"
+                  v-else-if="territoryMap[r - 1] && territoryMap[r - 1][c - 1] === 'W'"
                   :x="(c - 1) * 100 + 25"
                   :y="(r - 1) * 100 + 25"
                   width="50"
@@ -432,6 +452,7 @@ const coordTextColor = computed(() => {
                   v-if="game.getCell(r - 1, c - 1) !== null"
                   :transform="`translate(${(c - 1) * 100 + 50}, ${(r - 1) * 100 + 50})`"
                   class="transition-transform duration-150"
+                  pointer-events="none"
                 >
                   <!-- Atari Pulsing Aura Ring (叫吃呼吸红光) -->
                   <circle
@@ -479,7 +500,7 @@ const coordTextColor = computed(() => {
                     stroke-width="1.5"
                   />
 
-                  <!-- Last Move Marker (最后一手标记: 小红点/发光圆环) -->
+                  <!-- Last Move Marker (最后一手标记) -->
                   <g v-if="isLastMovePoint(r - 1, c - 1)">
                     <circle
                       cx="0"
@@ -529,7 +550,7 @@ const coordTextColor = computed(() => {
                     y="7"
                     text-anchor="middle"
                     :fill="game.getCell(r - 1, c - 1) === 'B' ? '#FFD43B' : '#1E293B'"
-                    font-size="22"
+                    :font-size="size >= 13 ? 24 : 22"
                     font-weight="900"
                     font-family="sans-serif"
                     class="pointer-events-none"
@@ -565,7 +586,7 @@ const coordTextColor = computed(() => {
           </g>
 
           <!-- Interactive Click Target Hitboxes -->
-          <g v-if="!readonly">
+          <g>
             <template v-for="r in size" :key="`hitbox-r-${r}`">
               <template v-for="c in size" :key="`hitbox-c-${c}`">
                 <rect
@@ -573,7 +594,9 @@ const coordTextColor = computed(() => {
                   :y="(r - 1) * 100"
                   width="100"
                   height="100"
-                  fill="transparent"
+                  fill="#FFFFFF"
+                  fill-opacity="0.001"
+                  pointer-events="all"
                   class="cursor-pointer"
                   @click="handleCellClick(r - 1, c - 1)"
                   @mouseenter="handleCellEnter(r - 1, c - 1)"
@@ -588,7 +611,7 @@ const coordTextColor = computed(() => {
       <!-- Right Coordinates (Numbers) -->
       <div
         v-if="showCoordinates"
-        class="flex flex-col justify-around h-full text-center font-black text-[10px] sm:text-xs ml-1.5 w-4"
+        class="flex flex-col justify-around h-full text-center font-black text-[9px] sm:text-xs ml-1 sm:ml-1.5 w-3 sm:w-4"
         :class="coordTextColor"
       >
         <span v-for="num in rowNumbers" :key="num">{{ num }}</span>
@@ -598,7 +621,7 @@ const coordTextColor = computed(() => {
     <!-- Bottom Coordinates (Letters) -->
     <div
       v-if="showCoordinates"
-      class="grid grid-flow-col text-center font-black text-[10px] sm:text-xs mt-1.5 px-4"
+      class="grid grid-flow-col text-center font-black text-[9px] sm:text-xs mt-1.5 px-3 sm:px-4"
       :class="coordTextColor"
       :style="{ gridTemplateColumns: `repeat(${size}, 1fr)` }"
     >

@@ -195,7 +195,7 @@ const handleClearAll = () => {
             <div class="pt-2 flex items-center justify-between border-t border-gray-100">
               <span class="text-[11px] font-bold text-gray-400 flex items-center gap-1">
                 <Database class="w-3 h-3 text-emerald-500" />
-                <span>本地实时保存 (LocalStorage)</span>
+                <span>数据仅存在本地</span>
               </span>
               <button
                 @click="handleClearAll"
@@ -274,9 +274,9 @@ const handleClearAll = () => {
               </button>
             </div>
 
-            <!-- Zero server privacy assurance -->
+            <!-- Privacy Note -->
             <p class="text-[11px] text-gray-400 text-center font-bold">
-              🔒 零服务器传输 · 数据 100% 实时保存在当前设备浏览器中
+              🔒 数据仅存在本地
             </p>
           </div>
 

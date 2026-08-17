@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { GO_DICTIONARY, type DictEntry } from '../data/dictionaryData';
 import { GoBoard } from '../engine/GoBoard';
 import type { Point } from '../engine/types';
+import { useUserStore } from '../stores/userStore';
 import { sound } from '../utils/sound';
 import GoBoardComponent from '../components/GoBoard.vue';
 import {
@@ -10,6 +11,8 @@ import {
   Sparkles,
   Search,
 } from 'lucide-vue-next';
+
+const userStore = useUserStore();
 
 const searchQuery = ref('');
 const activeCategory = ref<string>('all');
@@ -54,6 +57,10 @@ const selectEntry = (entry: DictEntry) => {
 setupDemoBoard(currentEntry.value);
 
 const handleDemoPlay = (point: Point) => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   const res = demoBoard.value.playMove(point.r, point.c, 'B');
   if (res.success) {
     sound.playStoneSound();
@@ -65,6 +72,10 @@ const handleDemoPlay = (point: Point) => {
 };
 
 const resetDemoBoard = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   sound.playButtonSound();
   setupDemoBoard(currentEntry.value);
 };
@@ -271,5 +282,4 @@ const resetDemoBoard = () => {
     </div>
   </div>
 </template>
-
 

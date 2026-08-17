@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
+import ProfileSwitcherModal from './components/common/ProfileSwitcherModal.vue';
+import { useUserStore } from './stores/useUserStore';
+
+const userStore = useUserStore();
 </script>
 
 <template>
@@ -10,6 +14,12 @@ import Footer from './components/Footer.vue';
       <router-view />
     </main>
     <Footer />
+
+    <!-- Global Profile Switcher / Creation Modal -->
+    <ProfileSwitcherModal
+      :isOpen="userStore.isProfileModalOpen"
+      @close="userStore.closeProfileModal"
+    />
   </div>
 </template>
 

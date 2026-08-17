@@ -69,36 +69,20 @@ onMounted(() => {
   initGame();
 });
 
+// Called when player successfully places a move via GoBoard
 const handlePlay = (point: Point) => {
   if (isGameOver.value || isBotThinking.value) return;
-  if (board.value.turn !== userColor.value) return;
 
-  const { r, c } = point;
-  const res = board.value.playMove(r, c, userColor.value);
-
-  if (!res.success) {
-    sound.playErrorSound();
-    mascotMood.value = 'comforting';
-    mascotMessage.value = `无法落子：${res.errorReason}`;
-    return;
-  }
-
-  sound.playStoneSound();
-  if (res.capturedStones.length > 0) {
-    sound.playCaptureSound();
-    mascotMood.value = 'excited';
-    mascotMessage.value = `好棋！成功提吃对手 ${res.capturedStones.length} 颗棋子！`;
-  }
   lastMove.value = point;
   highlightPoints.value = [];
 
-  // Check game over
+  // Check game over by 2 consecutive passes
   if (board.value.consecutivePasses >= 2) {
     endGame();
     return;
   }
 
-  // Trigger bot reply
+  // Trigger bot reply turn
   triggerBotTurn();
 };
 
@@ -129,6 +113,9 @@ const triggerBotTurn = () => {
         sound.playCaptureSound();
         mascotMood.value = 'surprised';
         mascotMessage.value = `哎呀！${activeBotInfo.value.name} 提吃了你 ${res.capturedStones.length} 颗子，要当心哦！`;
+      } else {
+        mascotMood.value = 'happy';
+        mascotMessage.value = `${activeBotInfo.value.name} 落下了一子，轮到你啦！`;
       }
       lastMove.value = botMove;
     }
@@ -138,6 +125,10 @@ const triggerBotTurn = () => {
 };
 
 const handlePass = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   if (isGameOver.value || isBotThinking.value) return;
   sound.playButtonSound();
   const gameEnds = board.value.pass(userColor.value);
@@ -152,6 +143,10 @@ const handlePass = () => {
 };
 
 const handleUndo = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   if (isGameOver.value || isBotThinking.value) return;
   // Undo 2 plies (both bot and player)
   if (board.value.history.length >= 2) {
@@ -169,6 +164,10 @@ const handleUndo = () => {
 };
 
 const handleResign = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   if (isGameOver.value) return;
   sound.playErrorSound();
   isGameOver.value = true;
@@ -192,6 +191,10 @@ const handleResign = () => {
 };
 
 const handleAIMoveHint = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   sound.playHintSound();
   sound.fireMiniSparkles();
   const hint = GoAI.getBestMoveHint(board.value, userColor.value);
@@ -485,5 +488,4 @@ const endGame = () => {
     />
   </div>
 </template>
-
 

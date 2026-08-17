@@ -3,7 +3,6 @@ import { ref } from 'vue';
 import { useUserStore } from '../stores/useUserStore';
 import { BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
 import { playButtonSound } from '../lib/audio';
-import ProfileSwitcherModal from '../components/common/ProfileSwitcherModal.vue';
 import {
   Trophy,
   Star,
@@ -19,14 +18,17 @@ import {
 
 const userStore = useUserStore();
 
-const showSwitcherModal = ref(false);
 const isEditingName = ref(false);
 const newNickname = ref(userStore.nickname);
 
 const avatarList = ['🦁', '🐰', '🐼', '🐱', '🦊', '🐶', '🦄', '🐯', '🐨', '🤖', '🐵', '🐥'];
 
 const saveNickname = () => {
-  if (newNickname.value.trim() && userStore.hasProfile) {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
+  if (newNickname.value.trim()) {
     userStore.currentProfile.nickname = newNickname.value.trim();
   }
   isEditingName.value = false;
@@ -34,10 +36,12 @@ const saveNickname = () => {
 };
 
 const selectAvatar = (av: string) => {
-  if (userStore.hasProfile) {
-    userStore.currentProfile.avatar = av;
-    playButtonSound();
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
   }
+  userStore.currentProfile.avatar = av;
+  playButtonSound();
 };
 
 const isBadgeUnlocked = (badgeId: string): boolean => {
@@ -59,6 +63,10 @@ const getRarityBadgeClass = (rarity: AchievementBadge['rarity']) => {
 };
 
 const exportData = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   playButtonSound();
   const data = {
     userStore: userStore.$state,
@@ -74,6 +82,10 @@ const exportData = () => {
 };
 
 const confirmReset = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   if (confirm(`确定要重置当前宝贝「${userStore.nickname}」的闯关进度与金币吗？`)) {
     userStore.resetCurrentProfileProgress();
   }
@@ -130,7 +142,7 @@ const confirmReset = () => {
               <!-- Quick Switch Profile Button -->
               <div class="flex items-center gap-2 pt-1 justify-center sm:justify-start">
                 <button
-                  @click="showSwitcherModal = true"
+                  @click="userStore.openProfileModal()"
                   class="px-3 py-1.5 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-900 text-xs font-black flex items-center gap-1.5 transition active:scale-95 shadow-2xs"
                 >
                   <Users class="w-3.5 h-3.5" />
@@ -203,7 +215,7 @@ const confirmReset = () => {
             </p>
           </div>
           <button
-            @click="showSwitcherModal = true"
+            @click="userStore.openProfileModal()"
             class="px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-sm shadow-md transition active:scale-95 inline-flex items-center gap-2"
           >
             <UserPlus class="w-4 h-4" />
@@ -228,11 +240,12 @@ const confirmReset = () => {
           <div
             v-for="badge in BADGES_DATA"
             :key="badge.id"
-            class="rounded-3xl p-4 border-2 transition-all flex flex-col justify-between"
+            @click="!userStore.hasProfile && userStore.openProfileModal()"
+            class="rounded-3xl p-4 border-2 transition-all flex flex-col justify-between cursor-pointer"
             :class="
               isBadgeUnlocked(badge.id)
                 ? 'bg-white border-amber-300 shadow-sm hover:shadow-md'
-                : 'bg-gray-50 border-gray-200 opacity-50 grayscale'
+                : 'bg-gray-50 border-gray-200 opacity-50 grayscale hover:opacity-75'
             "
           >
             <div class="space-y-3">
@@ -315,11 +328,16 @@ const confirmReset = () => {
           </div>
         </div>
 
-        <!-- Data Export & Reset -->
+        <!-- Data Export & Reset (Protected when no profile) -->
         <div class="pt-4 border-t border-gray-100 flex flex-wrap gap-3">
           <button
             @click="exportData"
-            class="px-4 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-black text-xs flex items-center gap-2 transition active:scale-95"
+            class="px-4 py-2.5 rounded-2xl border text-xs font-black flex items-center gap-2 transition active:scale-95"
+            :class="
+              userStore.hasProfile
+                ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900 cursor-pointer'
+                : 'bg-gray-50 border-gray-200 text-gray-400 hover:text-orange-600 hover:border-orange-300'
+            "
           >
             <Download class="w-4 h-4" />
             <span>导出学习档案备份 (JSON)</span>
@@ -338,12 +356,6 @@ const confirmReset = () => {
       </div>
 
     </div>
-
-    <!-- Profile Switcher Modal -->
-    <ProfileSwitcherModal
-      :isOpen="showSwitcherModal"
-      @close="showSwitcherModal = false"
-    />
   </div>
 </template>
 

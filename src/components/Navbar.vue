@@ -3,7 +3,6 @@ import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '../stores/useUserStore';
 import { playButtonSound } from '../lib/audio';
-import ProfileSwitcherModal from './common/ProfileSwitcherModal.vue';
 import {
   Volume2,
   VolumeX,
@@ -29,7 +28,6 @@ const userStore = useUserStore();
 
 const mobileMenuOpen = ref(false);
 const showThemeDropdown = ref(false);
-const showProfileModal = ref(false);
 
 const navItems = [
   { path: '/', name: '首页', icon: Compass },
@@ -125,7 +123,7 @@ const isNavActive = (itemPath: string) => {
           <!-- Mode A: Profile Exists -> Profile Selector Chip -->
           <div
             v-if="userStore.hasProfile"
-            @click="showProfileModal = true"
+            @click="userStore.openProfileModal()"
             class="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-orange-300/80 px-2.5 sm:px-3 py-1.5 rounded-2xl cursor-pointer shadow-2xs transition transform active:scale-95 flex-shrink-0"
             title="点击切换当前宝贝档案"
           >
@@ -143,7 +141,7 @@ const isNavActive = (itemPath: string) => {
           <!-- Mode B: No Profile Exists -> Create Profile Action Button -->
           <button
             v-else
-            @click="showProfileModal = true"
+            @click="userStore.openProfileModal()"
             class="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white border border-amber-300 px-3 py-1.5 rounded-2xl cursor-pointer shadow-sm transition transform active:scale-95 flex-shrink-0 text-xs font-black"
             title="点击创建宝贝档案"
           >
@@ -269,12 +267,6 @@ const isNavActive = (itemPath: string) => {
         <span class="text-xs opacity-75 font-bold">进入 →</span>
       </button>
     </div>
-
-    <!-- Profile Switcher / Creation Modal -->
-    <ProfileSwitcherModal
-      :isOpen="showProfileModal"
-      @close="showProfileModal = false"
-    />
   </header>
 </template>
 

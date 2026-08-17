@@ -30,7 +30,7 @@ const featureCards = [
     titleEn: 'Adventure Quest',
     badge: '推荐 · 循序渐进',
     badgeColor: 'bg-emerald-500',
-    desc: '从数气到手筋，5大篇章24个闯关小故事，带你一步步成为围棋小高手！',
+    desc: '从数气到手筋，6大篇章24个闯关小故事，带你一步步成为围棋小高手！',
     icon: Gamepad2,
     gradient: 'from-emerald-400 via-teal-500 to-cyan-500',
     stats: () => `已收集 ${userStore.totalStars} 颗星星`

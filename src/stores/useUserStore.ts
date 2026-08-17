@@ -5,17 +5,16 @@ import type { ThemeType } from '../engine/types';
 
 /**
  * 独立儿童用户档案 (Child Profile Data Structure)
- * 零默认预设、纯前端 LocalStorage 本地持久化隔离
  */
 export interface ChildProfile {
-  id: string; // 唯一标识 uuid
-  nickname: string; // 宝贝昵称 (如: 乐乐、小葡萄)
-  avatar: string; // 卡通头像标识 (如: 🦁, 🐰, 🐼, 🐱, 🦊, 🐶, 🦄, 🐯, 🐨, 🤖)
+  id: string;
+  nickname: string;
+  avatar: string;
   createdAt: number;
   progress: Record<string, { completed: boolean; stars: number; highscore?: number; completedAt?: string }>;
   totalStars: number;
-  badges: string[]; // 已获得成就徽章
-  solvedPuzzles: string[]; // 已攻克的死活题 ID 列表
+  badges: string[];
+  solvedPuzzles: string[];
   exp: number;
   coins: number;
   stats: {
@@ -49,25 +48,21 @@ const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
 
 export const useUserStore = defineStore('userStore', {
   state: () => ({
-    // 多儿童档案列表 (默认空数组，完全零默认预设用户，由用户首次自行创建)
     profiles: [] as ChildProfile[],
     currentProfileId: '' as string,
-
-    // 全局偏好设置 (Global App Settings)
+    isProfileModalOpen: false as boolean,
     theme: 'wood' as ThemeType,
-    soundEnabled: true,
-    volume: 0.8,
-    showLibertiesOverlay: true,
-    showAtariAlerts: true,
-    showTerritoryHeatmap: false,
-
-    // 实时存储元信息
-    lastSavedAt: Date.now()
+    soundEnabled: true as boolean,
+    volume: 0.8 as number,
+    showLibertiesOverlay: true as boolean,
+    showAtariAlerts: true as boolean,
+    showTerritoryHeatmap: false as boolean,
+    lastSavedAt: Date.now() as number
   }),
 
   getters: {
     hasProfile(state): boolean {
-      return state.profiles.length > 0;
+      return state.profiles.length > 0 && !!state.currentProfileId;
     },
 
     currentProfile(state): ChildProfile {
@@ -79,7 +74,6 @@ export const useUserStore = defineStore('userStore', {
         state.currentProfileId = state.profiles[0].id;
         found = state.profiles[0];
       }
-      // 保证字段完整性
       if (!found.badges) found.badges = [];
       if (!found.solvedPuzzles) found.solvedPuzzles = [];
       if (!found.progress) found.progress = {};
@@ -173,12 +167,18 @@ export const useUserStore = defineStore('userStore', {
   },
 
   actions: {
-    // 标记实时保存更新
+    openProfileModal() {
+      this.isProfileModalOpen = true;
+    },
+
+    closeProfileModal() {
+      this.isProfileModalOpen = false;
+    },
+
     touchSave() {
       this.lastSavedAt = Date.now();
     },
 
-    // 1. 创建新宝贝档案 (零默认初始数据，干净起步)
     createProfile(nickname: string, avatar: string): ChildProfile {
       const newId = 'kid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
       const newProfile: ChildProfile = {
@@ -188,10 +188,10 @@ export const useUserStore = defineStore('userStore', {
         createdAt: Date.now(),
         progress: {},
         totalStars: 0,
-        badges: [], // 干净起步，0 初始徽章
+        badges: [],
         solvedPuzzles: [],
         exp: 0,
-        coins: 0, // 干净起步，0 初始金币
+        coins: 0,
         stats: {
           gamesPlayed: 0,
           gamesWon: 0,
@@ -209,7 +209,6 @@ export const useUserStore = defineStore('userStore', {
       return newProfile;
     },
 
-    // 2. 切换当前宝贝角色
     switchProfile(id: string) {
       const target = this.profiles.find(p => p.id === id);
       if (target) {
@@ -219,7 +218,6 @@ export const useUserStore = defineStore('userStore', {
       }
     },
 
-    // 3. 删除指定宝贝档案
     deleteProfile(id: string) {
       const idx = this.profiles.findIndex(p => p.id === id);
       if (idx >= 0) {
@@ -232,7 +230,6 @@ export const useUserStore = defineStore('userStore', {
       }
     },
 
-    // 清空所有档案与旧测试数据 (重置为零用户初始状态)
     clearAllProfiles() {
       this.profiles = [];
       this.currentProfileId = '';
@@ -240,7 +237,6 @@ export const useUserStore = defineStore('userStore', {
       sound.playButtonSound();
     },
 
-    // 4. 更新当前宝贝关卡进度与星级
     updateLessonProgress(
       lessonId: string,
       stars: number,
@@ -266,7 +262,6 @@ export const useUserStore = defineStore('userStore', {
       if (rewards.exp) this.addExp(rewards.exp);
       if (rewards.coins) this.addCoins(rewards.coins);
 
-      // 解锁首次落子与通关徽章
       this.unlockBadge('first_move');
       if (lessonId === 'lesson_1_3' || lessonId === 'c1_l4') {
         this.unlockBadge('first_door');
@@ -278,7 +273,6 @@ export const useUserStore = defineStore('userStore', {
       this.touchSave();
     },
 
-    // 5. 获得经验与升级检测
     addExp(amount: number) {
       if (this.profiles.length === 0) return;
       const prof = this.currentProfile;
@@ -292,7 +286,6 @@ export const useUserStore = defineStore('userStore', {
       }
     },
 
-    // 6. 获得金币
     addCoins(amount: number) {
       if (this.profiles.length === 0) return;
       this.currentProfile.coins = (this.currentProfile.coins || 0) + amount;
@@ -300,7 +293,6 @@ export const useUserStore = defineStore('userStore', {
       sound.playCoinSound();
     },
 
-    // 7. 解锁徽章
     unlockBadge(badgeId: string) {
       if (this.profiles.length === 0) return;
       const prof = this.currentProfile;
@@ -317,7 +309,6 @@ export const useUserStore = defineStore('userStore', {
       }
     },
 
-    // 8. 记录对局结束
     recordGameEnd(won: boolean, captures: number, moves: number) {
       if (this.profiles.length === 0) return;
       const prof = this.currentProfile;
@@ -336,7 +327,6 @@ export const useUserStore = defineStore('userStore', {
       this.touchSave();
     },
 
-    // 9. 记录死活题解题
     recordPuzzleSolved(puzzleId?: string) {
       if (this.profiles.length === 0) return;
       const prof = this.currentProfile;
@@ -354,7 +344,6 @@ export const useUserStore = defineStore('userStore', {
       this.touchSave();
     },
 
-    // 10. 重置当前宝贝进度
     resetCurrentProfileProgress() {
       if (this.profiles.length === 0) return;
       const prof = this.currentProfile;
@@ -394,9 +383,6 @@ export const useUserStore = defineStore('userStore', {
     }
   },
 
-  persist: {
-    key: 'yinuo_go_user_store',
-    storage: localStorage
-  }
+  persist: true
 });
 

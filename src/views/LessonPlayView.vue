@@ -109,6 +109,10 @@ watch(() => route.params.id, () => {
 });
 
 const handleMove = (point: Point) => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   if (isLessonComplete.value || isBotThinking.value) return;
 
   const lesson = currentLesson.value;
@@ -388,5 +392,4 @@ const handleBackToMap = () => {
     />
   </div>
 </template>
-
 

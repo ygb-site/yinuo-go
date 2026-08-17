@@ -45,7 +45,6 @@ const highlightPoints = ref<Point[]>([]);
 const mascotMood = ref<MascotMood>('happy');
 const mascotMessage = ref<string>('');
 const isSolved = ref(false);
-const showSolution = ref(false);
 const isBotThinking = ref(false);
 const waitingForNextStep = ref(false);
 
@@ -55,7 +54,6 @@ const initPuzzle = () => {
   lastMove.value = null;
   highlightPoints.value = [];
   isSolved.value = false;
-  showSolution.value = false;
   isBotThinking.value = false;
   waitingForNextStep.value = false;
 
@@ -82,26 +80,19 @@ const selectPuzzle = (puzzle: TsumegoPuzzle) => {
 };
 
 const handlePlay = (point: Point) => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
+
   if (isSolved.value || isBotThinking.value) return;
 
   const p = currentPuzzle.value;
   const { r, c } = point;
 
-  // Check legality
-  const check = board.value.isLegalMove(r, c, p.playerColor);
-  if (!check.legal) {
-    sound.playErrorSound();
-    mascotMood.value = 'comforting';
-    mascotMessage.value = `此处不能落子：${check.reason}`;
-    return;
-  }
-
   // Check branch response if applicable
   if (waitingForNextStep.value && p.botBranchMoves) {
     if (point.r === p.botBranchMoves.nextValidMove.r && point.c === p.botBranchMoves.nextValidMove.c) {
-      const moveRes = board.value.playMove(r, c, p.playerColor);
-      sound.playStoneSound();
-      if (moveRes.capturedStones.length > 0) sound.playCaptureSound();
       lastMove.value = point;
       triggerPuzzleSolve(p.botBranchMoves.winComment);
       return;
@@ -117,9 +108,6 @@ const handlePlay = (point: Point) => {
   const isCorrect = p.correctMoves.some(cm => cm.r === r && cm.c === c);
 
   if (isCorrect) {
-    const moveRes = board.value.playMove(r, c, p.playerColor);
-    sound.playStoneSound();
-    if (moveRes.capturedStones.length > 0) sound.playCaptureSound();
     lastMove.value = point;
     highlightPoints.value = [];
 
@@ -165,6 +153,10 @@ const triggerPuzzleSolve = (customWinMsg?: string) => {
 };
 
 const handleHint = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   sound.playHintSound();
   sound.fireMiniSparkles();
   mascotMood.value = 'excited';
@@ -178,6 +170,10 @@ const handleRestart = () => {
 };
 
 const toggleFavorite = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
+    return;
+  }
   tsumegoStore.toggleFavorite(currentPuzzle.value.id);
 };
 </script>
@@ -313,6 +309,7 @@ const toggleFavorite = () => {
           <MascotNuoNuo
             :message="mascotMessage"
             :mood="mascotMood"
+            :speakerName="'导师 · 小诺'"
             :subtext="`当前题目：${currentPuzzle.title}`"
           />
 
@@ -392,5 +389,4 @@ const toggleFavorite = () => {
     </div>
   </div>
 </template>
-
 
