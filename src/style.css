@@ -57,3 +57,13 @@
   font-family: 'ZCOOL KuaiLe', 'Fredoka', 'Chalkboard SE', 'Comic Sans MS', 'PingFang SC', sans-serif;
   letter-spacing: 0.03em;
 }
+
+
+/* Utility to hide scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

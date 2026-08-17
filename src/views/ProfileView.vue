@@ -180,13 +180,13 @@ const confirmReset = () => {
               </div>
 
               <!-- Avatar Quick Selector -->
-              <div class="flex items-center gap-1.5 pt-1.5 justify-center sm:justify-start overflow-x-auto">
+              <div class="flex flex-wrap items-center gap-1.5 pt-1.5 justify-center sm:justify-start">
                 <button
                   v-for="av in avatarList.slice(0, 8)"
                   :key="av"
                   @click="selectAvatar(av)"
-                  class="w-7 h-7 rounded-lg border text-sm flex items-center justify-center transition transform hover:scale-110 active:scale-95 cursor-pointer"
-                  :class="userStore.avatar === av ? 'bg-orange-100 border-orange-500 shadow-2xs' : 'bg-gray-50 border-gray-200'"
+                  class="w-8 h-8 rounded-xl border text-base flex items-center justify-center transition transform hover:scale-110 active:scale-95 cursor-pointer shadow-2xs"
+                  :class="userStore.avatar === av ? 'bg-orange-100 border-orange-500 ring-2 ring-orange-400/40' : 'bg-gray-50 border-gray-200 hover:bg-orange-50/50'"
                 >
                   {{ av }}
                 </button>
