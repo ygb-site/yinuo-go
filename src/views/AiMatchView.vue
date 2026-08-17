@@ -59,9 +59,9 @@ const initGame = () => {
   mascotMood.value = 'happy';
   mascotMessage.value = `【${activeBotInfo.value.name}】：“${activeBotInfo.value.catchphrase}” 准备好了吗？开始对局！`;
 
-  // If user plays White, Bot plays Black first
+  // If user plays White, bot (Black) moves first!
   if (userColor.value === 'W') {
-    triggerBotTurn();
+    triggerBotMove();
   }
 };
 
@@ -69,59 +69,77 @@ onMounted(() => {
   initGame();
 });
 
-// Called when player successfully places a move via GoBoard
 const handlePlay = (point: Point) => {
-  if (isGameOver.value || isBotThinking.value) return;
-
-  lastMove.value = point;
-  highlightPoints.value = [];
-
-  // Check game over by 2 consecutive passes
-  if (board.value.consecutivePasses >= 2) {
-    endGame();
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
     return;
   }
 
-  // Trigger bot reply turn
-  triggerBotTurn();
+  if (isGameOver.value || isBotThinking.value) return;
+
+  const currentTurn = board.value.turn;
+  if (currentTurn !== userColor.value) return;
+
+  const { r, c } = point;
+  const result = board.value.playMove(r, c, userColor.value);
+
+  if (!result.success) {
+    sound.playErrorSound();
+    mascotMood.value = 'comforting';
+    mascotMessage.value = '这里是禁着点或者已经有棋子啦，换个地方试试吧！';
+    return;
+  }
+
+  lastMove.value = point;
+  highlightPoints.value = [];
+  sound.playStoneSound();
+
+  if (result.capturedStones.length > 0) {
+    sound.playCaptureSound();
+    mascotMood.value = 'cheering';
+    mascotMessage.value = `好棋！提掉了对手 ${result.capturedStones.length} 颗子！`;
+  }
+
+  // Trigger bot's turn
+  triggerBotMove();
 };
 
-const triggerBotTurn = () => {
+const triggerBotMove = () => {
   const botColor = board.value.getOpponentColor(userColor.value);
   isBotThinking.value = true;
   mascotMood.value = 'thinking';
   mascotMessage.value = `${activeBotInfo.value.name} 正在认真思考中...`;
 
+  const thinkTime = 400 + Math.random() * 400;
+
   setTimeout(() => {
     if (isGameOver.value) return;
 
-    const botMove = GoAI.selectMove(board.value, selectedBot.value, botColor);
+    const movePoint = GoAI.selectMove(board.value, selectedBot.value, botColor);
 
-    if (!botMove) {
-      // Bot passes
-      const gameEnds = board.value.pass(botColor);
+    if (!movePoint) {
+      const ends = board.value.pass(botColor);
       sound.playButtonSound();
-      mascotMood.value = 'surprised';
-      mascotMessage.value = `${activeBotInfo.value.name} 选择了停着（Pass 虚手）。`;
-      if (gameEnds) {
-        endGame();
-      }
+      mascotMood.value = 'happy';
+      mascotMessage.value = `${activeBotInfo.value.name} 选择了虚手 (Pass)！`;
+      if (ends) endGame();
     } else {
-      const res = board.value.playMove(botMove.r, botMove.c, botColor);
+      const result = board.value.playMove(movePoint.r, movePoint.c, botColor);
       sound.playStoneSound();
-      if (res.capturedStones.length > 0) {
+      lastMove.value = movePoint;
+
+      if (result.capturedStones.length > 0) {
         sound.playCaptureSound();
-        mascotMood.value = 'surprised';
-        mascotMessage.value = `哎呀！${activeBotInfo.value.name} 提吃了你 ${res.capturedStones.length} 颗子，要当心哦！`;
+        mascotMood.value = 'excited';
+        mascotMessage.value = `${activeBotInfo.value.name} 发动进攻，吃掉了你的棋子！小心防守哦！`;
       } else {
         mascotMood.value = 'happy';
-        mascotMessage.value = `${activeBotInfo.value.name} 落下了一子，轮到你啦！`;
+        mascotMessage.value = `${activeBotInfo.value.name} 落子在 (${movePoint.r + 1}, ${movePoint.c + 1})。轮到你啦！`;
       }
-      lastMove.value = botMove;
     }
 
     isBotThinking.value = false;
-  }, 450);
+  }, thinkTime);
 };
 
 const handlePass = () => {
@@ -130,15 +148,16 @@ const handlePass = () => {
     return;
   }
   if (isGameOver.value || isBotThinking.value) return;
-  sound.playButtonSound();
-  const gameEnds = board.value.pass(userColor.value);
-  mascotMood.value = 'happy';
-  mascotMessage.value = '你选择了虚手停着（Pass）。';
 
-  if (gameEnds) {
+  sound.playButtonSound();
+  const ends = board.value.pass(userColor.value);
+  mascotMood.value = 'happy';
+  mascotMessage.value = '你选择了虚手 (Pass)。';
+
+  if (ends) {
     endGame();
   } else {
-    triggerBotTurn();
+    triggerBotMove();
   }
 };
 
@@ -241,12 +260,12 @@ const endGame = () => {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-6 sm:py-10 px-4 sm:px-6 lg:px-8 select-none">
-    <div class="max-w-7xl mx-auto space-y-6">
+  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-4 sm:py-8 lg:py-10 px-3 sm:px-6 lg:px-8 select-none">
+    <div class="max-w-7xl mx-auto space-y-4 sm:space-y-6">
 
       <!-- Header Banner -->
-      <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-        <div class="space-y-2 text-center md:text-left z-10">
+      <div class="bg-white rounded-3xl p-5 sm:p-8 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 relative overflow-hidden">
+        <div class="space-y-1.5 sm:space-y-2 text-center md:text-left z-10">
           <div class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-black">
             <Bot class="w-3.5 h-3.5" />
             <span>智能人机对弈场 (AI Arena)</span>
@@ -260,12 +279,12 @@ const endGame = () => {
         </div>
 
         <!-- Bot Selector Buttons -->
-        <div class="flex flex-wrap items-center gap-2 z-10">
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 w-full md:w-auto z-10">
           <button
             v-for="(bot, key) in AI_BOTS"
             :key="key"
             @click="selectedBot = key; initGame()"
-            class="px-3 py-2 rounded-2xl border-2 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-1.5 text-xs font-black"
+            class="px-3 py-2 rounded-2xl border-2 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-1.5 text-xs font-black whitespace-nowrap flex-shrink-0 cursor-pointer shadow-2xs"
             :class="
               selectedBot === key
                 ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-md'
@@ -279,15 +298,150 @@ const endGame = () => {
         </div>
       </div>
 
-      <!-- Main Battle Layout: Left Setup & Status / Right Go Board -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- Main Battle Layout: On Mobile, Board is placed prominently at top -->
+      <div class="flex flex-col lg:grid lg:grid-cols-12 gap-4 sm:gap-6">
 
-        <!-- Left Column: Opponent Card & In-Game Controls (4 cols) -->
-        <div class="lg:col-span-4 space-y-4">
+        <!-- Right / Top Column: Mascot & Board (order-1 on mobile, 8 cols on desktop) -->
+        <div class="order-1 lg:order-2 lg:col-span-8 space-y-4">
+          <!-- Mascot NuoNuo -->
+          <MascotNuoNuo
+            :message="mascotMessage"
+            :mood="mascotMood"
+            :speakerName="activeBotInfo.name"
+            :subtext="`当前对局：${boardSize}x${boardSize} 棋盘 · ${userColor === 'B' ? '你执黑' : '你执白'}`"
+          />
+
+          <!-- GoBoard Card -->
+          <div class="bg-white rounded-3xl p-4 sm:p-6 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-4">
+            
+            <!-- In-Board Mini Stats Header (Mobile visible) -->
+            <div class="w-full flex items-center justify-between pb-2 border-b border-gray-100 text-xs font-bold">
+              <div class="flex items-center gap-2">
+                <span class="text-base">{{ activeBotInfo.avatar }}</span>
+                <span class="font-black text-gray-800">{{ activeBotInfo.name }}</span>
+                <span class="text-[10px] font-black bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">
+                  {{ activeBotInfo.rank }}
+                </span>
+              </div>
+
+              <div class="flex items-center gap-3 text-xs">
+                <span class="text-emerald-700 font-extrabold">你提: {{ userColor === 'B' ? board.capturedByBlack : board.capturedByWhite }}</span>
+                <span class="text-gray-300">|</span>
+                <span class="text-rose-700 font-extrabold">AI提: {{ userColor === 'B' ? board.capturedByWhite : board.capturedByBlack }}</span>
+              </div>
+            </div>
+
+            <!-- GoBoard Component -->
+            <GoBoardComponent
+              :board="board"
+              :playerColor="userColor"
+              :lastMove="lastMove"
+              :highlightPoints="highlightPoints"
+              :showLiberties="showLiberties"
+              :showAtari="showAtari"
+              :showTerritory="showTerritory"
+              :theme="userStore.theme"
+              :manualMove="true"
+              :sizePx="440"
+              :disabled="isGameOver || isBotThinking || board.turn !== userColor"
+              @play="handlePlay"
+            />
+
+            <!-- In-Board Quick Action Bar -->
+            <div class="w-full flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100">
+              <div class="flex items-center gap-1.5">
+                <button
+                  @click="handleAIMoveHint"
+                  :disabled="isGameOver || isBotThinking"
+                  class="py-2 px-3 sm:px-4 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs shadow-sm flex items-center gap-1.5 transition active:scale-95 cursor-pointer disabled:opacity-50"
+                >
+                  <Lightbulb class="w-4 h-4 fill-current" />
+                  <span>AI 推荐点</span>
+                </button>
+
+                <button
+                  @click="handleUndo"
+                  :disabled="isGameOver || isBotThinking || board.history.length === 0"
+                  class="py-2 px-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer disabled:opacity-40"
+                >
+                  <Undo2 class="w-3.5 h-3.5" />
+                  <span>悔棋</span>
+                </button>
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <button
+                  @click="handlePass"
+                  :disabled="isGameOver || isBotThinking"
+                  class="py-2 px-3 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-black text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer disabled:opacity-50"
+                >
+                  <Hand class="w-3.5 h-3.5" />
+                  <span>虚手</span>
+                </button>
+
+                <button
+                  @click="handleResign"
+                  :disabled="isGameOver"
+                  class="py-2 px-3 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-black text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer disabled:opacity-50"
+                >
+                  <Flag class="w-3.5 h-3.5" />
+                  <span>认输数子</span>
+                </button>
+
+                <button
+                  @click="initGame"
+                  class="py-2 px-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer"
+                >
+                  <RotateCcw class="w-3.5 h-3.5" />
+                  <span>重开</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Helper Toggles Bar -->
+            <div class="w-full flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100 text-xs font-bold">
+              <div class="flex items-center gap-2">
+                <button
+                  @click="showLiberties = !showLiberties"
+                  class="px-2.5 py-1 rounded-xl border transition flex items-center gap-1 active:scale-95 text-[11px] cursor-pointer"
+                  :class="showLiberties ? 'bg-amber-100 border-amber-300 text-amber-900 font-black' : 'bg-gray-50 border-gray-200 text-gray-600'"
+                >
+                  <Eye class="w-3 h-3" />
+                  <span>显示气数</span>
+                </button>
+
+                <button
+                  @click="showAtari = !showAtari"
+                  class="px-2.5 py-1 rounded-xl border transition flex items-center gap-1 active:scale-95 text-[11px] cursor-pointer"
+                  :class="showAtari ? 'bg-rose-100 border-rose-300 text-rose-900 font-black' : 'bg-gray-50 border-gray-200 text-gray-600'"
+                >
+                  <AlertTriangle class="w-3 h-3" />
+                  <span>叫吃警报</span>
+                </button>
+
+                <button
+                  @click="showTerritory = !showTerritory"
+                  class="px-2.5 py-1 rounded-xl border transition flex items-center gap-1 active:scale-95 text-[11px] cursor-pointer"
+                  :class="showTerritory ? 'bg-indigo-100 border-indigo-300 text-indigo-900 font-black' : 'bg-gray-50 border-gray-200 text-gray-600'"
+                >
+                  <Flame class="w-3 h-3" />
+                  <span>领地预览</span>
+                </button>
+              </div>
+
+              <div class="text-[11px] font-black text-gray-400">
+                手数: {{ board.history.length }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Left / Bottom Column: Settings & Personality (order-2 on mobile, 4 cols on desktop) -->
+        <div class="order-2 lg:order-1 lg:col-span-4 space-y-4">
           <!-- Opponent Card -->
           <div class="bg-white rounded-3xl p-5 border-2 border-orange-100 shadow-sm space-y-4">
             <div class="flex items-center gap-3">
-              <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-100 to-orange-200 p-2 border-2 border-orange-300 flex items-center justify-center text-4xl shadow-sm">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-100 to-orange-200 p-2 border-2 border-orange-300 flex items-center justify-center text-3xl shadow-sm">
                 {{ activeBotInfo.avatar }}
               </div>
               <div>
@@ -303,24 +457,8 @@ const endGame = () => {
               </div>
             </div>
 
-            <!-- Score & Capture Counter -->
-            <div class="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
-              <div class="bg-gray-50 rounded-2xl p-3 text-center border border-gray-200">
-                <div class="text-[10px] font-bold text-gray-500">你提吃棋子</div>
-                <div class="text-2xl font-black text-emerald-600">
-                  {{ userColor === 'B' ? board.capturedByBlack : board.capturedByWhite }}
-                </div>
-              </div>
-              <div class="bg-gray-50 rounded-2xl p-3 text-center border border-gray-200">
-                <div class="text-[10px] font-bold text-gray-500">对手提吃棋子</div>
-                <div class="text-2xl font-black text-rose-600">
-                  {{ userColor === 'B' ? board.capturedByWhite : board.capturedByBlack }}
-                </div>
-              </div>
-            </div>
-
             <!-- Game Setup Options (Board Size & Color) -->
-            <div class="space-y-2 pt-2 border-t border-gray-100 text-xs font-bold text-gray-700">
+            <div class="space-y-3 pt-2 border-t border-gray-100 text-xs font-bold text-gray-700">
               <div class="flex items-center justify-between">
                 <span>棋盘路数</span>
                 <div class="flex gap-1">
@@ -328,7 +466,7 @@ const endGame = () => {
                     v-for="s in [5, 7, 9, 13, 19]"
                     :key="s"
                     @click="boardSize = s; initGame()"
-                    class="px-2 py-1 rounded-lg border text-xs font-black transition"
+                    class="px-2 py-1 rounded-lg border text-xs font-black transition cursor-pointer"
                     :class="boardSize === s ? 'bg-orange-500 text-white border-orange-500' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'"
                   >
                     {{ s }}x{{ s }}
@@ -341,14 +479,14 @@ const endGame = () => {
                 <div class="flex gap-1">
                   <button
                     @click="userColor = 'B'; initGame()"
-                    class="px-3 py-1 rounded-lg border text-xs font-black transition"
+                    class="px-3 py-1 rounded-lg border text-xs font-black transition cursor-pointer"
                     :class="userColor === 'B' ? 'bg-black text-white border-black' : 'bg-gray-50 border-gray-200'"
                   >
                     执黑先下
                   </button>
                   <button
                     @click="userColor = 'W'; initGame()"
-                    class="px-3 py-1 rounded-lg border text-xs font-black transition"
+                    class="px-3 py-1 rounded-lg border text-xs font-black transition cursor-pointer"
                     :class="userColor === 'W' ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-gray-50 border-gray-200'"
                   >
                     执白后下
@@ -357,127 +495,13 @@ const endGame = () => {
               </div>
             </div>
           </div>
-
-          <!-- In-Game Functional Action Buttons -->
-          <div class="bg-white rounded-3xl p-5 border-2 border-orange-100 shadow-sm space-y-2.5">
-            <div class="text-xs font-black text-gray-500 uppercase tracking-wide">
-              对弈操作 (Actions)
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <button
-                @click="handleAIMoveHint"
-                class="py-2.5 px-3 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs shadow-sm flex items-center justify-center gap-1.5 transition active:scale-95"
-              >
-                <Lightbulb class="w-4 h-4 fill-current" />
-                <span>AI 推荐点</span>
-              </button>
-
-              <button
-                @click="handleUndo"
-                class="py-2.5 px-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
-              >
-                <Undo2 class="w-4 h-4" />
-                <span>悔棋一步</span>
-              </button>
-
-              <button
-                @click="handlePass"
-                class="py-2.5 px-3 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-extrabold text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
-              >
-                <Hand class="w-4 h-4" />
-                <span>虚手停着 (Pass)</span>
-              </button>
-
-              <button
-                @click="handleResign"
-                class="py-2.5 px-3 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-extrabold text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
-              >
-                <Flag class="w-4 h-4" />
-                <span>认输并数子</span>
-              </button>
-            </div>
-
-            <button
-              @click="initGame"
-              class="w-full py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
-            >
-              <RotateCcw class="w-4 h-4" />
-              <span>重新开局</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Right Column: Interactive Board & NuoNuo (8 cols) -->
-        <div class="lg:col-span-8 space-y-4">
-          <!-- Mascot NuoNuo Banner -->
-          <MascotNuoNuo
-            :message="mascotMessage"
-            :mood="mascotMood"
-            :speakerName="activeBotInfo.name"
-            :subtext="`当前回合：${board.turn === 'B' ? '黑方走' : '白方走'}`"
-          />
-
-          <!-- Go Board Container -->
-          <div class="bg-white rounded-3xl p-6 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-4">
-            <GoBoardComponent
-              :board="board"
-              :playerColor="userColor"
-              :lastMove="lastMove"
-              :highlightPoints="highlightPoints"
-              :showLiberties="showLiberties"
-              :showAtari="showAtari"
-              :showTerritory="showTerritory"
-              :theme="userStore.theme"
-              :sizePx="480"
-              :disabled="isGameOver || isBotThinking"
-              @play="handlePlay"
-            />
-
-            <!-- Assistant Tool Toggles -->
-            <div class="w-full flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-100 text-xs font-bold">
-              <div class="flex items-center gap-2">
-                <button
-                  @click="showLiberties = !showLiberties"
-                  class="px-3 py-1.5 rounded-xl border transition flex items-center gap-1.5 active:scale-95"
-                  :class="showLiberties ? 'bg-amber-100 border-amber-300 text-amber-900 font-black' : 'bg-gray-50 border-gray-200 text-gray-600'"
-                >
-                  <Eye class="w-3.5 h-3.5" />
-                  <span>显示气数</span>
-                </button>
-
-                <button
-                  @click="showAtari = !showAtari"
-                  class="px-3 py-1.5 rounded-xl border transition flex items-center gap-1.5 active:scale-95"
-                  :class="showAtari ? 'bg-rose-100 border-rose-300 text-rose-900 font-black' : 'bg-gray-50 border-gray-200 text-gray-600'"
-                >
-                  <AlertTriangle class="w-3.5 h-3.5" />
-                  <span>叫吃警报</span>
-                </button>
-
-                <button
-                  @click="showTerritory = !showTerritory"
-                  class="px-3 py-1.5 rounded-xl border transition flex items-center gap-1.5 active:scale-95"
-                  :class="showTerritory ? 'bg-indigo-100 border-indigo-300 text-indigo-900 font-black' : 'bg-gray-50 border-gray-200 text-gray-600'"
-                >
-                  <Flame class="w-3.5 h-3.5" />
-                  <span>领地预览</span>
-                </button>
-              </div>
-
-              <div class="text-xs font-black text-gray-400">
-                手数: {{ board.history.length }}
-              </div>
-            </div>
-          </div>
-
         </div>
 
       </div>
 
     </div>
 
-    <!-- Score Calculation Modal -->
+    <!-- Score Breakdown Modal -->
     <ScoreModal
       v-if="scoreResult"
       :isOpen="showScoreModal"
