@@ -67,10 +67,10 @@ const isNavActive = (itemPath: string) => {
 <template>
   <!-- Top Navigation Header -->
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-orange-100 shadow-xs select-none">
-    <div class="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6">
-      <div class="flex items-center justify-between h-14 sm:h-18 gap-2 sm:gap-4">
+    <div class="max-w-7xl mx-auto px-2.5 sm:px-5 lg:px-6">
+      <div class="flex items-center justify-between h-14 sm:h-18 gap-1.5 sm:gap-4">
         
-        <!-- Left: Brand Logo & Title -->
+        <!-- Left: Brand Logo & Title (Consistent on Web & Mobile) -->
         <div
           @click="navigateTo('/')"
           class="flex items-center gap-2 cursor-pointer group flex-shrink-0"
@@ -82,15 +82,15 @@ const isNavActive = (itemPath: string) => {
             <span class="text-xl sm:text-2xl">🐼</span>
           </div>
           <div class="flex flex-col justify-center">
-            <div class="flex items-center gap-1.5">
-              <span class="text-xl sm:text-2xl font-cartoon font-bold bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 bg-clip-text text-transparent leading-none whitespace-nowrap tracking-wider">
+            <div class="flex items-center gap-1 sm:gap-1.5">
+              <span class="text-lg sm:text-2xl font-cartoon font-bold bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 bg-clip-text text-transparent leading-none whitespace-nowrap tracking-wider">
                 一诺围棋
               </span>
-              <span class="bg-orange-100 text-orange-800 text-[10px] font-black px-1.5 py-0.5 rounded-full border border-orange-300 shadow-2xs whitespace-nowrap hidden sm:inline-block">
+              <span class="bg-orange-100 text-orange-800 text-[9px] sm:text-[10px] font-black px-1.5 py-0.2 rounded-full border border-orange-300 shadow-2xs whitespace-nowrap">
                 YiNuo Go
               </span>
             </div>
-            <span class="text-[10px] font-bold text-gray-400 leading-tight whitespace-nowrap hidden md:inline-block">
+            <span class="text-[9px] sm:text-[10px] font-bold text-gray-400 leading-tight whitespace-nowrap">
               少儿互动启蒙 · 快乐学棋
             </span>
           </div>
@@ -115,20 +115,20 @@ const isNavActive = (itemPath: string) => {
         </nav>
 
         <!-- Right: Kid Profile Switcher, Stars, Coins & Actions -->
-        <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+        <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           
           <!-- Mode A: Profile Exists -> Profile Selector Chip -->
           <div
             v-if="userStore.hasProfile"
             @click="userStore.openProfileModal()"
-            class="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-orange-300/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl cursor-pointer shadow-2xs transition transform active:scale-95 flex-shrink-0"
+            class="flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-orange-300/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl cursor-pointer shadow-2xs transition transform active:scale-95 flex-shrink-0"
             title="点击切换当前宝贝档案"
           >
             <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white flex items-center justify-center text-xs sm:text-sm shadow-inner border border-orange-200 flex-shrink-0">
               {{ userStore.avatar }}
             </div>
             <div class="flex items-center gap-1 whitespace-nowrap">
-              <span class="text-xs sm:text-sm font-black text-gray-800 whitespace-nowrap max-w-[60px] sm:max-w-[100px] truncate">
+              <span class="text-xs sm:text-sm font-black text-gray-800 whitespace-nowrap max-w-[50px] sm:max-w-[100px] truncate">
                 {{ userStore.nickname }}
               </span>
               <ChevronDown class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-500 flex-shrink-0" />
@@ -139,7 +139,7 @@ const isNavActive = (itemPath: string) => {
           <button
             v-else
             @click="userStore.openProfileModal()"
-            class="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white border border-amber-300 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl cursor-pointer shadow-sm transition transform active:scale-95 flex-shrink-0 text-xs font-black"
+            class="flex items-center gap-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white border border-amber-300 px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl cursor-pointer shadow-sm transition transform active:scale-95 flex-shrink-0 text-[11px] sm:text-xs font-black"
             title="点击创建宝贝档案"
           >
             <UserPlus class="w-3.5 h-3.5 flex-shrink-0" />
@@ -164,21 +164,21 @@ const isNavActive = (itemPath: string) => {
           <!-- Sound Toggle Button -->
           <button
             @click="toggleSound"
-            class="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition active:scale-90 flex items-center justify-center flex-shrink-0 cursor-pointer"
+            class="w-7 h-7 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition active:scale-90 flex items-center justify-center flex-shrink-0 cursor-pointer"
             :title="userStore.soundEnabled ? '音效已开启（点击静音）' : '音效已静音（点击开启）'"
           >
-            <Volume2 v-if="userStore.soundEnabled" class="w-4 h-4 text-emerald-600" />
-            <VolumeX v-else class="w-4 h-4 text-gray-400" />
+            <Volume2 v-if="userStore.soundEnabled" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
+            <VolumeX v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
           </button>
 
           <!-- Theme Dropdown Button -->
           <div class="relative flex-shrink-0">
             <button
               @click="showThemeDropdown = !showThemeDropdown"
-              class="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-amber-600 transition active:scale-90 flex items-center justify-center cursor-pointer"
+              class="w-7 h-7 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-amber-600 transition active:scale-90 flex items-center justify-center cursor-pointer"
               title="切换棋盘主题皮肤"
             >
-              <Palette class="w-4 h-4" />
+              <Palette class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             <!-- Theme Dropdown Menu -->
@@ -222,7 +222,7 @@ const isNavActive = (itemPath: string) => {
     </div>
   </header>
 
-  <!-- Mobile Bottom Navigation Bar (📱 手机端固定底部快捷导航栏 - 1秒即达) -->
+  <!-- Mobile Bottom Navigation Bar (📱 手机端固定底部快捷导航栏 - 1秒直达) -->
   <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-orange-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-1 pt-1.5 pb-[max(0.4rem,env(safe-area-inset-bottom))] flex items-center justify-around select-none">
     <button
       v-for="item in navItems"
