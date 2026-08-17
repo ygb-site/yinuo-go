@@ -101,27 +101,32 @@ const startLesson = (lesson: Lesson) => {
           v-for="chap in CHAPTERS_DATA"
           :key="chap.id"
           @click="selectChapter(chap.id)"
-          class="p-5 rounded-3xl border-2 transition-all transform hover:scale-102 active:scale-95 text-left flex items-center justify-between"
+          class="p-5 rounded-3xl border-2 transition-all transform hover:scale-102 active:scale-95 text-left flex items-center justify-between gap-3 group"
           :class="
             activeChapterId === chap.id
-              ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-lg shadow-orange-500/25 ring-2 ring-orange-300'
+              ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-lg shadow-orange-500/25 ring-2 ring-orange-300/60'
               : 'bg-white text-gray-800 border-gray-100 hover:border-orange-200 shadow-sm'
           "
         >
-          <div class="flex items-center gap-4">
-            <span class="text-3xl sm:text-4xl">{{ chap.icon }}</span>
-            <div>
+          <div class="flex items-center gap-3.5 flex-1 min-w-0">
+            <div
+              class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl flex-shrink-0 shadow-xs transition transform group-hover:scale-110"
+              :class="activeChapterId === chap.id ? 'bg-white/20' : 'bg-orange-50 border border-orange-100'"
+            >
+              {{ chap.icon }}
+            </div>
+            <div class="flex-1 min-w-0">
               <span
-                class="text-[10px] font-black px-2 py-0.5 rounded-full"
-                :class="activeChapterId === chap.id ? 'bg-white/30 text-white' : 'bg-orange-50 text-orange-600'"
+                class="text-[10px] font-black px-2 py-0.5 rounded-full inline-block mb-1"
+                :class="activeChapterId === chap.id ? 'bg-white/30 text-white' : 'bg-orange-100 text-orange-800'"
               >
                 第 {{ chap.id }} 章
               </span>
-              <h3 class="text-base sm:text-lg font-black mt-0.5">
+              <h3 class="text-sm sm:text-base font-cartoon font-bold tracking-wide truncate leading-tight">
                 {{ chap.title.split('：')[1] || chap.title }}
               </h3>
               <p
-                class="text-xs font-medium mt-0.5 line-clamp-1"
+                class="text-[11px] font-medium mt-1 line-clamp-1 opacity-90"
                 :class="activeChapterId === chap.id ? 'text-white/80' : 'text-gray-500'"
               >
                 {{ chap.description }}
@@ -130,8 +135,8 @@ const startLesson = (lesson: Lesson) => {
           </div>
 
           <div
-            class="text-xs font-black px-3 py-1.5 rounded-xl border"
-            :class="activeChapterId === chap.id ? 'bg-white text-orange-600 border-white' : 'bg-gray-50 text-gray-700 border-gray-200'"
+            class="text-xs font-black px-3 py-1.5 rounded-2xl border flex-shrink-0 whitespace-nowrap text-center flex items-center justify-center min-w-[56px] shadow-xs"
+            :class="activeChapterId === chap.id ? 'bg-white text-orange-600 border-white shadow-sm' : 'bg-gray-50 text-gray-600 border-gray-200'"
           >
             {{ chap.lessons.length }} 关
           </div>
@@ -197,7 +202,7 @@ const startLesson = (lesson: Lesson) => {
 
             <!-- Main Content -->
             <div class="space-y-1.5 mb-4">
-              <h3 class="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
+              <h3 class="text-base sm:text-lg font-cartoon font-bold text-gray-900 tracking-wide flex items-center gap-2">
                 <span>{{ lesson.title }}</span>
                 <Lock v-if="!isLessonUnlocked(lesson.id)" class="w-4 h-4 text-gray-400" />
               </h3>
@@ -233,4 +238,3 @@ const startLesson = (lesson: Lesson) => {
     </div>
   </div>
 </template>
-
