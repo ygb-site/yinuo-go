@@ -4,7 +4,6 @@ import type { Point, StoneColor, ThemeType, BoardSize, StoneGroup } from '../../
 import { GoGame } from '../../engine/GoGame';
 import { useUserStore } from '../../stores/useUserStore';
 import { playStoneSound, playCaptureSound, playErrorSound } from '../../lib/audio';
-import { getPointInfo, type BoardPointInfo } from '../../engine/boardNames';
 
 const props = withDefaults(
   defineProps<{
@@ -53,21 +52,6 @@ const isShaking = ref(false);
 const boardVersion = ref(0);
 
 const size = computed(() => props.game?.size || 9);
-
-// Dynamic Position Inspector
-const activePointInfo = computed<BoardPointInfo | null>(() => {
-  if (hoverPoint.value) {
-    return getPointInfo(hoverPoint.value.r, hoverPoint.value.c, size.value);
-  }
-  if (selectedStonePoint.value) {
-    return getPointInfo(selectedStonePoint.value.r, selectedStonePoint.value.c, size.value);
-  }
-  if (props.lastMove) {
-    return getPointInfo(props.lastMove.r, props.lastMove.c, size.value);
-  }
-  return null;
-});
-
 
 // 100% Guaranteed Reactive Stone List calculation
 const renderedStones = computed(() => {
@@ -358,27 +342,6 @@ const coordTextColor = computed(() => {
     :style="{ width: 'min(100%, ' + sizePx + 'px)' }"
     @click.capture="handleBoardContainerClick"
   >
-    
-    <!-- Position & Board Nomenclature Inspector Bar -->
-    <div class="flex items-center justify-between px-3 py-1.5 mb-2 bg-amber-50/80 backdrop-blur-sm rounded-2xl border border-amber-200/80 shadow-xs min-h-[36px]">
-      <div v-if="activePointInfo" class="flex items-center gap-2 text-xs font-bold text-gray-800 animate-fade-in">
-        <span
-          class="px-2 py-0.5 rounded-lg text-[10px] font-black"
-          :class="activePointInfo.lineNumber <= 1 ? 'bg-rose-100 text-rose-800' : activePointInfo.lineNumber === 3 ? 'bg-emerald-100 text-emerald-900' : activePointInfo.lineNumber === 4 ? 'bg-blue-100 text-blue-900' : 'bg-orange-100 text-orange-900'"
-        >
-          {{ activePointInfo.lineTag }}
-        </span>
-        <span class="font-cartoon text-sm sm:text-base font-bold text-orange-950 tracking-wide">
-          {{ activePointInfo.fullTitle }}
-        </span>
-      </div>
-      <div v-else class="flex items-center gap-1.5 text-xs font-bold text-amber-900/60">
-        <span>🧭 移动或点击棋盘交叉点，探索每一个位置的神秘地名</span>
-      </div>
-      <span class="text-[10px] font-black text-amber-900 bg-white px-2 py-0.5 rounded-full border border-amber-200">
-        {{ size }}x{{ size }}
-      </span>
-    </div>
 
     <!-- Top Coordinates (Letters) -->
     <div
