@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "push": "bash deploy.sh",
+    "deploy": "bash deploy.sh"
   },
   "dependencies": {
     "@types/canvas-confetti": "^1.9.0",
