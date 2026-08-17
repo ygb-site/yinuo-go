@@ -166,9 +166,7 @@ const featureCards = [
             <span class="text-2xl">🚀</span>
             <h2 class="text-xl sm:text-2xl font-black text-gray-800">精彩学习模块</h2>
           </div>
-          <span class="text-xs font-extrabold text-orange-600 bg-orange-50 px-3 py-1 rounded-full border border-orange-200">
-            全部免费 · 无需配置
-          </span>
+
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
