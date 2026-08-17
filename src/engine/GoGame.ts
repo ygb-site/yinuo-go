@@ -26,6 +26,7 @@ export class GoGame {
   public consecutivePasses: number = 0;
   public komi: number = 5.5;
   public stateHistory: Set<string>;
+  public version: number = 0;
 
   constructor(size: BoardSize = 9, komi: number = 5.5) {
     this.size = Number(size);
@@ -68,6 +69,7 @@ export class GoGame {
     this.consecutivePasses = 0;
     this.stateHistory = new Set<string>();
     this.stateHistory.add(this.getRawGridHash());
+    this.version++;
   }
 
   /**
@@ -91,6 +93,7 @@ export class GoGame {
   public setCell(r: number, c: number, color: BoardCell) {
     if (this.isValidCoord(r, c)) {
       this.grid[r][c] = color;
+      this.version++;
     }
   }
 
@@ -441,6 +444,7 @@ export class GoGame {
     };
     this.history.push(record);
     this.turn = opponent;
+    this.version++;
 
     return {
       success: true,
@@ -465,6 +469,7 @@ export class GoGame {
     };
     this.history.push(record);
     this.turn = opponent;
+    this.version++;
 
     return this.consecutivePasses >= 2;
   }
@@ -489,6 +494,7 @@ export class GoGame {
         this.playMove(record.point.r, record.point.c, record.color);
       }
     }
+    this.version++;
     return true;
   }
 
@@ -793,4 +799,3 @@ export class GoGame {
     };
   }
 }
-

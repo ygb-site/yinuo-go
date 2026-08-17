@@ -203,6 +203,7 @@ export const useUserStore = defineStore('userStore', {
 
       this.profiles.push(newProfile);
       this.currentProfileId = newId;
+      this.isProfileModalOpen = false;
       this.touchSave();
       sound.playWinSound();
       sound.fireCelebrationConfetti();
@@ -385,4 +386,3 @@ export const useUserStore = defineStore('userStore', {
 
   persist: true
 });
-

@@ -3,8 +3,8 @@ import { ref, computed } from 'vue';
 import { GO_DICTIONARY, type DictEntry } from '../data/dictionaryData';
 import { GoBoard } from '../engine/GoBoard';
 import type { Point } from '../engine/types';
-import { useUserStore } from '../stores/userStore';
-import { sound } from '../utils/sound';
+import { useUserStore } from '../stores/useUserStore';
+import { playButtonSound, playStoneSound } from '../lib/audio';
 import GoBoardComponent from '../components/GoBoard.vue';
 import {
   BookMarked,
@@ -49,7 +49,7 @@ const setupDemoBoard = (entry: DictEntry) => {
 
 const selectEntry = (entry: DictEntry) => {
   activeEntryId.value = entry.id;
-  sound.playButtonSound();
+  playButtonSound();
   setupDemoBoard(entry);
 };
 
@@ -62,6 +62,7 @@ const handleDemoPlay = (point: Point) => {
     return;
   }
   demoLastMove.value = point;
+  playStoneSound();
 };
 
 const resetDemoBoard = () => {
@@ -69,7 +70,7 @@ const resetDemoBoard = () => {
     userStore.openProfileModal();
     return;
   }
-  sound.playButtonSound();
+  playButtonSound();
   setupDemoBoard(currentEntry.value);
 };
 </script>
@@ -89,7 +90,7 @@ const resetDemoBoard = () => {
             围棋核心术语中英双解
           </h1>
           <p class="text-xs sm:text-sm text-gray-600 font-medium">
-            气、叫吃、手筋、死活、大局观全收录，配有生动童趣比喻与微型实战小黑板！
+            天元星位、四大黄金线、气、叫吃、手筋、死活全收录，配有生动童趣比喻与微型实战小黑板！
           </p>
         </div>
 
@@ -99,7 +100,7 @@ const resetDemoBoard = () => {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="搜索术语（如：气、Atari、倒扑）..."
+            placeholder="搜索术语（如：天元、星位、气、Atari）..."
             class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-200 text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400"
           />
         </div>
@@ -119,6 +120,13 @@ const resetDemoBoard = () => {
                 :class="activeCategory === 'all' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 全部术语
+              </button>
+              <button
+                @click="activeCategory = 'board_positions'"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition"
+                :class="activeCategory === 'board_positions' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+              >
+                🧭 棋盘地名
               </button>
               <button
                 @click="activeCategory = 'basic'"
@@ -275,4 +283,3 @@ const resetDemoBoard = () => {
     </div>
   </div>
 </template>
-
