@@ -34,7 +34,11 @@ const props = withDefaults(
     lastMove: null,
     sizePx: 500,
     manualMove: false,
-    editMode: null
+    editMode: null,
+    // Vue 把未传入的 Boolean prop 默认成 false；这里必须显式默认 true，否则整盘会被当成只读
+    interactive: true,
+    readonly: false,
+    disabled: false
   }
 );
 
