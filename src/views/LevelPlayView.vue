@@ -304,6 +304,7 @@ const handleBackToMap = () => {
           :showLiberties="showLiberties"
           :showAtari="showAtari"
           :theme="userStore.theme"
+        :manualMove="true"
           :sizePx="480"
           :disabled="isCompleted || isBotThinking"
           @play="handlePlay"

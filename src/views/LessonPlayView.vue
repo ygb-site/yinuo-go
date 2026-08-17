@@ -5,7 +5,7 @@ import { CHAPTERS_DATA, type Lesson, type PuzzleNode } from '../data/chapters';
 import { GoGame } from '../engine/GoGame';
 import type { Point } from '../engine/types';
 import { useUserStore } from '../stores/useUserStore';
-import { playHintSound, playButtonSound, playErrorSound } from '../lib/audio';
+import { playHintSound, playButtonSound, playErrorSound, playStoneSound, playCaptureSound } from '../lib/audio';
 import GoBoard from '../components/board/GoBoard.vue';
 import SpeechBubble from '../components/common/SpeechBubble.vue';
 import StarModal from '../components/common/StarModal.vue';
@@ -128,6 +128,9 @@ const handleMove = (point: Point) => {
       return;
     }
 
+    const moveRes = game.value.playMove(r, c, lesson.playerColor);
+    playStoneSound();
+    if (moveRes.capturedStones.length > 0) playCaptureSound();
     lastMove.value = point;
     highlightPoints.value = [];
 
@@ -142,11 +145,14 @@ const handleMove = (point: Point) => {
   }
 
   // 2. Practice Mode
-  lastMove.value = point;
   const branches = currentBranches.value;
   const matchedNode = branches.find(b => b.coord.r === r && b.coord.c === c);
 
   if (matchedNode && matchedNode.isCorrect) {
+    const moveRes = game.value.playMove(r, c, lesson.playerColor);
+    playStoneSound();
+    if (moveRes.capturedStones.length > 0) playCaptureSound();
+    lastMove.value = point;
     mascotMood.value = 'excited';
     mascotDialogue.value = matchedNode.comment;
     highlightPoints.value = [];
@@ -159,6 +165,7 @@ const handleMove = (point: Point) => {
         if (matchedNode.opponentResponse) {
           const oppPoint = matchedNode.opponentResponse.coord;
           game.value.playMove(oppPoint.r, oppPoint.c, game.value.turn);
+          playStoneSound();
           lastMove.value = oppPoint;
           mascotMood.value = 'surprised';
           mascotDialogue.value = matchedNode.opponentResponse.comment;
@@ -179,6 +186,7 @@ const handleMove = (point: Point) => {
       }
     }
   } else {
+    playErrorSound();
     attemptCount.value++;
     if (attemptCount.value >= 2) {
       earnedStars.value = Math.max(1, earnedStars.value - 1);
@@ -277,6 +285,7 @@ const handleBackToMap = () => {
             :showLiberties="showLiberties"
             :showAtari="showAtari"
             :theme="userStore.theme"
+            :manualMove="true"
             :highlightPoints="highlightPoints"
             :lastMove="lastMove"
             :sizePx="520"

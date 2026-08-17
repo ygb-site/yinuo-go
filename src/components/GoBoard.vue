@@ -21,6 +21,8 @@ const props = withDefaults(
     boardSize?: BoardSize;
     sizePx?: number;
     disabled?: boolean;
+    manualMove?: boolean;
+    editMode?: 'B' | 'W' | 'empty' | null;
   }>(),
   {
     showCoordinates: true,
@@ -30,7 +32,9 @@ const props = withDefaults(
     theme: 'wood',
     highlightPoints: () => [],
     lastMove: null,
-    sizePx: 500
+    sizePx: 500,
+    manualMove: false,
+    editMode: null
   }
 );
 
@@ -71,6 +75,8 @@ const handleSelect = (p: Point | null, g: StoneGroup | null) => {
     :highlightPoints="props.highlightPoints"
     :lastMove="props.lastMove"
     :sizePx="props.sizePx"
+    :manualMove="props.manualMove"
+    :editMode="props.editMode"
     @move="handleMove"
     @capture="emit('capture', $event)"
     @illegalMove="handleIllegal"

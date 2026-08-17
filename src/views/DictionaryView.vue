@@ -61,14 +61,7 @@ const handleDemoPlay = (point: Point) => {
     userStore.openProfileModal();
     return;
   }
-  const res = demoBoard.value.playMove(point.r, point.c, 'B');
-  if (res.success) {
-    sound.playStoneSound();
-    if (res.capturedStones.length > 0) sound.playCaptureSound();
-    demoLastMove.value = point;
-  } else {
-    sound.playErrorSound();
-  }
+  demoLastMove.value = point;
 };
 
 const resetDemoBoard = () => {

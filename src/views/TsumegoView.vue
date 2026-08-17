@@ -323,6 +323,7 @@ const toggleFavorite = () => {
               :showLiberties="userStore.showLibertiesOverlay"
               :showAtari="userStore.showAtariAlerts"
               :theme="userStore.theme"
+              :manualMove="true"
               :sizePx="460"
               :disabled="isSolved || isBotThinking"
               @play="handlePlay"

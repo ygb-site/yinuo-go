@@ -18,6 +18,8 @@ const props = withDefaults(
     highlightPoints?: Point[];
     lastMove?: Point | null;
     sizePx?: number;
+    manualMove?: boolean;
+    editMode?: 'B' | 'W' | 'empty' | null;
   }>(),
   {
     readonly: false,
@@ -28,7 +30,9 @@ const props = withDefaults(
     theme: 'wood',
     highlightPoints: () => [],
     lastMove: null,
-    sizePx: 520
+    sizePx: 520,
+    manualMove: false,
+    editMode: null
   }
 );
 
@@ -45,6 +49,7 @@ const userStore = useUserStore();
 const hoverPoint = ref<Point | null>(null);
 const selectedStonePoint = ref<Point | null>(null);
 const isShaking = ref(false);
+const boardVersion = ref(0);
 
 const size = computed(() => props.game.size || 9);
 
@@ -177,6 +182,27 @@ const handleCellClick = (r: number, c: number) => {
 
   if (props.readonly) return;
 
+  // Handle Edit Mode (placing Black, White, or Erasing directly)
+  if (props.editMode) {
+    if (props.editMode === 'empty') {
+      props.game.setCell(r, c, null);
+    } else {
+      props.game.setCell(r, c, props.editMode);
+    }
+    boardVersion.value++;
+    playStoneSound();
+    emit('play', { r, c });
+    emit('move', { r, c }, props.editMode === 'empty' ? 'B' : props.editMode);
+    return;
+  }
+
+  // Handle Manual Mode (parent view controls move logic)
+  if (props.manualMove) {
+    emit('play', { r, c });
+    emit('move', { r, c }, props.game.turn);
+    return;
+  }
+
   const existingStone = props.game.getCell(r, c);
 
   // If clicking on an existing stone, toggle selection to show its liberties
@@ -207,6 +233,7 @@ const handleCellClick = (r: number, c: number) => {
   // Play move on GoGame state machine
   const res = props.game.playMove(r, c, turnColor);
   if (res.success) {
+    boardVersion.value++;
     playStoneSound();
     emit('move', { r, c }, turnColor);
     emit('play', { r, c });

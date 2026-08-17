@@ -56,30 +56,6 @@ const handlePlay = (point: Point) => {
     userStore.openProfileModal();
     return;
   }
-
-  const { r, c } = point;
-
-  if (mode.value === 'edit') {
-    sound.playStoneSound();
-    if (editTool.value === 'empty') {
-      board.value.setCell(r, c, null);
-    } else {
-      board.value.setCell(r, c, editTool.value);
-    }
-    return;
-  }
-
-  // Play mode (alternates Black / White)
-  const curTurn = board.value.turn;
-  const res = board.value.playMove(r, c, curTurn);
-
-  if (!res.success) {
-    sound.playErrorSound();
-    return;
-  }
-
-  sound.playStoneSound();
-  if (res.capturedStones.length > 0) sound.playCaptureSound();
   lastMove.value = point;
 };
 
@@ -357,6 +333,7 @@ const importSGF = () => {
               :showAtari="showAtari"
               :showTerritory="showTerritory"
               :theme="userStore.theme"
+              :editMode="mode === 'edit' ? editTool : null"
               :sizePx="480"
               @play="handlePlay"
             />
