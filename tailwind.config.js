@@ -25,6 +25,7 @@ export default {
         }
       },
       fontFamily: {
+        cartoon: ['"ZCOOL KuaiLe"', '"Fredoka"', '"Chalkboard SE"', '"Comic Sans MS"', '"PingFang SC"', 'sans-serif'],
         sans: ['"PingFang SC"', '"Hiragino Sans GB"', '"Microsoft YaHei"', 'system-ui', '-apple-system', 'sans-serif'],
         comic: ['"Comic Sans MS"', '"Chalkboard SE"', '"Bubblegum Sans"', 'cursive', 'sans-serif']
       },

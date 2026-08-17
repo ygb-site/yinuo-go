@@ -109,7 +109,7 @@ const featureCards = [
               <Sparkles class="w-3.5 h-3.5" />
               <span>少儿围棋启蒙世界 · 开启聪明大脑</span>
             </div>
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-wide drop-shadow-md">
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-cartoon font-bold text-white tracking-wider drop-shadow-md">
               欢迎来到 一诺围棋！
             </h1>
             <p class="text-white/90 text-sm sm:text-base font-semibold max-w-xl">

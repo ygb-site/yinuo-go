@@ -52,3 +52,8 @@
   @apply transition-all duration-150 active:translate-y-1 active:shadow-none font-bold rounded-2xl cursor-pointer;
 }
 
+
+.font-cartoon {
+  font-family: 'ZCOOL KuaiLe', 'Fredoka', 'Chalkboard SE', 'Comic Sans MS', 'PingFang SC', sans-serif;
+  letter-spacing: 0.03em;
+}

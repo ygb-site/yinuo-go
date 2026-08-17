@@ -67,7 +67,7 @@ const startLesson = (lesson: Lesson) => {
             <Gamepad2 class="w-3.5 h-3.5" />
             <span>少儿启蒙闯关大冒险 (Adventure Map)</span>
           </div>
-          <h1 class="text-2xl sm:text-3xl font-black text-gray-900">
+          <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
             围棋小精灵成长之路
           </h1>
           <p class="text-xs sm:text-sm text-gray-600 font-medium max-w-xl">
