@@ -10,6 +10,11 @@ import {
   BookMarked,
   Sparkles,
   Search,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  List,
+  Eye
 } from 'lucide-vue-next';
 
 const userStore = useUserStore();
@@ -17,6 +22,7 @@ const userStore = useUserStore();
 const searchQuery = ref('');
 const activeCategory = ref<string>('all');
 const activeEntryId = ref<string>(GO_DICTIONARY[0].id);
+const mobileTab = ref<'list' | 'detail'>('list');
 
 const filteredEntries = computed(() => {
   return GO_DICTIONARY.filter(item => {
@@ -28,6 +34,10 @@ const filteredEntries = computed(() => {
       item.pinyin.includes(searchQuery.value);
     return matchCat && matchSearch;
   });
+});
+
+const currentEntryIndex = computed(() => {
+  return filteredEntries.value.findIndex(e => e.id === activeEntryId.value);
 });
 
 const currentEntry = computed<DictEntry>(() => {
@@ -51,6 +61,22 @@ const selectEntry = (entry: DictEntry) => {
   activeEntryId.value = entry.id;
   playButtonSound();
   setupDemoBoard(entry);
+  mobileTab.value = 'detail';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const prevEntry = () => {
+  const idx = currentEntryIndex.value;
+  if (idx > 0) {
+    selectEntry(filteredEntries.value[idx - 1]);
+  }
+};
+
+const nextEntry = () => {
+  const idx = currentEntryIndex.value;
+  if (idx >= 0 && idx < filteredEntries.value.length - 1) {
+    selectEntry(filteredEntries.value[idx + 1]);
+  }
 };
 
 // Initialize demo board
@@ -76,12 +102,12 @@ const resetDemoBoard = () => {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-6 sm:py-10 px-4 sm:px-6 lg:px-8 select-none">
-    <div class="max-w-7xl mx-auto space-y-6">
+  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-4 sm:py-8 lg:py-10 px-3 sm:px-6 lg:px-8 select-none">
+    <div class="max-w-7xl mx-auto space-y-4 sm:space-y-6">
 
       <!-- Header Banner -->
-      <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-        <div class="space-y-2 text-center md:text-left z-10">
+      <div class="bg-white rounded-3xl p-5 sm:p-8 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 relative overflow-hidden">
+        <div class="space-y-1.5 sm:space-y-2 text-center md:text-left z-10">
           <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-black">
             <BookMarked class="w-3.5 h-3.5" />
             <span>少儿围棋双语小字典 (Go Dictionary)</span>
@@ -100,58 +126,81 @@ const resetDemoBoard = () => {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="搜索术语（如：天元、星位、气、Atari）..."
+            placeholder="搜索术语（如：天元、星位、气）..."
             class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-200 text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400"
           />
         </div>
       </div>
 
+      <!-- Mobile Tab Switcher (lg:hidden) -->
+      <div class="lg:hidden flex items-center bg-amber-100/70 p-1 rounded-2xl border border-orange-200 shadow-inner">
+        <button
+          @click="mobileTab = 'list'"
+          class="flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+          :class="mobileTab === 'list' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-600 hover:text-orange-600'"
+        >
+          <List class="w-4 h-4" />
+          <span>📚 术语列表 ({{ filteredEntries.length }})</span>
+        </button>
+        <button
+          @click="mobileTab = 'detail'"
+          class="flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer truncate px-2"
+          :class="mobileTab === 'detail' ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm' : 'text-gray-600 hover:text-orange-600'"
+        >
+          <Eye class="w-4 h-4 flex-shrink-0" />
+          <span class="truncate">🔍 术语详解 ({{ currentEntry.chinese }})</span>
+        </button>
+      </div>
+
       <!-- Main Layout: Term List & Interactive Details -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
 
         <!-- Left List Column (5 cols) -->
-        <div class="lg:col-span-5 space-y-4">
+        <div
+          class="lg:col-span-5 space-y-4"
+          :class="{ 'hidden lg:block': mobileTab === 'detail' }"
+        >
           <!-- Category Filters -->
           <div class="bg-white rounded-3xl p-4 border-2 border-orange-100 shadow-sm space-y-2.5">
             <div class="flex flex-wrap gap-1.5">
               <button
                 @click="activeCategory = 'all'"
-                class="px-3 py-1.5 rounded-xl text-xs font-black transition"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
                 :class="activeCategory === 'all' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 全部术语
               </button>
               <button
                 @click="activeCategory = 'board_positions'"
-                class="px-3 py-1.5 rounded-xl text-xs font-black transition"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
                 :class="activeCategory === 'board_positions' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 🧭 棋盘地名
               </button>
               <button
                 @click="activeCategory = 'basic'"
-                class="px-3 py-1.5 rounded-xl text-xs font-black transition"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
                 :class="activeCategory === 'basic' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 🌱 基础概念
               </button>
               <button
                 @click="activeCategory = 'tesuji'"
-                class="px-3 py-1.5 rounded-xl text-xs font-black transition"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
                 :class="activeCategory === 'tesuji' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 ⚡ 吃子手筋
               </button>
               <button
                 @click="activeCategory = 'life_death'"
-                class="px-3 py-1.5 rounded-xl text-xs font-black transition"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
                 :class="activeCategory === 'life_death' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 🏰 死活眼位
               </button>
               <button
                 @click="activeCategory = 'opening_shape'"
-                class="px-3 py-1.5 rounded-xl text-xs font-black transition"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
                 :class="activeCategory === 'opening_shape' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 👑 布局地盘
@@ -165,7 +214,7 @@ const resetDemoBoard = () => {
               v-for="entry in filteredEntries"
               :key="entry.id"
               @click="selectEntry(entry)"
-              class="p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between"
+              class="p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group"
               :class="
                 activeEntryId === entry.id
                   ? 'bg-orange-50 border-orange-400 shadow-sm ring-2 ring-orange-300/40'
@@ -174,7 +223,7 @@ const resetDemoBoard = () => {
             >
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
-                  <span class="text-sm font-black text-gray-900">{{ entry.chinese }}</span>
+                  <span class="text-sm font-black text-gray-900 group-hover:text-orange-600">{{ entry.chinese }}</span>
                   <span class="text-xs text-orange-600 font-bold">{{ entry.pinyin }}</span>
                 </div>
                 <div class="text-[11px] font-bold text-gray-400">
@@ -193,8 +242,45 @@ const resetDemoBoard = () => {
         </div>
 
         <!-- Right Detail & Live Interactive Demo Board (7 cols) -->
-        <div class="lg:col-span-7 space-y-4">
-          <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm space-y-6">
+        <div
+          class="lg:col-span-7 space-y-4"
+          :class="{ 'hidden lg:block': mobileTab === 'list' }"
+        >
+          <!-- Mobile In-Detail Stepper Header (lg:hidden) -->
+          <div class="lg:hidden flex items-center justify-between bg-white rounded-2xl p-3 border border-orange-200 shadow-2xs">
+            <button
+              @click="mobileTab = 'list'"
+              class="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-900 text-xs font-black flex items-center gap-1 transition active:scale-95 cursor-pointer"
+            >
+              <ArrowLeft class="w-3.5 h-3.5" />
+              <span>术语列表</span>
+            </button>
+
+            <div class="text-xs font-black text-gray-700">
+              第 {{ currentEntryIndex + 1 }} / {{ filteredEntries.length }} 项
+            </div>
+
+            <div class="flex items-center gap-1">
+              <button
+                @click="prevEntry"
+                :disabled="currentEntryIndex <= 0"
+                class="p-1.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-orange-50 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                title="上一个"
+              >
+                <ChevronLeft class="w-4 h-4 text-gray-700" />
+              </button>
+              <button
+                @click="nextEntry"
+                :disabled="currentEntryIndex >= filteredEntries.length - 1"
+                class="p-1.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-orange-50 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                title="下一个"
+              >
+                <ChevronRight class="w-4 h-4 text-gray-700" />
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-3xl p-5 sm:p-8 border-2 border-orange-100 shadow-sm space-y-5 sm:space-y-6">
             
             <!-- Term Title Header -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-gray-100">
@@ -222,7 +308,7 @@ const resetDemoBoard = () => {
 
             <!-- Kid-friendly Analogy Box -->
             <div class="bg-amber-50 rounded-2xl p-4 border-2 border-amber-200 flex items-start gap-3">
-              <span class="text-2xl">💡</span>
+              <span class="text-2xl flex-shrink-0">💡</span>
               <div class="space-y-0.5">
                 <div class="text-xs font-black text-amber-900">小诺的趣味童言秒懂：</div>
                 <p class="text-xs sm:text-sm font-bold text-amber-800 leading-relaxed">
@@ -242,15 +328,15 @@ const resetDemoBoard = () => {
             </div>
 
             <!-- Live Interactive Mini Demo Board -->
-            <div class="bg-orange-50/50 rounded-3xl p-5 border border-orange-200 space-y-3">
-              <div class="flex items-center justify-between">
+            <div class="bg-orange-50/50 rounded-3xl p-4 sm:p-5 border border-orange-200 space-y-3">
+              <div class="flex items-center justify-between flex-wrap gap-2">
                 <div class="flex items-center gap-1.5 text-xs font-black text-orange-900">
                   <Sparkles class="w-4 h-4 text-orange-500" />
                   <span>互动小黑板 · 动手下下一诺演练</span>
                 </div>
                 <button
                   @click="resetDemoBoard"
-                  class="text-[11px] font-black text-orange-600 hover:text-orange-700 bg-white px-2.5 py-1 rounded-full border border-orange-200 shadow-sm active:scale-95"
+                  class="text-[11px] font-black text-orange-600 hover:text-orange-700 bg-white px-2.5 py-1 rounded-full border border-orange-200 shadow-sm active:scale-95 cursor-pointer"
                 >
                   重置演示
                 </button>
@@ -265,7 +351,7 @@ const resetDemoBoard = () => {
                   :highlightPoints="currentEntry.demoInteractiveMoves"
                   :showLiberties="true"
                   :showAtari="true"
-                  :sizePx="340"
+                  :sizePx="320"
                   @play="handleDemoPlay"
                 />
               </div>

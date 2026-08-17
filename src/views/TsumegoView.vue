@@ -17,6 +17,11 @@ import {
   Heart,
   CheckCircle2,
   BookOpen,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  List,
+  Target
 } from 'lucide-vue-next';
 
 const tsumegoStore = useTsumegoStore();
@@ -26,6 +31,7 @@ const route = useRoute();
 const selectedCategory = ref<string>('all');
 const selectedDifficulty = ref<string>('all');
 const activePuzzleId = ref<string>(TSUMEGO_PUZZLES[0].id);
+const mobileTab = ref<'list' | 'board'>('list');
 
 const filteredPuzzles = computed(() => {
   return TSUMEGO_PUZZLES.filter(p => {
@@ -38,6 +44,10 @@ const filteredPuzzles = computed(() => {
     const matchDiff = selectedDifficulty.value === 'all' || p.difficulty === selectedDifficulty.value;
     return matchCat && matchDiff;
   });
+});
+
+const currentPuzzleIndex = computed(() => {
+  return filteredPuzzles.value.findIndex(p => p.id === activePuzzleId.value);
 });
 
 const currentPuzzle = computed<TsumegoPuzzle>(() => {
@@ -78,6 +88,7 @@ onMounted(() => {
     const targetId = String(route.query.id);
     if (TSUMEGO_PUZZLES.some(p => p.id === targetId)) {
       activePuzzleId.value = targetId;
+      mobileTab.value = 'board';
     }
   }
   if (route.query.cat) {
@@ -91,6 +102,7 @@ watch(() => route.query, (newQuery) => {
     const targetId = String(newQuery.id);
     if (TSUMEGO_PUZZLES.some(p => p.id === targetId)) {
       activePuzzleId.value = targetId;
+      mobileTab.value = 'board';
     }
   }
   if (newQuery.cat) {
@@ -105,6 +117,22 @@ watch(activePuzzleId, () => {
 const selectPuzzle = (puzzle: TsumegoPuzzle) => {
   activePuzzleId.value = puzzle.id;
   sound.playButtonSound();
+  mobileTab.value = 'board';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const prevPuzzle = () => {
+  const idx = currentPuzzleIndex.value;
+  if (idx > 0) {
+    selectPuzzle(filteredPuzzles.value[idx - 1]);
+  }
+};
+
+const nextPuzzle = () => {
+  const idx = currentPuzzleIndex.value;
+  if (idx >= 0 && idx < filteredPuzzles.value.length - 1) {
+    selectPuzzle(filteredPuzzles.value[idx + 1]);
+  }
 };
 
 const handlePlay = (point: Point) => {
@@ -223,12 +251,12 @@ const toggleFavorite = () => {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-6 sm:py-10 px-4 sm:px-6 lg:px-8 select-none">
-    <div class="max-w-7xl mx-auto space-y-6">
+  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-4 sm:py-8 lg:py-10 px-3 sm:px-6 lg:px-8 select-none">
+    <div class="max-w-7xl mx-auto space-y-4 sm:space-y-6">
 
       <!-- Header Banner -->
-      <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-        <div class="space-y-2 text-center md:text-left z-10">
+      <div class="bg-white rounded-3xl p-5 sm:p-8 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 relative overflow-hidden">
+        <div class="space-y-1.5 sm:space-y-2 text-center md:text-left z-10">
           <div class="inline-flex items-center gap-2 bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-xs font-black">
             <Puzzle class="w-3.5 h-3.5" />
             <span>每日死活实战题库 (Daily Tsumego)</span>
@@ -242,20 +270,43 @@ const toggleFavorite = () => {
         </div>
 
         <div class="flex items-center gap-3 z-10">
-          <div class="bg-rose-50 border border-rose-200 px-4 py-2.5 rounded-2xl text-center">
-            <div class="text-[11px] font-bold text-rose-700">已攻克题数</div>
-            <div class="text-2xl font-black text-rose-900">
+          <div class="bg-rose-50 border border-rose-200 px-4 py-2 sm:py-2.5 rounded-2xl text-center shadow-2xs">
+            <div class="text-[10px] sm:text-[11px] font-bold text-rose-700">已攻克题数</div>
+            <div class="text-xl sm:text-2xl font-black text-rose-900">
               {{ tsumegoStore.totalSolvedCount }} / {{ TSUMEGO_PUZZLES.length }}
             </div>
           </div>
         </div>
       </div>
 
+      <!-- Mobile Tab Switcher (lg:hidden) -->
+      <div class="lg:hidden flex items-center bg-amber-100/70 p-1 rounded-2xl border border-orange-200 shadow-inner">
+        <button
+          @click="mobileTab = 'list'"
+          class="flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+          :class="mobileTab === 'list' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-600 hover:text-orange-600'"
+        >
+          <List class="w-4 h-4" />
+          <span>📋 题库列表 ({{ filteredPuzzles.length }})</span>
+        </button>
+        <button
+          @click="mobileTab = 'board'"
+          class="flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer truncate px-2"
+          :class="mobileTab === 'board' ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm' : 'text-gray-600 hover:text-orange-600'"
+        >
+          <Target class="w-4 h-4 flex-shrink-0" />
+          <span class="truncate">🎯 棋盘实战 ({{ currentPuzzle.title }})</span>
+        </button>
+      </div>
+
       <!-- Main Layout: Left Puzzle Explorer / Right Interactive Board -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         
         <!-- Left Column: Filter & Puzzle List (4 cols) -->
-        <div class="lg:col-span-4 space-y-4">
+        <div
+          class="lg:col-span-4 space-y-4"
+          :class="{ 'hidden lg:block': mobileTab === 'board' }"
+        >
           <!-- Category Filters -->
           <div class="bg-white rounded-3xl p-4 border-2 border-orange-100 shadow-sm space-y-3">
             <div class="text-xs font-black text-gray-500 uppercase tracking-wide">
@@ -264,14 +315,14 @@ const toggleFavorite = () => {
             <div class="flex flex-wrap gap-1.5">
               <button
                 @click="selectedCategory = 'all'"
-                class="px-3 py-1.5 rounded-xl text-xs font-black transition"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
                 :class="selectedCategory === 'all' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 全部
               </button>
               <button
                 @click="selectedCategory = 'favorite'"
-                class="px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 active:scale-95"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 active:scale-95 cursor-pointer"
                 :class="selectedCategory === 'favorite' ? 'bg-rose-500 text-white shadow-sm' : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'"
               >
                 <span>❤️ 我的收藏</span>
@@ -285,35 +336,35 @@ const toggleFavorite = () => {
               </button>
               <button
                 @click="selectedCategory = 'capturing'"
-                class="px-3 py-1.5 rounded-xl text-xs font-black transition"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
                 :class="selectedCategory === 'capturing' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 ⚔️ 吃子
               </button>
               <button
                 @click="selectedCategory = 'living'"
-                class="px-3 py-1.5 rounded-xl text-xs font-black transition"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
                 :class="selectedCategory === 'living' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 🏰 做活
               </button>
               <button
                 @click="selectedCategory = 'killing'"
-                class="px-3 py-1.5 rounded-xl text-xs font-black transition"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
                 :class="selectedCategory === 'killing' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 ⚡ 杀棋
               </button>
               <button
                 @click="selectedCategory = 'semeai'"
-                class="px-3 py-1.5 rounded-xl text-xs font-black transition"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
                 :class="selectedCategory === 'semeai' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 🎯 对杀
               </button>
               <button
                 @click="selectedCategory = 'ko'"
-                class="px-3 py-1.5 rounded-xl text-xs font-black transition"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
                 :class="selectedCategory === 'ko' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 🔄 劫争
@@ -327,7 +378,7 @@ const toggleFavorite = () => {
               v-for="p in filteredPuzzles"
               :key="p.id"
               @click="selectPuzzle(p)"
-              class="p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between"
+              class="p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group"
               :class="
                 activePuzzleId === p.id
                   ? 'bg-orange-50 border-orange-400 shadow-sm ring-2 ring-orange-300/40'
@@ -336,7 +387,7 @@ const toggleFavorite = () => {
             >
               <div class="space-y-1">
                 <div class="flex items-center gap-1.5">
-                  <span class="text-xs font-black text-gray-800">{{ p.title }}</span>
+                  <span class="text-xs font-black text-gray-800 group-hover:text-orange-600">{{ p.title }}</span>
                   <Heart
                     v-if="tsumegoStore.isFavorite(p.id)"
                     class="w-3.5 h-3.5 text-rose-500 fill-current flex-shrink-0"
@@ -374,7 +425,44 @@ const toggleFavorite = () => {
         </div>
 
         <!-- Right Column: Interactive Board & Tutor (8 cols) -->
-        <div class="lg:col-span-8 space-y-4">
+        <div
+          class="lg:col-span-8 space-y-4"
+          :class="{ 'hidden lg:block': mobileTab === 'list' }"
+        >
+          <!-- Mobile In-Board Stepper Header (lg:hidden) -->
+          <div class="lg:hidden flex items-center justify-between bg-white rounded-2xl p-3 border border-orange-200 shadow-2xs">
+            <button
+              @click="mobileTab = 'list'"
+              class="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-900 text-xs font-black flex items-center gap-1 transition active:scale-95 cursor-pointer"
+            >
+              <ArrowLeft class="w-3.5 h-3.5" />
+              <span>选题列表</span>
+            </button>
+
+            <div class="text-xs font-black text-gray-700">
+              第 {{ currentPuzzleIndex + 1 }} / {{ filteredPuzzles.length }} 题
+            </div>
+
+            <div class="flex items-center gap-1">
+              <button
+                @click="prevPuzzle"
+                :disabled="currentPuzzleIndex <= 0"
+                class="p-1.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-orange-50 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                title="上一题"
+              >
+                <ChevronLeft class="w-4 h-4 text-gray-700" />
+              </button>
+              <button
+                @click="nextPuzzle"
+                :disabled="currentPuzzleIndex >= filteredPuzzles.length - 1"
+                class="p-1.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-orange-50 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                title="下一题"
+              >
+                <ChevronRight class="w-4 h-4 text-gray-700" />
+              </button>
+            </div>
+          </div>
+
           <!-- Mascot NuoNuo -->
           <MascotNuoNuo
             :message="mascotMessage"
@@ -384,7 +472,38 @@ const toggleFavorite = () => {
           />
 
           <!-- Board Card -->
-          <div class="bg-white rounded-3xl p-6 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-4">
+          <div class="bg-white rounded-3xl p-4 sm:p-6 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-4">
+            
+            <!-- Desktop Puzzle Nav Indicator -->
+            <div class="hidden lg:flex items-center justify-between w-full pb-2 border-b border-gray-100 text-xs font-bold text-gray-500">
+              <div class="flex items-center gap-2">
+                <span class="bg-orange-100 text-orange-800 px-2 py-0.5 rounded-md font-black">
+                  {{ currentPuzzle.categoryLabel }}
+                </span>
+                <span class="font-black text-gray-800 text-sm">{{ currentPuzzle.title }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span>第 {{ currentPuzzleIndex + 1 }} / {{ filteredPuzzles.length }} 题</span>
+                <div class="flex items-center gap-1">
+                  <button
+                    @click="prevPuzzle"
+                    :disabled="currentPuzzleIndex <= 0"
+                    class="px-2.5 py-1 rounded-lg border border-gray-200 bg-gray-50 hover:bg-orange-50 disabled:opacity-30 disabled:pointer-events-none text-xs font-bold transition cursor-pointer"
+                  >
+                    上一题
+                  </button>
+                  <button
+                    @click="nextPuzzle"
+                    :disabled="currentPuzzleIndex >= filteredPuzzles.length - 1"
+                    class="px-2.5 py-1 rounded-lg border border-gray-200 bg-gray-50 hover:bg-orange-50 disabled:opacity-30 disabled:pointer-events-none text-xs font-bold transition cursor-pointer"
+                  >
+                    下一题
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- GoBoard -->
             <GoBoardComponent
               :board="board"
               :playerColor="currentPuzzle.playerColor"
@@ -394,16 +513,27 @@ const toggleFavorite = () => {
               :showAtari="userStore.showAtariAlerts"
               :theme="userStore.theme"
               :manualMove="true"
-              :sizePx="460"
+              :sizePx="440"
               :disabled="isSolved || isBotThinking"
               @play="handlePlay"
             />
+
+            <!-- Next Puzzle Quick Button after Solved -->
+            <div v-if="isSolved && currentPuzzleIndex < filteredPuzzles.length - 1" class="w-full flex justify-center pt-1 animate-bounce-subtle">
+              <button
+                @click="nextPuzzle"
+                class="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>太棒了！攻克下一题 🚀</span>
+                <ChevronRight class="w-4 h-4" />
+              </button>
+            </div>
 
             <!-- Control Action Buttons -->
             <div class="w-full flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100">
               <button
                 @click="toggleFavorite"
-                class="px-3.5 py-2 rounded-2xl border transition flex items-center gap-1.5 text-xs font-black active:scale-95"
+                class="px-3.5 py-2 rounded-2xl border transition flex items-center gap-1.5 text-xs font-black active:scale-95 cursor-pointer"
                 :class="
                   tsumegoStore.isFavorite(currentPuzzle.id)
                     ? 'bg-rose-50 border-rose-300 text-rose-600'
@@ -420,7 +550,7 @@ const toggleFavorite = () => {
               <div class="flex items-center gap-2">
                 <button
                   @click="handleHint"
-                  class="px-4 py-2 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs shadow-sm transition active:scale-95 flex items-center gap-1.5"
+                  class="px-4 py-2 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs shadow-sm transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
                 >
                   <Lightbulb class="w-4 h-4 fill-current" />
                   <span>锦囊提示</span>
@@ -428,7 +558,7 @@ const toggleFavorite = () => {
 
                 <button
                   @click="handleRestart"
-                  class="px-4 py-2 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-xs transition active:scale-95 flex items-center gap-1.5"
+                  class="px-4 py-2 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
                 >
                   <RotateCcw class="w-4 h-4" />
                   <span>重试本题</span>
@@ -439,7 +569,7 @@ const toggleFavorite = () => {
 
           <!-- Explanation Box -->
           <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl p-5 border-2 border-orange-200 space-y-2">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-2 text-xs font-black text-orange-900">
                 <BookOpen class="w-4 h-4 text-orange-600" />
                 <span>名师精解 (Master Commentary)</span>
