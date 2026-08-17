@@ -113,6 +113,18 @@ const copySGF = () => {
   setTimeout(() => (copyFeedback.value = false), 2000);
 };
 
+const downloadSGF = () => {
+  if (!sgfText.value.trim()) return;
+  sound.playCoinSound();
+  const blob = new Blob([sgfText.value], { type: 'application/x-go-sgf;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${userStore.nickname || 'yinuo-go'}-game-${new Date().toISOString().split('T')[0]}.sgf`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 const importSGF = () => {
   if (!userStore.hasProfile) {
     userStore.openProfileModal();
@@ -387,12 +399,24 @@ const importSGF = () => {
         class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/65 backdrop-blur-md select-none animate-fade-in"
       >
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border-4 border-amber-300 space-y-4 animate-pop-in">
-          <h3 class="text-xl font-black text-gray-900 flex items-center gap-2">
-            <span>📜 SGF 围棋棋谱</span>
-          </h3>
-          <p class="text-xs text-gray-500 font-medium">
-            可直接复制以下 SGF 代码保存，或粘贴外部棋谱进行导入：
-          </p>
+          <div class="flex items-center justify-between">
+            <h3 class="text-xl font-cartoon font-bold text-gray-900 flex items-center gap-2">
+              <span>📜 SGF 通用围棋棋谱</span>
+            </h3>
+            <span class="text-[10px] font-black text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
+              世界通用记谱格式
+            </span>
+          </div>
+
+          <div class="bg-amber-50 rounded-2xl p-3 border border-amber-200 text-xs text-amber-900 font-medium leading-relaxed space-y-1">
+            <div class="font-bold text-amber-950 flex items-center gap-1">
+              <span>💡 什么是 SGF？</span>
+            </div>
+            <p class="text-[11px] text-amber-800">
+              SGF 是全世界通用的围棋棋谱代码（记录了整盘棋的每一步落子顺序）。
+              <b>【复制/下载】</b>可将这盘棋发给老师或保存；<b>【导入】</b>粘贴外部棋谱可瞬间在棋盘上复原名局与死活题！
+            </p>
+          </div>
 
           <textarea
             v-model="sgfText"
@@ -401,24 +425,34 @@ const importSGF = () => {
             placeholder="粘贴标准 SGF 文本..."
           ></textarea>
 
-          <div class="flex gap-2">
+          <div class="flex flex-wrap sm:flex-nowrap gap-2">
             <button
               @click="copySGF"
-              class="flex-1 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
+              class="flex-1 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-xs"
             >
               <Copy class="w-4 h-4" />
-              <span>{{ copyFeedback ? '已复制到剪贴板！' : '复制棋谱' }}</span>
+              <span>{{ copyFeedback ? '已复制到剪贴板！' : '复制文本' }}</span>
             </button>
+
+            <button
+              @click="downloadSGF"
+              class="flex-1 py-2.5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-2xs"
+            >
+              <Download class="w-4 h-4" />
+              <span>下载 .sgf 文件</span>
+            </button>
+
             <button
               @click="importSGF"
-              class="flex-1 py-2.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
+              class="flex-1 py-2.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-xs"
             >
               <Upload class="w-4 h-4" />
               <span>导入棋盘</span>
             </button>
+
             <button
               @click="sgfModalOpen = false"
-              class="px-4 py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs"
+              class="px-4 py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs cursor-pointer"
             >
               关闭
             </button>
