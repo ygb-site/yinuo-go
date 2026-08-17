@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/useUserStore';
+import { useTsumegoStore } from '../stores/tsumegoStore';
+import { TSUMEGO_PUZZLES } from '../data/tsumegoLibrary';
 import { BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
 import { playButtonSound } from '../lib/audio';
 import {
@@ -13,13 +16,36 @@ import {
   Download,
   Lock,
   Edit2,
-  UserPlus
+  UserPlus,
+  Heart,
+  ArrowRight
 } from 'lucide-vue-next';
 
+const router = useRouter();
 const userStore = useUserStore();
+const tsumegoStore = useTsumegoStore();
 
 const isEditingName = ref(false);
 const newNickname = ref(userStore.nickname);
+
+const favoritePuzzlesList = computed(() => {
+  return TSUMEGO_PUZZLES.filter(p => tsumegoStore.isFavorite(p.id));
+});
+
+const goToTsumego = (puzzleId?: string) => {
+  playButtonSound();
+  if (puzzleId) {
+    router.push({ path: '/tsumego', query: { id: puzzleId, cat: 'favorite' } });
+  } else {
+    router.push('/tsumego');
+  }
+};
+
+const removeFavorite = (puzzleId: string, event: Event) => {
+  event.stopPropagation();
+  playButtonSound();
+  tsumegoStore.toggleFavorite(puzzleId);
+};
 
 const avatarList = ['🦁', '🐰', '🐼', '🐱', '🦊', '🐶', '🦄', '🐯', '🐨', '🤖', '🐵', '🐥'];
 
@@ -76,7 +102,7 @@ const exportData = () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `yinuo-go-backup-${userStore.nickname || 'kids'}-${new Date().toISOString().split('T')[0]}.json`;
+  a.download = 'yinuo-go-backup-' + (userStore.nickname || 'kids') + '.json';
   a.click();
   URL.revokeObjectURL(url);
 };
@@ -86,7 +112,7 @@ const confirmReset = () => {
     userStore.openProfileModal();
     return;
   }
-  if (confirm(`确定要重置当前宝贝「${userStore.nickname}」的闯关进度与金币吗？`)) {
+  if (confirm('Reset progress?')) {
     userStore.resetCurrentProfileProgress();
   }
 };
@@ -119,7 +145,7 @@ const confirmReset = () => {
               <div class="flex items-center gap-2 justify-center sm:justify-start">
                 <div v-if="!isEditingName" class="flex items-center gap-2">
                   <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">{{ userStore.nickname }}</h1>
-                  <button @click="isEditingName = true" class="p-1 text-gray-400 hover:text-orange-500" title="修改昵称">
+                  <button @click="isEditingName = true" class="p-1 text-gray-400 hover:text-orange-500 cursor-pointer" title="修改昵称">
                     <Edit2 class="w-4 h-4" />
                   </button>
                 </div>
@@ -130,7 +156,7 @@ const confirmReset = () => {
                     maxlength="10"
                     class="px-3 py-1 rounded-xl border border-orange-300 text-sm font-bold text-gray-800 focus:outline-none"
                   />
-                  <button @click="saveNickname" class="px-3 py-1 bg-orange-500 text-white text-xs font-black rounded-xl">
+                  <button @click="saveNickname" class="px-3 py-1 bg-orange-500 text-white text-xs font-black rounded-xl cursor-pointer">
                     保存
                   </button>
                 </div>
@@ -146,7 +172,7 @@ const confirmReset = () => {
               <div class="flex items-center gap-2 pt-1 justify-center sm:justify-start">
                 <button
                   @click="userStore.openProfileModal()"
-                  class="px-3 py-1.5 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-900 text-xs font-black flex items-center gap-1.5 transition active:scale-95 shadow-2xs"
+                  class="px-3 py-1.5 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-900 text-xs font-black flex items-center gap-1.5 transition active:scale-95 shadow-2xs cursor-pointer"
                 >
                   <Users class="w-3.5 h-3.5" />
                   <span>切换宝贝 (共 {{ userStore.profiles.length }} 位)</span>
@@ -159,7 +185,7 @@ const confirmReset = () => {
                   v-for="av in avatarList.slice(0, 8)"
                   :key="av"
                   @click="selectAvatar(av)"
-                  class="w-7 h-7 rounded-lg border text-sm flex items-center justify-center transition transform hover:scale-110 active:scale-95"
+                  class="w-7 h-7 rounded-lg border text-sm flex items-center justify-center transition transform hover:scale-110 active:scale-95 cursor-pointer"
                   :class="userStore.avatar === av ? 'bg-orange-100 border-orange-500 shadow-2xs' : 'bg-gray-50 border-gray-200'"
                 >
                   {{ av }}
@@ -199,7 +225,7 @@ const confirmReset = () => {
               <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                 <div
                   class="bg-gradient-to-r from-orange-500 to-amber-500 h-full rounded-full transition-all"
-                  :style="{ width: `${userStore.rankProgressPercent}%` }"
+                  :style="{ width: userStore.rankProgressPercent + '%' }"
                 ></div>
               </div>
             </div>
@@ -219,10 +245,99 @@ const confirmReset = () => {
           </div>
           <button
             @click="userStore.openProfileModal()"
-            class="px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-sm shadow-md transition active:scale-95 inline-flex items-center gap-2"
+            class="px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-sm shadow-md transition active:scale-95 inline-flex items-center gap-2 cursor-pointer"
           >
             <UserPlus class="w-4 h-4" />
             <span>创建第一位宝贝档案 🚀</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Favorite Puzzles Showcase (❤️ 宝贝死活题收藏本) -->
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-rose-100 shadow-sm space-y-5">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-2">
+            <div class="w-9 h-9 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-600">
+              <Heart class="w-5 h-5 fill-current" />
+            </div>
+            <div>
+              <h2 class="text-xl font-black text-gray-900">死活题专属收藏本 (Favorite Puzzles)</h2>
+              <p class="text-xs text-gray-500 font-medium">收集重点难题与经典手筋，方便随时集中练习与巩固</p>
+            </div>
+          </div>
+          <button
+            @click="goToTsumego()"
+            class="text-xs font-black text-rose-700 bg-rose-50 hover:bg-rose-100 px-3.5 py-1.5 rounded-full border border-rose-200 flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+          >
+            <span>去死活题大本营</span>
+            <ArrowRight class="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <!-- Favorites List -->
+        <div v-if="favoritePuzzlesList.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div
+            v-for="p in favoritePuzzlesList"
+            :key="p.id"
+            @click="goToTsumego(p.id)"
+            class="rounded-3xl p-4 border-2 border-rose-100 hover:border-rose-300 bg-gradient-to-br from-white to-rose-50/30 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group space-y-3"
+          >
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-md">
+                  {{ p.categoryLabel }}
+                </span>
+                <div class="flex items-center gap-1">
+                  <div class="flex items-center text-amber-400 mr-1">
+                    <Star v-for="s in p.difficultyStars" :key="s" class="w-3 h-3 fill-current" />
+                  </div>
+                  <button
+                    @click="removeFavorite(p.id, $event)"
+                    class="text-gray-300 hover:text-rose-500 p-1 transition cursor-pointer"
+                    title="取消收藏"
+                  >
+                    <Heart class="w-4 h-4 fill-current text-rose-500 hover:scale-110" />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <h4 class="text-sm font-black text-gray-900 group-hover:text-rose-600 transition flex items-center gap-1.5">
+                  <span>{{ p.title }}</span>
+                  <CheckCircle2 v-if="tsumegoStore.isSolved(p.id)" class="w-4 h-4 text-emerald-500" />
+                </h4>
+                <p class="text-xs text-gray-500 font-medium line-clamp-2 mt-1">
+                  {{ p.prompt }}
+                </p>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-rose-100 flex items-center justify-between text-[11px] font-bold text-gray-500">
+              <span class="text-rose-600 flex items-center gap-1">
+                <span>{{ tsumegoStore.isSolved(p.id) ? '已攻克 🌟' : '待练习 🎯' }}</span>
+              </span>
+              <span class="text-orange-500 font-black flex items-center gap-1 group-hover:translate-x-0.5 transition">
+                <span>立即做题</span>
+                <ArrowRight class="w-3 h-3" />
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty Favorites -->
+        <div v-else class="py-8 px-4 text-center rounded-3xl bg-rose-50/40 border border-dashed border-rose-200 space-y-3">
+          <div class="text-3xl">💖</div>
+          <div class="space-y-1">
+            <h4 class="text-sm font-black text-gray-800">还没有收藏任何死活题哦</h4>
+            <p class="text-xs text-gray-500 font-medium max-w-md mx-auto">
+              在「每日死活」模块做题时，点击棋盘左下方的【❤️ 收藏】按钮，即可把易错题、重点妙手题一键收入此处！
+            </p>
+          </div>
+          <button
+            @click="goToTsumego()"
+            class="px-4 py-2 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-black text-xs shadow-sm transition active:scale-95 inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>去死活题库挑一挑 🎯</span>
           </button>
         </div>
       </div>
@@ -295,7 +410,7 @@ const confirmReset = () => {
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <button
               @click="userStore.setTheme('wood')"
-              class="p-4 rounded-2xl border-2 text-left transition"
+              class="p-4 rounded-2xl border-2 text-left transition cursor-pointer"
               :class="userStore.theme === 'wood' ? 'bg-amber-100 border-amber-500 font-black shadow-sm' : 'bg-gray-50 border-gray-200'"
             >
               <div class="text-2xl mb-1">🪵</div>
@@ -304,7 +419,7 @@ const confirmReset = () => {
 
             <button
               @click="userStore.setTheme('candy')"
-              class="p-4 rounded-2xl border-2 text-left transition"
+              class="p-4 rounded-2xl border-2 text-left transition cursor-pointer"
               :class="userStore.theme === 'candy' ? 'bg-pink-100 border-pink-500 font-black shadow-sm' : 'bg-gray-50 border-gray-200'"
             >
               <div class="text-2xl mb-1">🍬</div>
@@ -313,7 +428,7 @@ const confirmReset = () => {
 
             <button
               @click="userStore.setTheme('jade')"
-              class="p-4 rounded-2xl border-2 text-left transition"
+              class="p-4 rounded-2xl border-2 text-left transition cursor-pointer"
               :class="userStore.theme === 'jade' ? 'bg-emerald-100 border-emerald-500 font-black shadow-sm' : 'bg-gray-50 border-gray-200'"
             >
               <div class="text-2xl mb-1">🍵</div>
@@ -322,7 +437,7 @@ const confirmReset = () => {
 
             <button
               @click="userStore.setTheme('neon')"
-              class="p-4 rounded-2xl border-2 text-left transition"
+              class="p-4 rounded-2xl border-2 text-left transition cursor-pointer"
               :class="userStore.theme === 'neon' ? 'bg-slate-800 text-cyan-300 border-cyan-400 font-black shadow-sm' : 'bg-gray-50 border-gray-200 text-gray-800'"
             >
               <div class="text-2xl mb-1">🌌</div>
@@ -335,10 +450,10 @@ const confirmReset = () => {
         <div class="pt-4 border-t border-gray-100 flex flex-wrap gap-3">
           <button
             @click="exportData"
-            class="px-4 py-2.5 rounded-2xl border text-xs font-black flex items-center gap-2 transition active:scale-95"
+            class="px-4 py-2.5 rounded-2xl border text-xs font-black flex items-center gap-2 transition active:scale-95 cursor-pointer"
             :class="
               userStore.hasProfile
-                ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900 cursor-pointer'
+                ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900'
                 : 'bg-gray-50 border-gray-200 text-gray-400 hover:text-orange-600 hover:border-orange-300'
             "
           >
@@ -349,7 +464,7 @@ const confirmReset = () => {
           <button
             v-if="userStore.hasProfile"
             @click="confirmReset"
-            class="px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs flex items-center gap-2 transition active:scale-95"
+            class="px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs flex items-center gap-2 transition active:scale-95 cursor-pointer"
           >
             <RotateCcw class="w-4 h-4" />
             <span>重置当前宝贝进度</span>

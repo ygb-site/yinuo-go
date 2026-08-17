@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { TSUMEGO_PUZZLES, type TsumegoPuzzle } from '../data/tsumegoLibrary';
 import { GoBoard } from '../engine/GoBoard';
 import type { Point } from '../engine/types';
@@ -20,6 +21,7 @@ import {
 
 const tsumegoStore = useTsumegoStore();
 const userStore = useUserStore();
+const route = useRoute();
 
 const selectedCategory = ref<string>('all');
 const selectedDifficulty = ref<string>('all');
@@ -27,7 +29,12 @@ const activePuzzleId = ref<string>(TSUMEGO_PUZZLES[0].id);
 
 const filteredPuzzles = computed(() => {
   return TSUMEGO_PUZZLES.filter(p => {
-    const matchCat = selectedCategory.value === 'all' || p.category === selectedCategory.value;
+    const matchCat =
+      selectedCategory.value === 'all'
+        ? true
+        : selectedCategory.value === 'favorite'
+        ? tsumegoStore.isFavorite(p.id)
+        : p.category === selectedCategory.value;
     const matchDiff = selectedDifficulty.value === 'all' || p.difficulty === selectedDifficulty.value;
     return matchCat && matchDiff;
   });
@@ -67,7 +74,28 @@ const initPuzzle = () => {
 };
 
 onMounted(() => {
+  if (route.query.id) {
+    const targetId = String(route.query.id);
+    if (TSUMEGO_PUZZLES.some(p => p.id === targetId)) {
+      activePuzzleId.value = targetId;
+    }
+  }
+  if (route.query.cat) {
+    selectedCategory.value = String(route.query.cat);
+  }
   initPuzzle();
+});
+
+watch(() => route.query, (newQuery) => {
+  if (newQuery.id) {
+    const targetId = String(newQuery.id);
+    if (TSUMEGO_PUZZLES.some(p => p.id === targetId)) {
+      activePuzzleId.value = targetId;
+    }
+  }
+  if (newQuery.cat) {
+    selectedCategory.value = String(newQuery.cat);
+  }
 });
 
 watch(activePuzzleId, () => {
@@ -181,6 +209,16 @@ const toggleFavorite = () => {
     return;
   }
   tsumegoStore.toggleFavorite(currentPuzzle.value.id);
+  const isFav = tsumegoStore.isFavorite(currentPuzzle.value.id);
+  if (isFav) {
+    sound.playCoinSound();
+    mascotMood.value = 'excited';
+    mascotMessage.value = `已将【${currentPuzzle.value.title}】加入我的收藏！随时可在左侧【❤️ 我的收藏】中集中复习！`;
+  } else {
+    sound.playButtonSound();
+    mascotMood.value = 'happy';
+    mascotMessage.value = `已从我的收藏中移出【${currentPuzzle.value.title}】。`;
+  }
 };
 </script>
 
@@ -230,6 +268,20 @@ const toggleFavorite = () => {
                 :class="selectedCategory === 'all' ? 'bg-orange-500 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
               >
                 全部
+              </button>
+              <button
+                @click="selectedCategory = 'favorite'"
+                class="px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 active:scale-95"
+                :class="selectedCategory === 'favorite' ? 'bg-rose-500 text-white shadow-sm' : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'"
+              >
+                <span>❤️ 我的收藏</span>
+                <span
+                  v-if="tsumegoStore.favoritePuzzleIds.length > 0"
+                  class="text-[10px] px-1.5 py-0.2 rounded-full font-black"
+                  :class="selectedCategory === 'favorite' ? 'bg-white text-rose-600' : 'bg-rose-200 text-rose-900'"
+                >
+                  {{ tsumegoStore.favoritePuzzleIds.length }}
+                </span>
               </button>
               <button
                 @click="selectedCategory = 'capturing'"
@@ -285,6 +337,10 @@ const toggleFavorite = () => {
               <div class="space-y-1">
                 <div class="flex items-center gap-1.5">
                   <span class="text-xs font-black text-gray-800">{{ p.title }}</span>
+                  <Heart
+                    v-if="tsumegoStore.isFavorite(p.id)"
+                    class="w-3.5 h-3.5 text-rose-500 fill-current flex-shrink-0"
+                  />
                   <CheckCircle2
                     v-if="tsumegoStore.isSolved(p.id)"
                     class="w-4 h-4 text-emerald-500 flex-shrink-0"
@@ -305,6 +361,14 @@ const toggleFavorite = () => {
                   class="w-3 h-3 fill-current"
                 />
               </div>
+            </div>
+            <!-- Empty State for Favorites -->
+            <div v-if="filteredPuzzles.length === 0" class="py-12 px-4 text-center space-y-2">
+              <div class="text-3xl">💖</div>
+              <div class="text-xs font-black text-gray-700">暂无收藏的死活题</div>
+              <p class="text-[11px] text-gray-400 font-medium leading-relaxed">
+                在做题时点击棋盘下方的【❤️ 收藏】按钮，即可把重点题加入此专属题库！
+              </p>
             </div>
           </div>
         </div>

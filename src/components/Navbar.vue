@@ -86,7 +86,7 @@ const isNavActive = (itemPath: string) => {
           </div>
           <div class="flex flex-col justify-center">
             <div class="flex items-center gap-1.5">
-              <span class="text-xl font-black bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 bg-clip-text text-transparent leading-none whitespace-nowrap">
+              <span class="text-2xl font-cartoon font-bold bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 bg-clip-text text-transparent leading-none whitespace-nowrap tracking-wider">
                 一诺围棋
               </span>
               <span class="bg-orange-100 text-orange-800 text-[10px] font-black px-1.5 py-0.5 rounded-full border border-orange-300 shadow-2xs whitespace-nowrap hidden sm:inline-block">
