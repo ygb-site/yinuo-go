@@ -97,14 +97,14 @@ const calculateScore = () => {
 const exportSGF = () => {
   if (!userStore.hasProfile) {
     userStore.openProfileModal();
-    return;
-  }
-  sound.playButtonSound();
-  sgfText.value = SGFParser.exportToSGF(board.value, {
-    gameName: '一诺围棋练习谱',
-    blackPlayer: userStore.nickname || '小棋手',
-    whitePlayer: '好友'
-  });
+  return;
+}
+sound.playButtonSound();
+sgfText.value = SGFParser.exportToSGF(board.value, {
+  gameName: '一诺弈学练习谱',
+  blackPlayer: userStore.nickname || '小棋手',
+  whitePlayer: '好友'
+});
   sgfModalOpen.value = true;
 };
 

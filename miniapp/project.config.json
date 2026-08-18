@@ -1,0 +1,14 @@
+{
+  "miniprogramRoot": "./",
+  "projectname": "yinuo-go",
+  "description": "一诺弈学少儿围棋启蒙小程序",
+  "appid": "wxb260f9ab8e1e8f5b",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "checkInvalidKey": false
+  },
+  "compileType": "miniprogram"
+}

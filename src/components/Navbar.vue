@@ -115,14 +115,14 @@ const isNavActive = (itemPath: string) => {
           title="返回首页"
         >
           <div
-            class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-rose-500 p-0.5 shadow-sm flex items-center justify-center border-2 border-white group-hover:rotate-6 transition-transform flex-shrink-0"
+            class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-rose-500 p-0.5 shadow-sm flex items-center justify-center border-2 border-white group-hover:rotate-6 transition-transform flex-shrink-0 overflow-hidden"
           >
-            <span class="text-xl sm:text-2xl">🐼</span>
+            <img src="/logo/logo-avatar-circle-144.png" alt="一诺弈学" class="w-full h-full object-contain" />
           </div>
           <div class="flex flex-col justify-center">
             <div class="flex items-center gap-1 sm:gap-1.5">
               <span class="text-lg sm:text-2xl font-cartoon font-bold bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 bg-clip-text text-transparent leading-none whitespace-nowrap tracking-wider">
-                一诺围棋
+                一诺弈学
               </span>
               <span class="bg-orange-100 text-orange-800 text-[9px] sm:text-[10px] font-black px-1.5 py-0.2 rounded-full border border-orange-300 shadow-2xs whitespace-nowrap">
                 YiNuo Go
@@ -297,4 +297,3 @@ const isNavActive = (itemPath: string) => {
     </button>
   </nav>
 </template>
-

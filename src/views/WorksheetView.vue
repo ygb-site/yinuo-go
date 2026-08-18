@@ -56,7 +56,7 @@ const handlePrint = () => {
       <div class="border-b-2 border-gray-800 pb-4 flex items-center justify-between">
         <div>
           <h2 class="text-xl sm:text-2xl font-black text-gray-900 font-cartoon">
-            一诺围棋 · 少儿死活手筋实战题单
+            一诺弈学 · 少儿死活手筋实战题单
           </h2>
           <div class="text-xs text-gray-500 font-bold mt-1">
             专注力 · 算路深度 · 手筋敏锐度特训
@@ -140,4 +140,3 @@ const handlePrint = () => {
 
   </div>
 </template>
-

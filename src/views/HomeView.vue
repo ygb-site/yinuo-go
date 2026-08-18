@@ -157,15 +157,15 @@ const featureCards = [
         <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
           <div class="space-y-2 sm:space-y-3 text-center md:text-left w-full md:w-auto">
             <div class="inline-flex items-center gap-1.5 bg-white/30 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full text-[11px] font-black shadow-xs">
-              <Sparkles class="w-3.5 h-3.5" />
-              <span>少儿围棋启蒙世界 · 开启聪明大脑</span>
-            </div>
-            
-            <h1 class="text-2xl sm:text-4xl lg:text-5xl font-cartoon font-bold text-white tracking-wider drop-shadow-md">
-              欢迎来到 一诺围棋！
-            </h1>
-            
-            <p class="text-white/95 text-xs sm:text-base font-semibold max-w-xl line-clamp-2 sm:line-clamp-none">
+            <Sparkles class="w-3.5 h-3.5" />
+            <span>少儿围棋启蒙世界 · 开启聪明大脑</span>
+          </div>
+          
+          <h1 class="text-2xl sm:text-4xl lg:text-5xl font-cartoon font-bold text-white tracking-wider drop-shadow-md">
+            欢迎来到 一诺弈学！
+          </h1>
+          
+          <p class="text-white/95 text-xs sm:text-base font-semibold max-w-xl line-clamp-2 sm:line-clamp-none">
               你好，{{ userStore.hasProfile ? userStore.nickname : '小棋手' }}！黑白子就像神奇的黑白精灵，在小小的棋盘上筑造属于你的智慧城堡吧！
             </p>
 
@@ -280,4 +280,3 @@ const featureCards = [
     />
   </div>
 </template>
-

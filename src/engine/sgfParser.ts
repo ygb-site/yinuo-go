@@ -40,7 +40,7 @@ export class SGFParser {
     sgf += `SZ[${board.size}]`;
     sgf += `KM[${board.komi}]`;
     sgf += `RU[Chinese]`;
-    sgf += `GN[${info.gameName || '一诺围棋少儿对局'}]`;
+    sgf += `GN[${info.gameName || '一诺弈学少儿对局'}]`;
     sgf += `PB[${info.blackPlayer || '小棋手'}]`;
     sgf += `PW[${info.whitePlayer || '一诺AI'}]`;
     sgf += `DT[${today}]`;
@@ -131,5 +131,4 @@ export class SGFParser {
     };
   }
 }
-
 

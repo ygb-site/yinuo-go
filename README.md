@@ -1,60 +1,67 @@
-# YiNuo Go (一诺围棋) 🐼 · 少儿互动启蒙围棋世界
+# 一诺弈学 (YiNuo Go) 🐼 · 少儿互动启蒙围棋世界
 
-> 专为 **4~10 岁少儿** 启蒙定制的高端互动式围棋教学 Web 应用。纯前端零配置起步（Zero-Config Local First），即开即玩，支持一键部署至 GitHub Pages！
-
----
-
-## ✨ 核心亮点与特色 (Key Highlights)
-
-1. **👦 少儿友好视觉与极致交互（Kid-Friendly UI）：**
-   - 暖色原木质感拟物棋盘、糖果粉彩、翡翠温玉与赛博星空等 4 款个性化皮肤自由切换。
-   - 拟物化 3D 棋子凸面光泽与立体阴影。
-   - 萌宠伴读导师“小诺（NuoNuo）”，生动喜怒哀乐表情互动，全程语音气泡指引。
-   - 内置纯前端 Web Audio 真实木质落子音效、提子音效、胜利交响 arpeggio 与全屏粒子礼花（Canvas Confetti）。
-
-2. **🧠 严谨完整的围棋规则引擎（Go Logic Engine）：**
-   - 气（Liberties）与连通块（Stone Groups）高精度计算。
-   - 提子（Capture）、打吃 / 叫吃（Atari）预警。
-   - 禁着点与自杀步（Suicide / Illegal Move）智能拦截。
-   - 劫争规则（Ko Rule / 打劫）状态比对防无限循环。
-   - 真眼与假眼（Real / False Eye）几何拓扑判定。
-   - 中国数子法（Chinese Area Scoring）领地与目数自动判定、贴目（Komi）结算。
-   - 多路数棋盘无缝切换：5x5（少儿速战）、7x7、9x9（启蒙标准）、13x13、19x19（标准棋盘）。
-
-3. **🎮 六大核心功能模块 (Core Modules)：**
-   - 🗺️ **趣味闯关（Adventure Quest）：** 5 大进阶篇章、24 个循序渐进关卡（从数气、吃子、手筋、死活到圈地盘），满星挑战与金币奖励。
-   - 🧩 **每日死活题（Daily Tsumego）：** 涵盖吃子手筋、做活保命、杀棋破眼、对杀技巧、劫争技巧等经典题库，AI 对手动态反击分支。
-   - 🤖 **人机对弈场（AI Arena）：** 5 级萌宠 AI（小狗贝贝 25K、小猫喵喵 20K、狐狸阿福 15K、熊猫师傅 10K、一诺大师 5K），配备 AI 推荐点与领地热力图。
-   - 🎨 **自由打谱台（Sandbox & SGF）：** 双人本地对弈、自由摆棋编辑、标准 SGF 棋谱导入与导出。
-   - 📖 **双语术语小字典（Go Dictionary）：** 24 个专业围棋术语中英双解、童言童语趣解与互动小黑板试玩。
-   - 🏆 **成长成就馆（Trophy Room）：** 启蒙初学者到一诺小九段 7 大段位进阶、14 枚闪耀勋章、学习数据持久化与 JSON 备份。
+> 基于 **Vue 3 + Uni-app + TypeScript + Pinia** 构建的少儿围棋启蒙教学全平台应用。
+> **一套代码，同时原生支持 微信小程序、手机 H5 浏览器、电脑官网。**
 
 ---
 
-## 🛠️ 技术栈 (Tech Stack)
+## 🌟 核心优势
 
-- **框架：** Vue 3 (Composition API) + Vite 8
-- **样式与设计：** TailwindCSS 3 + PostCSS + Autoprefixer
-- **状态与存储：** Pinia + pinia-plugin-persistedstate (LocalStorage 本地持久化)
-- **路由：** Vue Router 4 (Hash 模式，天然兼容 GitHub Pages 与静态托管)
-- **图标：** Lucide Vue Next
-- **动效与音效：** Canvas-Confetti + Web Audio API 动态音效合成引擎
+- 🎯 **一套代码，全端通用**：统一管理，修改任何逻辑或题库，微信小程序和官网同时生效。
+- 🐼 **核心围棋算法 100% 共享**：
+  - 气数、禁着点、提子、眼位计算与状态机 (`src/engine/GoGame.ts`)
+  - 5 级萌宠 AI 决策系统 (`src/engine/GoAI.ts`)
+  - 完整启蒙教学关卡库与死活宝库 (`src/data/`)
+- 🎨 **SVG 高性能矢量棋盘**：全平台原生支持，指尖触摸丝滑、动画流畅。
+- 💾 **跨端离线存档**：小程序与网页版均支持离线做题、自动存档。
 
 ---
 
-## 🚀 本地开发与运行 (Getting Started)
+## 🚀 快速上手与运行
 
+### 1. 启动微信小程序端（实时热更新开发）
 ```bash
-# 安装依赖
-npm install
+npm run dev:mp-weixin
+```
+* 打开 **微信开发者工具** ➡️ 点击 **导入项目**。
+* 选择目录：`dist/dev/mp-weixin`（开发版）或 `dist/build/mp-weixin`（正式发布版）。
+* AppID 选择「测试号」或填入您的小程序 AppID，即可在模拟器及真机扫码调试！
 
-# 启动本地开发服务
+### 2. 启动官网 / 手机 H5 端（浏览器开发）
+```bash
+npm run dev:h5
+# 或简写
 npm run dev
+```
+* 浏览器访问 `http://localhost:5173`，自适应 PC 宽屏与手机触屏。
 
-# 构建生产版本 (类型检查 + 生产打包)
-npm run build
+### 3. 一键构建正式发布包
+```bash
+# 1. 构建微信小程序发布包 (产物输出至 dist/build/mp-weixin)
+npm run build:mp-weixin
 
-# 本地预览生产产物
-npm run preview
+# 2. 构建官网/H5发布包 (产物输出至 dist/build/h5)
+npm run build:h5
+```
+
+---
+
+## 📁 目录结构
+
+```text
+yinuo-go/
+├── src/
+│   ├── components/      # 跨端通用组件 (GoBoard.vue 唯一 SVG 棋盘组件)
+│   ├── data/            # 关卡教程、死活题库、成就词典数据
+│   ├── engine/          # 围棋规则状态机、AI 算法、SGF 解析
+│   ├── pages/           # 各页面 (首页、启蒙学堂、关卡互动、死活宝库、街机对弈、个人中心)
+│   ├── stores/          # Pinia 状态管理与跨端数据持久化
+│   ├── utils/           # 跨端音效与存储适配
+│   ├── App.vue          # 小程序生命周期与全局样式
+│   ├── main.ts          # 应用入口
+│   ├── manifest.json    # 小程序 AppID、H5 路由、平台配置
+│   └── pages.json       # 页面路由与底部 TabBar 配置
+├── vite.config.ts       # Uni-app + Vite 构建配置
+└── package.json
 ```
 

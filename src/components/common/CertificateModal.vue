@@ -83,7 +83,7 @@ const handlePrint = () => {
               兹证明小棋手 <span class="text-xl sm:text-2xl font-black text-orange-600 underline decoration-amber-400 underline-offset-4 px-2">{{ userStore.nickname }}</span>（{{ userStore.avatar }}）
             </p>
             <p class="text-xs sm:text-sm text-gray-700 font-medium leading-relaxed">
-              在【一诺围棋少儿启蒙学院】完成系统修习与死活对战考验，棋理通达，手筋敏锐，特授予：
+              在【一诺弈学少儿启蒙学院】完成系统修习与死活对战考验，棋理通达，手筋敏锐，特授予：
             </p>
             <div class="inline-block py-2 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-xl sm:text-3xl font-cartoon font-bold shadow-md">
               🏅 {{ rankTitle }} 称号
@@ -99,7 +99,7 @@ const handlePrint = () => {
 
             <!-- Red Seal Stamp -->
             <div class="w-18 h-18 sm:w-20 sm:h-20 rounded-full border-4 border-rose-600 text-rose-600 flex flex-col items-center justify-center rotate-[-12deg] p-1 font-black shadow-xs bg-white/40">
-              <div class="text-[9px] leading-tight">一诺围棋</div>
+              <div class="text-[9px] leading-tight">一诺弈学</div>
               <div class="text-xs font-black my-0.5">⭐ 导师小诺 ⭐</div>
               <div class="text-[8px] leading-tight">认证印章</div>
             </div>
@@ -129,4 +129,3 @@ const handlePrint = () => {
     </div>
   </Teleport>
 </template>
-
