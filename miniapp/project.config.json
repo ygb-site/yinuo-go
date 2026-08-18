@@ -1,14 +1,36 @@
 {
-  "miniprogramRoot": "./",
-  "projectname": "yinuo-go",
-  "description": "一诺弈学少儿围棋启蒙微信原生小程序",
-  "appid": "wxb260f9ab8e1e8f5b",
+  "description": "项目配置文件。",
+  "packOptions": {
+    "ignore": []
+  },
   "setting": {
     "urlCheck": false,
     "es6": true,
     "postcss": true,
     "minified": true,
-    "checkInvalidKey": false
+    "newFeature": true,
+    "bigPackageSizeSupport": true
   },
-  "compileType": "miniprogram"
+  "compileType": "miniprogram",
+  "libVersion": "",
+  "appid": "wxb260f9ab8e1e8f5b",
+  "projectname": "一诺弈学",
+  "condition": {
+    "search": {
+      "current": -1,
+      "list": []
+    },
+    "conversation": {
+      "current": -1,
+      "list": []
+    },
+    "game": {
+      "current": -1,
+      "list": []
+    },
+    "miniprogram": {
+      "current": -1,
+      "list": []
+    }
+  }
 }

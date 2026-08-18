@@ -1,0 +1,236 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF5E36" />
+      <stop offset="50%" stop-color="#FF8A3D" />
+      <stop offset="100%" stop-color="#FFB300" />
+    </linearGradient>
+    
+    <radialGradient id="sunGlow" cx="50%" cy="38%" r="45%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.45" />
+      <stop offset="60%" stop-color="#FFE4C4" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#FF8A3D" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="innerPlate" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFDF9" />
+      <stop offset="100%" stop-color="#F7E6D0" />
+    </linearGradient>
+
+    <!-- Shading Gradients -->
+    <linearGradient id="headGrad" x1="20%" y1="10%" x2="80%" y2="90%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="70%" stop-color="#F8FAFC" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+
+    <linearGradient id="blackEarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2D3748" />
+      <stop offset="100%" stop-color="#1A202C" />
+    </linearGradient>
+
+    <radialGradient id="eyeShine" cx="35%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#334155" />
+      <stop offset="80%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#020617" />
+    </radialGradient>
+
+    <!-- Go Stones 3D Gradients -->
+    <!-- Black Stone -->
+    <radialGradient id="blackStone3D" cx="32%" cy="28%" r="68%">
+      <stop offset="0%" stop-color="#64748B" />
+      <stop offset="25%" stop-color="#334155" />
+      <stop offset="70%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#020617" />
+    </radialGradient>
+
+    <linearGradient id="blackStoneGloss" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.6" />
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.0" />
+    </linearGradient>
+
+    <!-- White Stone -->
+    <radialGradient id="whiteStone3D" cx="30%" cy="26%" r="72%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="55%" stop-color="#F1F5F9" />
+      <stop offset="85%" stop-color="#CBD5E1" />
+      <stop offset="100%" stop-color="#94A3B8" />
+    </radialGradient>
+
+    <!-- Gold Accents -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF3B0" />
+      <stop offset="40%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+
+    <linearGradient id="headbandGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#EF4444" />
+      <stop offset="50%" stop-color="#F43F5E" />
+      <stop offset="100%" stop-color="#E11D48" />
+    </linearGradient>
+
+    <!-- Soft Drop Shadows -->
+    <filter id="shadowApp" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="24" stdDeviation="32" flood-color="#B43403" flood-opacity="0.35" />
+    </filter>
+
+    <filter id="shadowPop" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#0F172A" flood-opacity="0.22" />
+    </filter>
+
+    <filter id="glowGold" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Base Icon Squircle Canvas (iOS & WeChat Mini Program Standard 22.5% corner radius) -->
+  <rect x="32" y="32" width="960" height="960" rx="224" ry="224" fill="url(#bgGrad)" filter="url(#shadowApp)" />
+  <rect x="32" y="32" width="960" height="960" rx="224" ry="224" fill="url(#sunGlow)" />
+  
+  <!-- Subtle Top Gloss on Squircle -->
+  <path d="M 32 256 C 32 132.2 132.2 32 256 32 L 768 32 C 891.8 32 992 132.2 992 256 C 992 280 970 340 512 370 C 54 400 32 280 32 256 Z" fill="#FFFFFF" fill-opacity="0.12" />
+
+  <!-- Inner Weiqi Board Arena (Circular Safe Area) -->
+  <g transform="translate(512, 512)">
+    <!-- Base Plate -->
+    <circle cx="0" cy="0" r="410" fill="url(#innerPlate)" stroke="#FFFFFF" stroke-width="12" filter="url(#shadowPop)" />
+    
+    <!-- Weiqi Board Grid Lines (Subtle Wood Carved Effect) -->
+    <g opacity="0.22" stroke="#8D5B1E" stroke-width="4" stroke-linecap="round">
+      <!-- Horizontal lines -->
+      <line x1="-260" y1="-180" x2="260" y2="-180" />
+      <line x1="-310" y1="-90" x2="310" y2="-90" />
+      <line x1="-330" y1="0" x2="330" y2="0" />
+      <line x1="-310" y1="90" x2="310" y2="90" />
+      <line x1="-260" y1="180" x2="260" y2="180" />
+      <!-- Vertical lines -->
+      <line x1="-180" y1="-260" x2="-180" y2="260" />
+      <line x1="-90" y1="-310" x2="-90" y2="310" />
+      <line x1="0" y1="-330" x2="0" y2="330" />
+      <line x1="90" y1="-310" x2="90" y2="310" />
+      <line x1="180" y1="-260" x2="180" y2="260" />
+      <!-- Star Points (星位) -->
+      <circle cx="-180" cy="-180" r="8" fill="#8D5B1E" stroke="none" />
+      <circle cx="180" cy="-180" r="8" fill="#8D5B1E" stroke="none" />
+      <circle cx="-180" cy="180" r="8" fill="#8D5B1E" stroke="none" />
+      <circle cx="180" cy="180" r="8" fill="#8D5B1E" stroke="none" />
+      <circle cx="0" cy="0" r="10" fill="#8D5B1E" stroke="none" />
+    </g>
+
+    <!-- Star Glow Sparkles in Background -->
+    <g fill="#F59E0B" opacity="0.85" filter="url(#glowGold)">
+      <!-- Top Right Star -->
+      <path d="M 260 -240 Q 260 -200 290 -200 Q 260 -200 260 -160 Q 260 -200 230 -200 Q 260 -200 260 -240 Z" />
+      <!-- Top Left Small Star -->
+      <path d="M -270 -190 Q -270 -165 -250 -165 Q -270 -165 -270 -140 Q -270 -165 -290 -165 Q -270 -165 -270 -190 Z" />
+      <!-- Right Side Sparkle -->
+      <path d="M 310 40 Q 310 60 330 60 Q 310 60 310 80 Q 310 60 290 60 Q 310 60 310 40 Z" />
+    </g>
+
+    <!-- ================= MASCOT: 小诺 (NuoNuo the Panda) ================= -->
+    <g transform="translate(0, -20)">
+      
+      <!-- Panda Ears (Behind Head) -->
+      <!-- Left Ear -->
+      <ellipse cx="-195" cy="-215" rx="86" ry="80" transform="rotate(-22, -195, -215)" fill="url(#blackEarGrad)" />
+      <ellipse cx="-195" cy="-215" rx="52" ry="46" transform="rotate(-22, -195, -215)" fill="#FB7185" opacity="0.45" />
+      <!-- Right Ear -->
+      <ellipse cx="195" cy="-215" rx="86" ry="80" transform="rotate(22, 195, -215)" fill="url(#blackEarGrad)" />
+      <ellipse cx="195" cy="-215" rx="52" ry="46" transform="rotate(22, 195, -215)" fill="#FB7185" opacity="0.45" />
+
+      <!-- Head Base (Cute Chubby Round Shape) -->
+      <ellipse cx="0" cy="-60" rx="250" ry="220" fill="url(#headGrad)" filter="url(#shadowPop)" />
+
+      <!-- Cute Headband (Master's Ribbon) -->
+      <path d="M -235 -140 Q 0 -190 235 -140 Q 242 -100 230 -90 Q 0 -140 -230 -90 Z" fill="url(#headbandGrad)" />
+      <!-- Headband Golden Badge (Yi / 弈 - Golden Star Wheel) -->
+      <circle cx="0" cy="-145" r="32" fill="url(#goldGrad)" stroke="#FFF" stroke-width="4" filter="url(#glowGold)" />
+      <!-- Star on Badge -->
+      <path d="M 0 -165 L 7 -152 L 20 -150 L 10 -140 L 13 -126 L 0 -134 L -13 -126 L -10 -140 L -20 -150 L -7 -152 Z" fill="#FFFFFF" />
+
+      <!-- Eye Patches (Black Panda Eye Rings - Angled for playful cuteness) -->
+      <ellipse cx="-105" cy="-65" rx="72" ry="60" transform="rotate(-18, -105, -65)" fill="#1E293B" />
+      <ellipse cx="105" cy="-65" rx="72" ry="60" transform="rotate(18, 105, -65)" fill="#1E293B" />
+
+      <!-- Eyeballs (Big, Shiny, Anime Sparkle) -->
+      <!-- Left Eye -->
+      <circle cx="-95" cy="-65" r="38" fill="url(#eyeShine)" />
+      <circle cx="-108" cy="-78" r="15" fill="#FFFFFF" /> <!-- Primary Catchlight -->
+      <circle cx="-82" cy="-55" r="7" fill="#FFFFFF" />  <!-- Secondary Catchlight -->
+      
+      <!-- Right Eye -->
+      <circle cx="95" cy="-65" r="38" fill="url(#eyeShine)" />
+      <circle cx="82" cy="-78" r="15" fill="#FFFFFF" />  <!-- Primary Catchlight -->
+      <circle cx="108" cy="-55" r="7" fill="#FFFFFF" />  <!-- Secondary Catchlight -->
+
+      <!-- Cute Nose & Mouth -->
+      <ellipse cx="0" cy="-2" rx="20" ry="14" fill="#0F172A" />
+      <path d="M -26 18 Q 0 42 26 18" fill="none" stroke="#0F172A" stroke-width="7" stroke-linecap="round" />
+      <!-- Happy Tongue -->
+      <path d="M -14 26 Q 0 46 14 26 Z" fill="#F43F5E" />
+
+      <!-- Pink Blush Cheeks (Chubby Cute) -->
+      <ellipse cx="-165" cy="-10" rx="38" ry="24" fill="#FB7185" opacity="0.6" />
+      <ellipse cx="165" cy="-10" rx="38" ry="24" fill="#FB7185" opacity="0.6" />
+
+      <!-- Panda Paws (Holding the Center Stones) -->
+      <!-- Left Paw -->
+      <ellipse cx="-180" cy="130" rx="60" ry="52" transform="rotate(25, -180, 130)" fill="#1E293B" filter="url(#shadowPop)" />
+      <circle cx="-195" cy="115" r="10" fill="#475569" />
+      <circle cx="-175" cy="100" r="10" fill="#475569" />
+      <circle cx="-155" cy="110" r="10" fill="#475569" />
+      
+      <!-- Right Paw -->
+      <ellipse cx="180" cy="130" rx="60" ry="52" transform="rotate(-25, 180, 130)" fill="#1E293B" filter="url(#shadowPop)" />
+      <circle cx="195" cy="115" r="10" fill="#475569" />
+      <circle cx="175" cy="100" r="10" fill="#475569" />
+      <circle cx="155" cy="110" r="10" fill="#475569" />
+    </g>
+
+    <!-- ================= CENTERSTAGE: 3D WEIQI STONES (Taiji Yin-Yang Charm) ================= -->
+    <g transform="translate(0, 150)">
+      
+      <!-- Black Stone (Obsidian Glossy 3D) - Left Side -->
+      <g transform="translate(-85, 0)">
+        <!-- Ambient Shadow -->
+        <ellipse cx="0" cy="68" rx="110" ry="36" fill="#000000" opacity="0.32" filter="url(#shadowPop)" />
+        <!-- Stone Body -->
+        <circle cx="0" cy="0" r="120" fill="url(#blackStone3D)" stroke="#334155" stroke-width="4" />
+        <!-- High Gloss Reflection Arc -->
+        <path d="M -75 -60 A 98 98 0 0 1 55 -75 A 110 110 0 0 0 -75 -60 Z" fill="url(#blackStoneGloss)" />
+        <ellipse cx="-40" cy="-45" rx="30" ry="16" transform="rotate(-30, -40, -45)" fill="#FFFFFF" fill-opacity="0.55" />
+      </g>
+
+      <!-- White Stone (Jade Pearl Glossy 3D) - Right Side -->
+      <g transform="translate(85, 10)">
+        <!-- Ambient Shadow -->
+        <ellipse cx="0" cy="65" rx="110" ry="36" fill="#000000" opacity="0.25" filter="url(#shadowPop)" />
+        <!-- Stone Body -->
+        <circle cx="0" cy="0" r="120" fill="url(#whiteStone3D)" stroke="#FFFFFF" stroke-width="6" />
+        <!-- Specular Highlight -->
+        <ellipse cx="-36" cy="-42" rx="34" ry="20" transform="rotate(-30, -36, -42)" fill="#FFFFFF" fill-opacity="0.9" />
+        <!-- Soft Rim Light -->
+        <path d="M -70 50 A 105 105 0 0 0 70 50 A 116 116 0 0 1 -70 50 Z" fill="#94A3B8" opacity="0.3" />
+      </g>
+
+      <!-- Golden Sparkle Badge between the two stones -->
+      <g transform="translate(0, -10)" filter="url(#glowGold)">
+        <circle cx="0" cy="0" r="36" fill="url(#goldGrad)" stroke="#FFFFFF" stroke-width="5" />
+        <!-- Mini YinYang or Star -->
+        <path d="M 0 -22 L 6 -7 L 22 -6 L 10 5 L 14 20 L 0 11 L -14 20 L -10 5 L -22 -6 L -6 -7 Z" fill="#FFFFFF" />
+      </g>
+    </g>
+
+    <!-- Bottom Ribbon Title Tag: "一诺弈学" (Friendly Kids Font Style) -->
+    <g transform="translate(0, 320)">
+      <!-- Ribbon Plate -->
+      <rect x="-190" y="-36" width="380" height="72" rx="36" ry="36" fill="#FFFFFF" stroke="#FDBA74" stroke-width="5" filter="url(#shadowPop)" />
+      <!-- Text -->
+      <text x="0" y="14" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="44" font-weight="900" text-anchor="middle" fill="#EA580C" letter-spacing="4">一诺弈学</text>
+    </g>
+
+  </g>
+</svg>

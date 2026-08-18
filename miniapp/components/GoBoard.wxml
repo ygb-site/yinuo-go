@@ -1,0 +1,1 @@
+<go-board wx:if="{{e}}" bindmove="{{a}}" bindcapture="{{b}}" bindillegalMove="{{c}}" bindselectStone="{{d}}" u-i="363cb016-0" bind:__l="__l" u-p="{{e}}"/>

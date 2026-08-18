@@ -1,3 +1,9 @@
 {
-  "navigationBarTitleText": "个人荣誉"
+  "navigationBarTitleText": "个人中心",
+  "navigationBarBackgroundColor": "#F97316",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#FDFBF7",
+  "usingComponents": {
+    "navbar": "../../components/Navbar"
+  }
 }
