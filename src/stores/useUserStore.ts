@@ -15,6 +15,19 @@ export interface ChildProfile {
   totalStars: number;
   badges: string[];
   solvedPuzzles: string[];
+  unlockedThemes?: string[];
+  unlockedAvatars?: string[];
+  mistakes?: string[];
+  solvedMistakes?: string[];
+  arcadeHighScores?: {
+    speedCapture: number;
+    countLiberties: number;
+    connectCut: number;
+  };
+  captureGoStats?: {
+    wins: number;
+    matches: number;
+  };
   exp: number;
   coins: number;
   stats: {
@@ -35,6 +48,19 @@ const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
   totalStars: 0,
   badges: [],
   solvedPuzzles: [],
+  unlockedThemes: ['wood'],
+  unlockedAvatars: ['🦁', '👶', '🐱', '🐼'],
+  mistakes: [],
+  solvedMistakes: [],
+  arcadeHighScores: {
+    speedCapture: 0,
+    countLiberties: 0,
+    connectCut: 0
+  },
+  captureGoStats: {
+    wins: 0,
+    matches: 0
+  },
   exp: 0,
   coins: 0,
   stats: {
@@ -77,6 +103,16 @@ export const useUserStore = defineStore('userStore', {
       if (!found.badges) found.badges = [];
       if (!found.solvedPuzzles) found.solvedPuzzles = [];
       if (!found.progress) found.progress = {};
+      if (!found.unlockedThemes) found.unlockedThemes = ['wood'];
+      if (!found.unlockedAvatars) found.unlockedAvatars = ['🦁', '👶', '🐱', '🐼'];
+      if (!found.mistakes) found.mistakes = [];
+      if (!found.solvedMistakes) found.solvedMistakes = [];
+      if (!found.arcadeHighScores) {
+        found.arcadeHighScores = { speedCapture: 0, countLiberties: 0, connectCut: 0 };
+      }
+      if (!found.captureGoStats) {
+        found.captureGoStats = { wins: 0, matches: 0 };
+      }
       if (!found.stats) {
         found.stats = {
           gamesPlayed: 0,
@@ -119,6 +155,30 @@ export const useUserStore = defineStore('userStore', {
 
     solvedPuzzles(): string[] {
       return this.currentProfile.solvedPuzzles || [];
+    },
+
+    unlockedThemes(): string[] {
+      return this.currentProfile.unlockedThemes || ['wood'];
+    },
+
+    unlockedAvatars(): string[] {
+      return this.currentProfile.unlockedAvatars || ['🦁', '👶', '🐱', '🐼'];
+    },
+
+    mistakes(): string[] {
+      return this.currentProfile.mistakes || [];
+    },
+
+    solvedMistakes(): string[] {
+      return this.currentProfile.solvedMistakes || [];
+    },
+
+    arcadeHighScores(): { speedCapture: number; countLiberties: number; connectCut: number } {
+      return this.currentProfile.arcadeHighScores || { speedCapture: 0, countLiberties: 0, connectCut: 0 };
+    },
+
+    captureGoStats(): { wins: number; matches: number } {
+      return this.currentProfile.captureGoStats || { wins: 0, matches: 0 };
     },
 
     stats(): ChildProfile['stats'] {
@@ -181,15 +241,29 @@ export const useUserStore = defineStore('userStore', {
 
     createProfile(nickname: string, avatar: string): ChildProfile {
       const newId = 'kid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+      const pickedAvatar = avatar || '🦁';
       const newProfile: ChildProfile = {
         id: newId,
         nickname: nickname.trim() || '小棋手',
-        avatar: avatar || '🦁',
+        avatar: pickedAvatar,
         createdAt: Date.now(),
         progress: {},
         totalStars: 0,
         badges: [],
         solvedPuzzles: [],
+        unlockedThemes: ['wood'],
+        unlockedAvatars: Array.from(new Set(['🦁', '👶', '🐱', '🐼', pickedAvatar])),
+        mistakes: [],
+        solvedMistakes: [],
+        arcadeHighScores: {
+          speedCapture: 0,
+          countLiberties: 0,
+          connectCut: 0
+        },
+        captureGoStats: {
+          wins: 0,
+          matches: 0
+        },
         exp: 0,
         coins: 0,
         stats: {
@@ -294,6 +368,17 @@ export const useUserStore = defineStore('userStore', {
       sound.playCoinSound();
     },
 
+    spendCoins(amount: number): boolean {
+      if (this.profiles.length === 0) return false;
+      const prof = this.currentProfile;
+      if ((prof.coins || 0) >= amount) {
+        prof.coins = (prof.coins || 0) - amount;
+        this.touchSave();
+        return true;
+      }
+      return false;
+    },
+
     unlockBadge(badgeId: string) {
       if (this.profiles.length === 0) return;
       const prof = this.currentProfile;
@@ -345,6 +430,111 @@ export const useUserStore = defineStore('userStore', {
       this.touchSave();
     },
 
+    recordMistake(puzzleId: string) {
+      if (this.profiles.length === 0) return;
+      const prof = this.currentProfile;
+      if (!prof.mistakes) prof.mistakes = [];
+      if (!prof.mistakes.includes(puzzleId)) {
+        prof.mistakes.push(puzzleId);
+        this.touchSave();
+      }
+    },
+
+    resolveMistake(puzzleId: string) {
+      if (this.profiles.length === 0) return;
+      const prof = this.currentProfile;
+      if (!prof.solvedMistakes) prof.solvedMistakes = [];
+      if (!prof.solvedMistakes.includes(puzzleId)) {
+        prof.solvedMistakes.push(puzzleId);
+        this.addCoins(10);
+        this.addExp(20);
+        this.touchSave();
+      }
+    },
+
+    buyTheme(themeId: ThemeType, price: number): boolean {
+      if (this.profiles.length === 0) return false;
+      const prof = this.currentProfile;
+      if (!prof.unlockedThemes) prof.unlockedThemes = ['wood'];
+      if (prof.unlockedThemes.includes(themeId)) {
+        this.setTheme(themeId);
+        return true;
+      }
+      if (this.spendCoins(price)) {
+        prof.unlockedThemes.push(themeId);
+        this.setTheme(themeId);
+        this.touchSave();
+        sound.playWinSound();
+        sound.fireCelebrationConfetti();
+        return true;
+      }
+      sound.playErrorSound();
+      return false;
+    },
+
+    buyAvatar(avatar: string, price: number): boolean {
+      if (this.profiles.length === 0) return false;
+      const prof = this.currentProfile;
+      if (!prof.unlockedAvatars) prof.unlockedAvatars = ['🦁', '👶', '🐱', '🐼'];
+      if (prof.unlockedAvatars.includes(avatar)) {
+        prof.avatar = avatar;
+        this.touchSave();
+        sound.playButtonSound();
+        return true;
+      }
+      if (this.spendCoins(price)) {
+        prof.unlockedAvatars.push(avatar);
+        prof.avatar = avatar;
+        this.touchSave();
+        sound.playWinSound();
+        sound.fireCelebrationConfetti();
+        return true;
+      }
+      sound.playErrorSound();
+      return false;
+    },
+
+    recordArcadeScore(
+      gameType: 'speedCapture' | 'countLiberties' | 'connectCut',
+      score: number,
+      coinsEarned: number
+    ) {
+      if (this.profiles.length === 0) return;
+      const prof = this.currentProfile;
+      if (!prof.arcadeHighScores) {
+        prof.arcadeHighScores = { speedCapture: 0, countLiberties: 0, connectCut: 0 };
+      }
+      if (score > (prof.arcadeHighScores[gameType] || 0)) {
+        prof.arcadeHighScores[gameType] = score;
+      }
+      if (coinsEarned > 0) this.addCoins(coinsEarned);
+      this.addExp(Math.round(score * 2));
+      this.touchSave();
+    },
+
+    recordCaptureGoWin(coinsEarned: number, expEarned: number) {
+      if (this.profiles.length === 0) return;
+      const prof = this.currentProfile;
+      if (!prof.captureGoStats) {
+        prof.captureGoStats = { wins: 0, matches: 0 };
+      }
+      prof.captureGoStats.matches++;
+      prof.captureGoStats.wins++;
+      this.addCoins(coinsEarned);
+      this.addExp(expEarned);
+      this.touchSave();
+    },
+
+    recordCaptureGoMatch() {
+      if (this.profiles.length === 0) return;
+      const prof = this.currentProfile;
+      if (!prof.captureGoStats) {
+        prof.captureGoStats = { wins: 0, matches: 0 };
+      }
+      prof.captureGoStats.matches++;
+      this.touchSave();
+    },
+
     resetCurrentProfileProgress() {
       if (this.profiles.length === 0) return;
       const prof = this.currentProfile;
@@ -354,6 +544,12 @@ export const useUserStore = defineStore('userStore', {
       prof.progress = {};
       prof.badges = [];
       prof.solvedPuzzles = [];
+      prof.unlockedThemes = ['wood'];
+      prof.unlockedAvatars = ['🦁', '👶', '🐱', '🐼'];
+      prof.mistakes = [];
+      prof.solvedMistakes = [];
+      prof.arcadeHighScores = { speedCapture: 0, countLiberties: 0, connectCut: 0 };
+      prof.captureGoStats = { wins: 0, matches: 0 };
       prof.stats = {
         gamesPlayed: 0,
         gamesWon: 0,
@@ -386,3 +582,4 @@ export const useUserStore = defineStore('userStore', {
 
   persist: true
 });
+

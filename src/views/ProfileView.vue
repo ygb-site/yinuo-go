@@ -5,6 +5,7 @@ import { useUserStore } from '../stores/useUserStore';
 import { useTsumegoStore } from '../stores/tsumegoStore';
 import { TSUMEGO_PUZZLES } from '../data/tsumegoLibrary';
 import { BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
+import { SHOP_THEMES } from '../data/shopData';
 import { playButtonSound } from '../lib/audio';
 import {
   Trophy,
@@ -403,46 +404,58 @@ const confirmReset = () => {
         <h2 class="text-xl font-black text-gray-900">个性化设置与多档案管理</h2>
 
         <!-- Theme Selection -->
-        <div class="space-y-2">
-          <div class="text-xs font-black text-gray-500 uppercase tracking-wide">
-            棋盘与皮肤主题
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="text-xs font-black text-gray-500 uppercase tracking-wide">
+              已解锁的棋盘皮肤
+            </div>
+            <button
+              @click="router.push('/shop')"
+              class="text-xs font-black text-orange-600 hover:text-orange-700 flex items-center gap-1 cursor-pointer"
+            >
+              <span>前往商城解锁更多皮肤</span>
+              <ArrowRight class="w-3.5 h-3.5" />
+            </button>
           </div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <button
-              @click="userStore.setTheme('wood')"
-              class="p-4 rounded-2xl border-2 text-left transition cursor-pointer"
-              :class="userStore.theme === 'wood' ? 'bg-amber-100 border-amber-500 font-black shadow-sm' : 'bg-gray-50 border-gray-200'"
-            >
-              <div class="text-2xl mb-1">🪵</div>
-              <div class="text-xs font-bold text-amber-900">原木温润 (Classic Wood)</div>
-            </button>
 
-            <button
-              @click="userStore.setTheme('candy')"
-              class="p-4 rounded-2xl border-2 text-left transition cursor-pointer"
-              :class="userStore.theme === 'candy' ? 'bg-pink-100 border-pink-500 font-black shadow-sm' : 'bg-gray-50 border-gray-200'"
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div
+              v-for="t in SHOP_THEMES"
+              :key="t.id"
+              @click="userStore.unlockedThemes.includes(t.id) || t.id === 'wood' ? userStore.setTheme(t.id) : router.push('/shop')"
+              class="p-3.5 rounded-2xl border-2 text-center transition cursor-pointer relative flex flex-col justify-between"
+              :class="
+                userStore.theme === t.id
+                  ? 'border-orange-500 ring-2 ring-orange-300 shadow-sm bg-orange-50/40 font-black'
+                  : (userStore.unlockedThemes.includes(t.id) || t.id === 'wood')
+                  ? 'border-emerald-200 hover:border-emerald-400 bg-white'
+                  : 'border-gray-100 bg-gray-50/80 opacity-70 hover:opacity-100'
+              "
             >
-              <div class="text-2xl mb-1">🍬</div>
-              <div class="text-xs font-bold text-pink-900">糖果梦境 (Sweet Candy)</div>
-            </button>
+              <div class="text-3xl mb-1">{{ t.icon }}</div>
+              <div class="text-xs font-bold text-gray-900 truncate">{{ t.name }}</div>
 
-            <button
-              @click="userStore.setTheme('jade')"
-              class="p-4 rounded-2xl border-2 text-left transition cursor-pointer"
-              :class="userStore.theme === 'jade' ? 'bg-emerald-100 border-emerald-500 font-black shadow-sm' : 'bg-gray-50 border-gray-200'"
-            >
-              <div class="text-2xl mb-1">🍵</div>
-              <div class="text-xs font-bold text-emerald-900">翡翠白玉 (Emerald Jade)</div>
-            </button>
-
-            <button
-              @click="userStore.setTheme('neon')"
-              class="p-4 rounded-2xl border-2 text-left transition cursor-pointer"
-              :class="userStore.theme === 'neon' ? 'bg-slate-800 text-cyan-300 border-cyan-400 font-black shadow-sm' : 'bg-gray-50 border-gray-200 text-gray-800'"
-            >
-              <div class="text-2xl mb-1">🌌</div>
-              <div class="text-xs font-bold">赛博星空 (Cyber Neon)</div>
-            </button>
+              <div class="mt-2 pt-1 border-t border-gray-100">
+                <span
+                  v-if="userStore.theme === t.id"
+                  class="text-[10px] text-orange-600 font-black"
+                >
+                  ✓ 使用中
+                </span>
+                <span
+                  v-else-if="userStore.unlockedThemes.includes(t.id) || t.id === 'wood'"
+                  class="text-[10px] text-emerald-700 font-bold"
+                >
+                  点击换上
+                </span>
+                <span
+                  v-else
+                  class="text-[10px] text-amber-700 font-bold flex items-center justify-center gap-0.5"
+                >
+                  <Lock class="w-3 h-3" /> {{ t.price }}币
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 

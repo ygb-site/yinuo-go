@@ -100,7 +100,7 @@ export interface AtariAlert {
   escapePoints: Point[];
 }
 
-export type ThemeType = 'wood' | 'candy' | 'neon' | 'jade';
+export type ThemeType = 'wood' | 'candy' | 'neon' | 'jade' | 'galaxy' | 'forest' | 'gold';
 
 export interface AIMoveHint {
   point: Point;

@@ -10,6 +10,14 @@ import FreeBoardView from '../views/FreeBoardView.vue';
 import DictionaryView from '../views/DictionaryView.vue';
 import ProfileView from '../views/ProfileView.vue';
 
+// 6 New Engaging Modules
+import ArcadeView from '../views/ArcadeView.vue';
+import CaptureGoView from '../views/CaptureGoView.vue';
+import MistakesView from '../views/MistakesView.vue';
+import ShopView from '../views/ShopView.vue';
+import TwoPlayerView from '../views/TwoPlayerView.vue';
+import RhymesView from '../views/RhymesView.vue';
+
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
@@ -19,6 +27,12 @@ const router = createRouter({
     { path: '/adventure', name: 'adventure', component: AdventureView },
     { path: '/adventure/:id', name: 'level-play', component: LevelPlayView },
     { path: '/tsumego', name: 'tsumego', component: TsumegoView },
+    { path: '/arcade', name: 'arcade', component: ArcadeView },
+    { path: '/capture-go', name: 'capture-go', component: CaptureGoView },
+    { path: '/mistakes', name: 'mistakes', component: MistakesView },
+    { path: '/shop', name: 'shop', component: ShopView },
+    { path: '/two-player', name: 'two-player', component: TwoPlayerView },
+    { path: '/rhymes', name: 'rhymes', component: RhymesView },
     { path: '/ai-match', name: 'ai-match', component: AiMatchView },
     { path: '/free-board', name: 'free-board', component: FreeBoardView },
     { path: '/dictionary', name: 'dictionary', component: DictionaryView },

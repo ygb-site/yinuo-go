@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { useUserStore } from './userStore';
 import { sound } from '../utils/sound';
+import { TSUMEGO_PUZZLES } from '../data/tsumegoLibrary';
 
 export const useTsumegoStore = defineStore('tsumego', {
   state: () => ({
@@ -14,6 +15,9 @@ export const useTsumegoStore = defineStore('tsumego', {
     totalSolvedCount(): number {
       const userStore = useUserStore();
       return userStore.solvedPuzzles.length;
+    },
+    totalPuzzlesCount(): number {
+      return TSUMEGO_PUZZLES.length;
     },
     isSolved() {
       return (puzzleId: string): boolean => {

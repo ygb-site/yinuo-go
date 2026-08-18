@@ -195,6 +195,7 @@ const handleMove = (point: Point) => {
     }
   } else {
     playErrorSound();
+    userStore.recordMistake(lesson.id);
     attemptCount.value++;
     if (attemptCount.value >= 2) {
       earnedStars.value = Math.max(1, earnedStars.value - 1);

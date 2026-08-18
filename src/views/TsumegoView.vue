@@ -200,6 +200,7 @@ const handlePlay = (point: Point) => {
     triggerPuzzleSolve();
   } else {
     sound.playErrorSound();
+    userStore.recordMistake(p.id);
     mascotMood.value = 'comforting';
     mascotMessage.value = `这步棋没有击中要害哦！提示：${p.hint}`;
   }

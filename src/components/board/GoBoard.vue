@@ -300,6 +300,12 @@ const themeContainerClass = computed(() => {
       return 'bg-[#0B1120] border-[#38BDF8] shadow-[0_15px_30px_-5px_rgba(56,189,248,0.35)]';
     case 'jade':
       return 'bg-[#ECFDF5] border-[#10B981] shadow-[0_15px_30px_-5px_rgba(16,185,129,0.3)]';
+    case 'galaxy':
+      return 'bg-[#180C2E] border-[#A855F7] shadow-[0_15px_30px_-5px_rgba(168,85,247,0.35)]';
+    case 'forest':
+      return 'bg-[#F0FDF4] border-[#22C55E] shadow-[0_15px_30px_-5px_rgba(34,197,94,0.3)]';
+    case 'gold':
+      return 'bg-[#FFFBEB] border-[#F59E0B] shadow-[0_15px_30px_-5px_rgba(245,158,11,0.35)]';
     case 'wood':
     default:
       return 'wood-pattern border-[#B47B36] shadow-[0_20px_35px_-10px_rgba(99,59,13,0.35)]';
@@ -314,6 +320,12 @@ const gridLineColor = computed(() => {
       return '#38BDF8';
     case 'jade':
       return '#059669';
+    case 'galaxy':
+      return '#C084FC';
+    case 'forest':
+      return '#15803D';
+    case 'gold':
+      return '#B45309';
     case 'wood':
     default:
       return '#6B3E11';
@@ -328,6 +340,12 @@ const coordTextColor = computed(() => {
       return 'text-cyan-400';
     case 'jade':
       return 'text-emerald-700';
+    case 'galaxy':
+      return 'text-purple-300';
+    case 'forest':
+      return 'text-emerald-800';
+    case 'gold':
+      return 'text-amber-800';
     case 'wood':
     default:
       return 'text-[#7C4A19]';
