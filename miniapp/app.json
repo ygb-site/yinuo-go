@@ -1,11 +1,17 @@
 {
   "pages": [
-    "pages/index/index"
+    "pages/index/index",
+    "pages/learn/learn",
+    "pages/lesson/lesson",
+    "pages/tsumego/tsumego",
+    "pages/arcade/arcade",
+    "pages/profile/profile"
   ],
   "window": {
     "navigationBarTitleText": "一诺弈学",
     "navigationBarBackgroundColor": "#F97316",
-    "navigationBarTextStyle": "white"
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#FDFBF7"
   },
   "lazyCodeLoading": "requiredComponents",
   "sitemapLocation": "sitemap.json"
