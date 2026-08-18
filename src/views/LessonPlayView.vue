@@ -129,12 +129,20 @@ const handleMove = (point: Point) => {
     }
 
     const moveRes = game.value.playMove(r, c, lesson.playerColor);
+    if (!moveRes.success) {
+      playErrorSound();
+      mascotMood.value = 'comforting';
+      mascotDialogue.value = '这个位置已经有棋子啦，换个地方试试吧！';
+      return;
+    }
     playStoneSound();
     if (moveRes.capturedStones.length > 0) playCaptureSound();
     lastMove.value = point;
     highlightPoints.value = [];
 
-    if (lesson.storyDialogues && storyDialogueIndex.value < lesson.storyDialogues.length - 1) {
+    const remainingTargets = (lesson.targetHighlight || []).filter(p => game.value.getCell(p.r, p.c) === null);
+
+    if (lesson.storyDialogues && storyDialogueIndex.value < lesson.storyDialogues.length - 1 && remainingTargets.length > 0) {
       storyDialogueIndex.value++;
       mascotMood.value = 'excited';
       mascotDialogue.value = lesson.storyDialogues[storyDialogueIndex.value];
