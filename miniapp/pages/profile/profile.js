@@ -1,66 +1,45 @@
-// pages/profile/profile.js
+import { USER_RANKS } from '../../data/achievementsData.js';
+
 Page({
-
-  /**
-   * 页面的初始数据
-   */
   data: {
-
+    nickname: '小棋手',
+    avatar: '🦁',
+    stars: 3,
+    coins: 180,
+    exp: 0,
+    solvedCount: 0,
+    rankTitle: '围棋小新星 25K'
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
-  onLoad(options) {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady() {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面显示
-   */
   onShow() {
+    const app = getApp();
+    const d = (app && app.globalData) ? app.globalData : {};
+    let rank = USER_RANKS[0];
+    for (const r of USER_RANKS) {
+      if ((d.exp || 0) >= r.minExp) rank = r;
+      else break;
+    }
 
+    this.setData({
+      nickname: d.nickname || '小棋手',
+      avatar: d.avatar || '🦁',
+      stars: d.stars !== undefined ? d.stars : 3,
+      coins: d.coins !== undefined ? d.coins : 180,
+      exp: d.exp || 0,
+      solvedCount: (d.solvedPuzzles || []).length,
+      rankTitle: rank.title
+    });
   },
 
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide() {
-
+  goHome() {
+    wx.navigateBack();
   },
 
-  /**
-   * 生命周期函数--监听页面卸载
-   */
-  onUnload() {
-
-  },
-
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh() {
-
-  },
-
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom() {
-
-  },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-
+  navTo(e) {
+    const url = e.currentTarget.dataset.url;
+    if (url) {
+      wx.navigateTo({ url });
+    }
   }
-})
+});
+

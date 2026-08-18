@@ -1,0 +1,102 @@
+.nav-back-arrow { font-size: 34rpx; color: #EA580C; font-weight: 900; margin-right: 4rpx; }
+
+.puzzle-progress-tag {
+  background: #FEF3C7;
+  color: #B45309;
+  font-size: 20rpx;
+  font-weight: 900;
+  padding: 6rpx 18rpx;
+  border-radius: 20rpx;
+  border: 1rpx solid #FDE68A;
+}
+
+.puzzle-banner-card {
+  background: #FFFFFF;
+  border-radius: 28rpx;
+  padding: 22rpx 24rpx;
+  border: 4rpx solid #FED7AA;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.02);
+}
+
+.puzzle-prompt-text { font-size: 24rpx; font-weight: 800; color: #1E293B; line-height: 1.4; }
+
+/* Modal */
+.modal-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx;
+  z-index: 9999;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 620rpx;
+  background: white;
+  border-radius: 36rpx;
+  border: 6rpx solid #FCD34D;
+  padding: 36rpx 28rpx;
+  text-align: center;
+  box-shadow: 0 20rpx 40rpx rgba(0, 0, 0, 0.2);
+}
+
+.tag-pill {
+  display: inline-block;
+  background: #FEF3C7;
+  color: #92400E;
+  font-size: 22rpx;
+  font-weight: 900;
+  padding: 6rpx 20rpx;
+  border-radius: 20rpx;
+  margin-bottom: 8rpx;
+}
+
+.modal-title { font-size: 38rpx; font-weight: 900; color: #EA580C; margin-bottom: 4rpx; }
+.modal-sub { font-size: 22rpx; color: #64748B; margin-bottom: 12rpx; }
+.stars-row { font-size: 48rpx; margin-bottom: 12rpx; }
+
+.quote-box {
+  background: #FFFBEB;
+  border: 2rpx solid #FDE68A;
+  border-radius: 18rpx;
+  padding: 12rpx 18rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 14rpx;
+}
+.panda-emoji { font-size: 32rpx; }
+.quote-text { font-size: 22rpx; color: #92400E; font-weight: 700; text-align: left; }
+
+.rewards-grid { display: flex; gap: 16rpx; margin-bottom: 14rpx; }
+.reward-pill { flex: 1; padding: 10rpx; border-radius: 16rpx; font-size: 24rpx; font-weight: 900; text-align: center; }
+.bg-gold { background: #FEF3C7; color: #B45309; }
+.bg-blue { background: #EEF2FF; color: #4338CA; }
+
+.explain-box {
+  background: #FFF7ED;
+  border: 2rpx solid #FFEDD5;
+  border-radius: 18rpx;
+  padding: 14rpx;
+  text-align: left;
+  margin-bottom: 20rpx;
+}
+.explain-title { font-size: 22rpx; font-weight: 900; color: #C2410C; margin-bottom: 4rpx; }
+.explain-body { font-size: 20rpx; color: #475569; line-height: 1.4; }
+
+.btn-next-large {
+  background: linear-gradient(135deg, #F97316 0%, #E11D48 100%);
+  color: white;
+  font-size: 30rpx;
+  font-weight: 900;
+  border-radius: 24rpx;
+  width: 100%;
+  margin-bottom: 12rpx;
+}
+
+.btn-secondary-row { display: flex; gap: 16rpx; }
+.btn-secondary { flex: 1; background: #F1F5F9; color: #475569; font-size: 24rpx; font-weight: 800; border-radius: 20rpx; }
+

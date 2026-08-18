@@ -1,0 +1,53 @@
+.nav-back-arrow { font-size: 34rpx; color: #EA580C; font-weight: 900; margin-right: 4rpx; }
+
+.arcade-ai-pill {
+  background: #ECFDF5;
+  color: #047857;
+  font-size: 20rpx;
+  font-weight: 900;
+  padding: 6rpx 18rpx;
+  border-radius: 20rpx;
+  border: 1rpx solid #A7F3D0;
+}
+
+.arcade-status-card {
+  background: #FFFFFF;
+  border-radius: 28rpx;
+  padding: 20rpx 24rpx;
+  border: 4rpx solid #FED7AA;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.02);
+}
+
+.arcade-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4rpx;
+}
+
+.status-left { display: flex; align-items: center; gap: 10rpx; }
+.status-dot-black { width: 16rpx; height: 16rpx; border-radius: 50%; background: #1E293B; }
+.status-turn-text { font-size: 26rpx; font-weight: 900; color: #1E293B; }
+.status-captures-text { font-size: 20rpx; font-weight: 800; color: #EA580C; background: #FFF7ED; padding: 4rpx 12rpx; border-radius: 12rpx; }
+.arcade-status-sub { font-size: 20rpx; color: #64748B; line-height: 1.35; }
+
+.bottom-tools-row { display: flex; gap: 16rpx; width: 100%; }
+.btn-arcade-reset {
+  flex: 1;
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  color: white;
+  font-size: 26rpx;
+  font-weight: 900;
+  border-radius: 22rpx;
+  box-shadow: 0 4rpx 12rpx rgba(249, 115, 22, 0.25);
+}
+.btn-arcade-pass {
+  flex: 1;
+  background: white;
+  border: 3rpx solid #E2E8F0;
+  color: #475569;
+  font-size: 26rpx;
+  font-weight: 900;
+  border-radius: 22rpx;
+}
+
