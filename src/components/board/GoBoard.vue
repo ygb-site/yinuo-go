@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue';
 import type { Point, StoneColor, ThemeType, BoardSize, StoneGroup } from '../../engine/types';
 import { GoGame } from '../../engine/GoGame';
 import { useUserStore } from '../../stores/useUserStore';
-import { playStoneSound, playCaptureSound, playErrorSound } from '../../lib/audio';
+import { playStoneSound, playCaptureSound, playErrorSound, playButtonSound } from '../../lib/audio';
 
 const props = withDefaults(
   defineProps<{
@@ -20,6 +20,7 @@ const props = withDefaults(
     sizePx?: number;
     manualMove?: boolean;
     editMode?: 'B' | 'W' | 'empty' | null;
+    confirmTouch?: boolean;
   }>(),
   {
     readonly: false,
@@ -32,7 +33,8 @@ const props = withDefaults(
     lastMove: null,
     sizePx: 520,
     manualMove: false,
-    editMode: null
+    editMode: null,
+    confirmTouch: undefined
   }
 );
 
@@ -48,7 +50,14 @@ const userStore = useUserStore();
 
 const hoverPoint = ref<Point | null>(null);
 const selectedStonePoint = ref<Point | null>(null);
+const pendingConfirmPoint = ref<Point | null>(null);
 const isShaking = ref(false);
+
+const isTouchConfirmActive = computed(() => {
+  return props.confirmTouch ?? userStore.touchConfirmEnabled;
+});
+
+
 const boardVersion = ref(0);
 
 const size = computed(() => props.game?.size || 9);
@@ -232,18 +241,11 @@ const handleCellClick = (r: number, c: number) => {
     return;
   }
 
-  // Handle Manual Mode (parent view controls move logic)
-  if (props.manualMove) {
-    emit('play', { r, c });
-    emit('move', { r, c }, props.game.turn);
-    boardVersion.value++;
-    return;
-  }
-
   const existingStone = props.game.getCell(r, c);
 
   // If clicking on an existing stone, toggle selection to show its liberties
   if (existingStone !== null) {
+    pendingConfirmPoint.value = null;
     if (selectedStonePoint.value && selectedStonePoint.value.r === r && selectedStonePoint.value.c === c) {
       selectedStonePoint.value = null;
       emit('selectStone', null, null);
@@ -252,6 +254,26 @@ const handleCellClick = (r: number, c: number) => {
       const group = props.game.getGroup(r, c);
       emit('selectStone', { r, c }, group);
     }
+    return;
+  }
+
+  // Touch confirm check: first tap selects, second tap on same spot confirms
+  if (isTouchConfirmActive.value && (!pendingConfirmPoint.value || pendingConfirmPoint.value.r !== r || pendingConfirmPoint.value.c !== c)) {
+    pendingConfirmPoint.value = { r, c };
+    playButtonSound();
+    return;
+  }
+
+  pendingConfirmPoint.value = null;
+  executeMove(r, c);
+};
+
+const executeMove = (r: number, c: number) => {
+  // Handle Manual Mode (parent view controls move logic)
+  if (props.manualMove) {
+    emit('play', { r, c });
+    emit('move', { r, c }, props.game.turn);
+    boardVersion.value++;
     return;
   }
 

@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue';
 import { useUserStore, type ChildProfile } from '../../stores/useUserStore';
 import { playButtonSound, playWinSound, triggerConfetti } from '../../lib/audio';
+import { showAlert, showConfirm } from '../../utils/alert';
 import {
   Plus,
   Trash2,
@@ -60,7 +61,7 @@ const handleSwitch = (id: string) => {
 const handleCreate = () => {
   const trimmed = newName.value.trim();
   if (!trimmed) {
-    alert('请先输入宝贝的名字或昵称哦！');
+    showAlert({ message: '请先输入宝贝的名字或可爱昵称哦！', type: 'warning' });
     return;
   }
   userStore.createProfile(trimmed, selectedAvatar.value);
@@ -71,14 +72,26 @@ const handleCreate = () => {
   emit('close');
 };
 
-const handleDelete = (profile: ChildProfile) => {
-  if (confirm(`确定要删除宝贝「${profile.nickname}」的档案吗？此操作无法恢复！`)) {
+const handleDelete = async (profile: ChildProfile) => {
+  const ok = await showConfirm({
+    title: '删除宝贝档案',
+    message: `确定要删除宝贝「${profile.nickname}」的档案吗？对应的数据与星星将无法恢复！`,
+    type: 'delete',
+    confirmText: '确定删除'
+  });
+  if (ok) {
     userStore.deleteProfile(profile.id);
   }
 };
 
-const handleClearAll = () => {
-  if (confirm('确定要清空所有档案并重新开始吗？所有闯关进度与星星都将被清除！')) {
+const handleClearAll = async () => {
+  const ok = await showConfirm({
+    title: '重置所有档案',
+    message: '确定要清空所有档案并重新开始吗？所有宝贝的闯关进度与星星都将被清除！',
+    type: 'delete',
+    confirmText: '确定重置'
+  });
+  if (ok) {
     userStore.clearAllProfiles();
     isCreating.value = true;
   }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Star, Coins, Zap, ArrowRight, RotateCcw, Map, BookOpen } from 'lucide-vue-next';
+import { Star, Coins, Zap, ArrowRight, RotateCcw, Map, BookOpen, X } from 'lucide-vue-next';
 import type { LevelItem } from '../data/curriculum';
 
 const props = defineProps<{
@@ -21,11 +21,22 @@ const emit = defineEmits<{
     <div
       v-if="isOpen"
       class="fixed inset-0 z-[9999] overflow-y-auto bg-black/65 backdrop-blur-md select-none animate-fade-in"
+      @click.self="emit('map')"
     >
       <div class="flex min-h-screen items-center justify-center p-4 sm:p-6 text-center">
         <div
           class="relative w-full max-w-lg transform rounded-3xl bg-white p-6 sm:p-8 text-center shadow-2xl border-4 border-amber-300 transition-all my-8 animate-pop-in z-[10000]"
         >
+          <!-- Close Button -->
+          <button
+            type="button"
+            @click="emit('map')"
+            class="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition cursor-pointer"
+            title="关闭"
+          >
+            <X class="w-5 h-5" />
+          </button>
+
           <!-- Victory Title -->
           <h2 class="text-2xl sm:text-3xl font-black text-gray-900 mb-1">
             闯关成功！太棒啦！

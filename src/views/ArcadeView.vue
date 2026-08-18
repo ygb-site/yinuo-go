@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { GoGame } from '../engine/GoGame';
 import type { Point } from '../engine/types';
 import { useUserStore } from '../stores/useUserStore';
+import { showConfirm } from '../utils/alert';
 import {
   playStoneSound,
   playCaptureSound,
@@ -20,7 +21,10 @@ import {
   Coins,
   Eye,
   Sparkles,
-  Gamepad2
+  Gamepad2,
+  Square,
+  RotateCcw,
+  X
 } from 'lucide-vue-next';
 
 const userStore = useUserStore();
@@ -60,40 +64,95 @@ const connectCutQuestion = ref<{
   coord: { r: 2, c: 2 }
 });
 
-// Speed capture puzzle generator
+// Dynamic Speed Capture Puzzle Generator (10+ Varied Positions across 5x5 Board)
 const generateSpeedCapturePuzzle = () => {
   const g = new GoGame(5);
   lastMove.value = null;
   highlightPoints.value = [];
 
-  const types = ['center', 'corner', 'edge', 'two_stones'];
-  const picked = types[Math.floor(Math.random() * types.length)];
+  const patterns = [
+    // 1. Center at (2,2) - Liberty at (2,3)
+    () => {
+      g.setCell(2, 2, 'W');
+      g.setCell(1, 2, 'B');
+      g.setCell(3, 2, 'B');
+      g.setCell(2, 1, 'B');
+    },
+    // 2. Center at (2,2) - Liberty at (1,2)
+    () => {
+      g.setCell(2, 2, 'W');
+      g.setCell(2, 3, 'B');
+      g.setCell(3, 2, 'B');
+      g.setCell(2, 1, 'B');
+    },
+    // 3. Top-left corner (0,0) - Liberty at (1,0)
+    () => {
+      g.setCell(0, 0, 'W');
+      g.setCell(0, 1, 'B');
+    },
+    // 4. Top-right corner (0,4) - Liberty at (0,3)
+    () => {
+      g.setCell(0, 4, 'W');
+      g.setCell(1, 4, 'B');
+    },
+    // 5. Bottom-left corner (4,0) - Liberty at (4,1)
+    () => {
+      g.setCell(4, 0, 'W');
+      g.setCell(3, 0, 'B');
+    },
+    // 6. Bottom-right corner (4,4) - Liberty at (3,4)
+    () => {
+      g.setCell(4, 4, 'W');
+      g.setCell(4, 3, 'B');
+    },
+    // 7. Left edge (2,0) - Liberty at (2,1)
+    () => {
+      g.setCell(2, 0, 'W');
+      g.setCell(1, 0, 'B');
+      g.setCell(3, 0, 'B');
+    },
+    // 8. Right edge (2,4) - Liberty at (2,3)
+    () => {
+      g.setCell(2, 4, 'W');
+      g.setCell(1, 4, 'B');
+      g.setCell(3, 4, 'B');
+    },
+    // 9. Top edge (0,2) - Liberty at (1,2)
+    () => {
+      g.setCell(0, 2, 'W');
+      g.setCell(0, 1, 'B');
+      g.setCell(0, 3, 'B');
+    },
+    // 10. Bottom edge (4,2) - Liberty at (3,2)
+    () => {
+      g.setCell(4, 2, 'W');
+      g.setCell(4, 1, 'B');
+      g.setCell(4, 3, 'B');
+    },
+    // 11. Two stones at (2,2) and (2,3) - Liberty at (2,4)
+    () => {
+      g.setCell(2, 2, 'W');
+      g.setCell(2, 3, 'W');
+      g.setCell(1, 2, 'B');
+      g.setCell(1, 3, 'B');
+      g.setCell(3, 2, 'B');
+      g.setCell(3, 3, 'B');
+      g.setCell(2, 1, 'B');
+    },
+    // 12. Two stones at (1,1) and (2,1) - Liberty at (0,1)
+    () => {
+      g.setCell(1, 1, 'W');
+      g.setCell(2, 1, 'W');
+      g.setCell(1, 0, 'B');
+      g.setCell(2, 0, 'B');
+      g.setCell(1, 2, 'B');
+      g.setCell(2, 2, 'B');
+      g.setCell(3, 1, 'B');
+    }
+  ];
 
-  if (picked === 'corner') {
-    // Corner capture at (0,0)
-    g.setCell(0, 0, 'W');
-    g.setCell(0, 1, 'B');
-  } else if (picked === 'edge') {
-    // Edge capture at (2,0)
-    g.setCell(2, 0, 'W');
-    g.setCell(1, 0, 'B');
-    g.setCell(3, 0, 'B');
-  } else if (picked === 'two_stones') {
-    // Two stones at (2,2) and (2,3)
-    g.setCell(2, 2, 'W');
-    g.setCell(2, 3, 'W');
-    g.setCell(1, 2, 'B');
-    g.setCell(1, 3, 'B');
-    g.setCell(3, 2, 'B');
-    g.setCell(3, 3, 'B');
-    g.setCell(2, 1, 'B');
-  } else {
-    // Center single stone at (2,2)
-    g.setCell(2, 2, 'W');
-    g.setCell(1, 2, 'B');
-    g.setCell(3, 2, 'B');
-    g.setCell(2, 1, 'B');
-  }
+  const picked = patterns[Math.floor(Math.random() * patterns.length)];
+  picked();
 
   g.turn = 'B';
   game.value = g;
@@ -187,7 +246,7 @@ const generateConnectCutPuzzle = () => {
   game.value = g;
 };
 
-const startGame = () => {
+const startGame = (regenerate = false) => {
   if (!userStore.hasProfile) {
     userStore.openProfileModal();
     return;
@@ -201,12 +260,15 @@ const startGame = () => {
   showGameOverModal.value = false;
   playButtonSound();
 
-  if (currentMode.value === 'speedCapture') {
-    generateSpeedCapturePuzzle();
-  } else if (currentMode.value === 'countLiberties') {
-    generateCountLibertiesPuzzle();
-  } else {
-    generateConnectCutPuzzle();
+  // 保持当前屏幕已展示的题目，直接无缝开局！只有再来一局才重新生成
+  if (regenerate) {
+    if (currentMode.value === 'speedCapture') {
+      generateSpeedCapturePuzzle();
+    } else if (currentMode.value === 'countLiberties') {
+      generateCountLibertiesPuzzle();
+    } else {
+      generateConnectCutPuzzle();
+    }
   }
 
   if (timerInterval) clearInterval(timerInterval);
@@ -220,8 +282,12 @@ const startGame = () => {
 };
 
 const endGame = () => {
-  if (timerInterval) clearInterval(timerInterval);
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
   isPlaying.value = false;
+  timeLeft.value = 60;
   showGameOverModal.value = true;
 
   const coinsEarned = Math.max(5, Math.floor(score.value / 40));
@@ -230,28 +296,60 @@ const endGame = () => {
   triggerConfetti();
 };
 
-const switchMode = (mode: GameMode) => {
+const switchMode = async (mode: GameMode) => {
+  if (currentMode.value === mode) return;
+
+  // 正在进行 60 秒极速挑战时，切换模式弹出二次确认
   if (isPlaying.value) {
-    if (timerInterval) clearInterval(timerInterval);
+    const ok = await showConfirm({
+      title: '切换游戏确认',
+      message: '当前 60 秒极速挑战正在进行中，切换游戏将结束当前对局并重置时间，确定要切换吗？',
+      type: 'warning',
+      confirmText: '确定切换',
+      cancelText: '继续挑战'
+    });
+    if (!ok) return;
+
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
     isPlaying.value = false;
   }
+
+  // 彻底初始化新模式为 60s 待机开局状态
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  isPlaying.value = false;
+  timeLeft.value = 60;
+  score.value = 0;
+  combo.value = 0;
+  maxCombo.value = 0;
+  correctCount.value = 0;
+
   currentMode.value = mode;
   playButtonSound();
+
   if (mode === 'speedCapture') generateSpeedCapturePuzzle();
   else if (mode === 'countLiberties') generateCountLibertiesPuzzle();
   else generateConnectCutPuzzle();
 };
 
+// Handle board move in Speed Capture (Manual Move Mode)
 const handleBoardMove = (point: Point) => {
-  if (!isPlaying.value || currentMode.value !== 'speedCapture') return;
+  if (currentMode.value !== 'speedCapture') return;
+  if (!isPlaying.value) {
+    startGame(false);
+  }
 
-  const testGame = game.value.clone();
-  const res = testGame.playMove(point.r, point.c, 'B');
+  const res = game.value.playMove(point.r, point.c, 'B');
 
   if (res.success && res.capturedStones.length > 0) {
-    game.value.playMove(point.r, point.c, 'B');
     playStoneSound();
     playCaptureSound();
+    lastMove.value = point;
 
     combo.value++;
     if (combo.value > maxCombo.value) maxCombo.value = combo.value;
@@ -259,9 +357,12 @@ const handleBoardMove = (point: Point) => {
     const bonus = 100 + combo.value * 25;
     score.value += bonus;
 
+    // Instantly generate next speed target after 250ms satisfying capture animation
     setTimeout(() => {
-      generateSpeedCapturePuzzle();
-    }, 250);
+      if (isPlaying.value && currentMode.value === 'speedCapture') {
+        generateSpeedCapturePuzzle();
+      }
+    }, 260);
   } else {
     playErrorSound();
     combo.value = 0;
@@ -269,7 +370,10 @@ const handleBoardMove = (point: Point) => {
 };
 
 const handleLibertyChoice = (choice: number) => {
-  if (!isPlaying.value || currentMode.value !== 'countLiberties') return;
+  if (currentMode.value !== 'countLiberties') return;
+  if (!isPlaying.value) {
+    startGame(false);
+  }
 
   const actual = currentTargetLibertyCount.value;
   const isCorrect = (choice === 5 && actual >= 5) || choice === actual;
@@ -285,8 +389,10 @@ const handleLibertyChoice = (choice: number) => {
     score.value += 100 + combo.value * 20;
 
     setTimeout(() => {
-      generateCountLibertiesPuzzle();
-    }, 400);
+      if (isPlaying.value && currentMode.value === 'countLiberties') {
+        generateCountLibertiesPuzzle();
+      }
+    }, 350);
   } else {
     playErrorSound();
     combo.value = 0;
@@ -294,7 +400,10 @@ const handleLibertyChoice = (choice: number) => {
 };
 
 const handleConnectCutChoice = (choice: 'connect' | 'cut') => {
-  if (!isPlaying.value || currentMode.value !== 'connectCut') return;
+  if (currentMode.value !== 'connectCut') return;
+  if (!isPlaying.value) {
+    startGame(false);
+  }
 
   const isCorrect = choice === connectCutQuestion.value.correctAnswer;
   showFeedback.value = true;
@@ -308,8 +417,10 @@ const handleConnectCutChoice = (choice: 'connect' | 'cut') => {
     score.value += 120 + combo.value * 30;
 
     setTimeout(() => {
-      generateConnectCutPuzzle();
-    }, 400);
+      if (isPlaying.value && currentMode.value === 'connectCut') {
+        generateConnectCutPuzzle();
+      }
+    }, 350);
   } else {
     playErrorSound();
     combo.value = 0;
@@ -409,17 +520,42 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <!-- Start / Stop Button -->
-            <button
-              v-if="!isPlaying"
-              @click="startGame"
-              class="w-full py-3.5 rounded-2xl bg-white hover:bg-amber-50 text-orange-600 font-black text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Zap class="w-4 h-4 fill-current" />
-              <span>开始 60 秒极速挑战 🚀</span>
-            </button>
-            <div v-else class="text-center text-xs font-black bg-white/20 py-2.5 rounded-xl">
-              🔥 正在挑战中，请全神贯注！
+            <!-- Start / Stop / Restart Controls -->
+            <div v-if="!isPlaying">
+              <button
+                @click="() => startGame(false)"
+                class="w-full py-3.5 rounded-2xl bg-white hover:bg-amber-50 text-orange-600 font-black text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Zap class="w-4 h-4 fill-current" />
+                <span>开始 60 秒极速挑战 🚀</span>
+              </button>
+            </div>
+
+            <div v-else class="space-y-2 animate-fade-in">
+              <div class="text-center text-xs font-black bg-white/20 py-1.5 rounded-xl text-yellow-100 flex items-center justify-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-yellow-300 animate-ping"></span>
+                <span>挑战进行中 · 保持全神贯注！</span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  @click="endGame"
+                  class="py-2.5 px-3 rounded-2xl bg-white hover:bg-rose-50 text-rose-600 font-black text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Square class="w-3.5 h-3.5 fill-current" />
+                  <span>提前结束挑战</span>
+                </button>
+
+                <button
+                  type="button"
+                  @click="() => startGame(true)"
+                  class="py-2.5 px-3 rounded-2xl bg-black/20 hover:bg-black/30 text-white font-black text-xs transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <RotateCcw class="w-3.5 h-3.5" />
+                  <span>重新开局</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -430,7 +566,7 @@ onUnmounted(() => {
               <span>玩法规则：</span>
             </div>
             <p v-if="currentMode === 'speedCapture'">
-              棋盘上会不断出现被叫吃的白子，在 60 秒内以最快速度点击提吃白子！连击越高得分翻倍！
+              棋盘上会不断随机刷新被叫吃的白子，在 60 秒内以最快速度点击提吃白子！提子成功后会自动刷新下一题，连击越高得分翻倍！
             </p>
             <p v-else-if="currentMode === 'countLiberties'">
               观察棋盘上高亮的这块棋，数一数它一共有几口气，快速点击下方气数按钮！
@@ -454,9 +590,10 @@ onUnmounted(() => {
             
             <GoBoard
               :game="game"
-              :readonly="!isPlaying || currentMode !== 'speedCapture'"
-              :showLiberties="true"
-              :showAtari="true"
+              :readonly="currentMode !== 'speedCapture'"
+              :manualMove="true"
+              :showLiberties="currentMode !== 'countLiberties'"
+              :showAtari="currentMode !== 'countLiberties'"
               :theme="userStore.theme"
               :highlightPoints="highlightPoints"
               :lastMove="lastMove"
@@ -465,7 +602,7 @@ onUnmounted(() => {
             />
 
             <!-- Specific Control Buttons for Count Liberties Mode -->
-            <div v-if="currentMode === 'countLiberties' && isPlaying" class="w-full space-y-2 animate-fade-in">
+            <div v-if="currentMode === 'countLiberties'" class="w-full space-y-2 animate-fade-in">
               <div class="text-center text-xs font-black text-gray-600">
                 请选择高亮棋子的气数：
               </div>
@@ -482,7 +619,7 @@ onUnmounted(() => {
             </div>
 
             <!-- Specific Control Buttons for Connect / Cut Mode -->
-            <div v-if="currentMode === 'connectCut' && isPlaying" class="w-full space-y-2 animate-fade-in">
+            <div v-if="currentMode === 'connectCut'" class="w-full space-y-2 animate-fade-in">
               <div class="text-center text-xs font-black text-gray-700">
                 {{ connectCutQuestion.question }}
               </div>
@@ -513,10 +650,21 @@ onUnmounted(() => {
     <div
       v-if="showGameOverModal"
       class="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-md flex items-center justify-center p-4 select-none animate-fade-in"
+      @click.self="showGameOverModal = false"
     >
-      <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border-4 border-amber-300 shadow-2xl text-center space-y-4 animate-pop-in">
+      <div class="relative bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border-4 border-amber-300 shadow-2xl text-center space-y-4 animate-pop-in">
+        <!-- Close button in top-right -->
+        <button
+          type="button"
+          @click="showGameOverModal = false"
+          class="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition cursor-pointer"
+          title="关闭"
+        >
+          <X class="w-5 h-5" />
+        </button>
+
         <div class="text-5xl">🏆</div>
-        <h2 class="text-2xl font-black text-gray-900">挑战完成！太厉害了！</h2>
+        <h2 class="text-2xl font-black text-gray-900 font-cartoon">挑战完成！太厉害了！</h2>
         
         <div class="grid grid-cols-2 gap-3 bg-amber-50 p-4 rounded-2xl border border-amber-200">
           <div>
@@ -534,12 +682,22 @@ onUnmounted(() => {
           <span>获得金币奖励：+{{ Math.max(5, Math.floor(score / 40)) }}</span>
         </div>
 
-        <button
-          @click="startGame"
-          class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white font-black text-sm shadow-md transition active:scale-95 cursor-pointer"
-        >
-          再战一局 🚀
-        </button>
+        <div class="flex gap-2.5 pt-2">
+          <button
+            type="button"
+            @click="showGameOverModal = false"
+            class="flex-1 py-3.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-xs sm:text-sm transition active:scale-95 cursor-pointer"
+          >
+            返回乐园
+          </button>
+          <button
+            type="button"
+            @click="() => startGame(true)"
+            class="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white font-black text-xs sm:text-sm shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center gap-1"
+          >
+            <span>再战一局 🚀</span>
+          </button>
+        </div>
       </div>
     </div>
 

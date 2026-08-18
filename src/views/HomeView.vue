@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import DailyQuestModal from '../components/common/DailyQuestModal.vue';
 import { useUserStore } from '../stores/userStore';
 import { useTsumegoStore } from '../stores/tsumegoStore';
 import { sound } from '../utils/sound';
 import {
+  Calendar,
   Gamepad2,
   Puzzle,
   Bot,
@@ -19,6 +22,7 @@ import {
 } from 'lucide-vue-next';
 
 const router = useRouter();
+const showQuestModal = ref(false);
 const userStore = useUserStore();
 const tsumegoStore = useTsumegoStore();
 
@@ -166,20 +170,27 @@ const featureCards = [
             </p>
 
             <!-- Quick Action Buttons -->
-            <div class="flex items-center justify-center md:justify-start gap-2.5 sm:gap-3 pt-1">
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 pt-1">
               <button
                 @click="navigate('/learn')"
-                class="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-2xl bg-white text-orange-600 font-black text-xs sm:text-sm shadow-md hover:bg-orange-50 transform transition hover:scale-105 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                class="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl bg-white text-orange-600 font-black text-xs sm:text-sm shadow-md hover:bg-orange-50 transform transition hover:scale-105 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span>开启闯关大冒险</span>
                 <ArrowRight class="w-4 h-4" />
               </button>
               <button
                 @click="navigate('/arcade')"
-                class="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-2xl bg-orange-600/30 hover:bg-orange-600/40 text-white font-black text-xs sm:text-sm backdrop-blur-sm border border-white/50 transform transition hover:scale-105 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                class="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-orange-600/30 hover:bg-orange-600/40 text-white font-black text-xs sm:text-sm backdrop-blur-sm border border-white/50 transform transition hover:scale-105 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Zap class="w-4 h-4 fill-current" />
                 <span>极速反应乐园</span>
+              </button>
+              <button
+                @click="showQuestModal = true"
+                class="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs sm:text-sm shadow-md transform transition hover:scale-105 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Calendar class="w-4 h-4" />
+                <span>📅 每日打卡任务</span>
               </button>
             </div>
           </div>
@@ -262,6 +273,11 @@ const featureCards = [
       </div>
 
     </div>
+    <!-- Daily Quest Modal -->
+    <DailyQuestModal
+      :isOpen="showQuestModal"
+      @close="showQuestModal = false"
+    />
   </div>
 </template>
 

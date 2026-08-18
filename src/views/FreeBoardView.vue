@@ -5,6 +5,7 @@ import { SGFParser } from '../engine/sgfParser';
 import type { Point, ScoreBreakdown } from '../engine/types';
 import { useUserStore } from '../stores/userStore';
 import { sound } from '../utils/sound';
+import { showAlert } from '../utils/alert';
 import GoBoardComponent from '../components/GoBoard.vue';
 import ScoreModal from '../components/ScoreModal.vue';
 import {
@@ -148,7 +149,7 @@ const importSGF = () => {
     lastMove.value = board.value.history.length > 0 ? board.value.history[board.value.history.length - 1].point : null;
   } catch (e) {
     sound.playErrorSound();
-    alert('SGF 格式解析错误，请检查输入的棋谱文本。');
+    showAlert({ message: 'SGF 格式解析错误，请检查输入的棋谱文本。', type: 'warning' });
   }
 };
 </script>

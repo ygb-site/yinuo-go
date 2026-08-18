@@ -14,7 +14,7 @@ import {
 } from '../lib/audio';
 import GoBoard from '../components/board/GoBoard.vue';
 import SpeechBubble from '../components/common/SpeechBubble.vue';
-import { Swords, RotateCcw } from 'lucide-vue-next';
+import { Swords, RotateCcw, X } from 'lucide-vue-next';
 
 const userStore = useUserStore();
 
@@ -68,17 +68,23 @@ const handlePlayerMove = (point: Point) => {
   if (!res.success) {
     playErrorSound();
     mascotMood.value = 'comforting';
-    mascotText.value = `这里不能下哦：${res.errorReason || '该位置不合法'}`;
+    mascotText.value = res.errorReason?.includes('已有棋子')
+      ? '这里已经有棋子啦，请选择空的交叉点落子哦！'
+      : `哎呀，这里不能落子哦：${res.errorReason || '禁着点'}`;
     return;
   }
 
   playStoneSound();
+  lastMove.value = point;
+
   if (res.capturedStones.length > 0) {
     playCaptureSound();
     mascotMood.value = 'surprised';
-    mascotText.value = `哇！你一下子提掉了我 ${res.capturedStones.length} 颗子！好厉害！`;
+    mascotText.value = `哇！好漂亮的手筋，一下子提掉了我 ${res.capturedStones.length} 颗白子！`;
+  } else {
+    mascotMood.value = 'thinking';
+    mascotText.value = '黑子落定！小诺正在认真构思反击方案...';
   }
-  lastMove.value = point;
 
   // Check if player won
   if (game.value.capturedByBlack >= captureTarget.value) {
@@ -88,8 +94,6 @@ const handlePlayerMove = (point: Point) => {
 
   // Trigger AI move
   isBotThinking.value = true;
-  mascotMood.value = 'thinking';
-  mascotText.value = '让我想想怎么走棋...';
 
   setTimeout(() => {
     runAIMove();
@@ -105,12 +109,16 @@ const runAIMove = () => {
   if (movePoint) {
     const res = game.value.playMove(movePoint.r, movePoint.c, 'W');
     playStoneSound();
+    lastMove.value = movePoint;
+
     if (res.capturedStones.length > 0) {
       playCaptureSound();
       mascotMood.value = 'excited';
-      mascotText.value = `嘿嘿，我也吃到了 ${res.capturedStones.length} 颗黑子哦！`;
+      mascotText.value = `嘿嘿，小诺也提到了 ${res.capturedStones.length} 颗黑子哦！要小心防守啦~`;
+    } else {
+      mascotMood.value = 'happy';
+      mascotText.value = '小诺落子完毕！轮到黑棋走啦，看准气门继续进攻！';
     }
-    lastMove.value = movePoint;
 
     // Check if AI won
     if (game.value.capturedByWhite >= captureTarget.value) {
@@ -121,7 +129,7 @@ const runAIMove = () => {
     // AI passes
     game.value.pass('W');
     mascotMood.value = 'comforting';
-    mascotText.value = '小诺这回合选择停一手！该你落子啦！';
+    mascotText.value = '小诺这回合选择停一手 (Pass)！该你落子啦！';
   }
 };
 
@@ -208,7 +216,7 @@ const changeTarget = (target: number) => {
               <div class="bg-amber-50 rounded-2xl p-3.5 border border-orange-200 text-center space-y-1">
                 <div class="flex items-center justify-center gap-1.5 text-xs font-black text-gray-800">
                   <span class="w-3.5 h-3.5 rounded-full bg-black inline-block"></span>
-                  <span class="truncate">{{ userStore.nickname }}</span>
+                  <span class="truncate">{{ userStore.nickname }} (你 · 执黑先手)</span>
                 </div>
                 <div class="text-3xl font-black text-gray-900 font-mono">
                   {{ blackCaptures }} / {{ captureTarget }}
@@ -220,7 +228,7 @@ const changeTarget = (target: number) => {
               <div class="bg-indigo-50 rounded-2xl p-3.5 border border-indigo-200 text-center space-y-1">
                 <div class="flex items-center justify-center gap-1.5 text-xs font-black text-gray-800">
                   <span class="w-3.5 h-3.5 rounded-full bg-white border border-gray-400 inline-block"></span>
-                  <span>导师小诺</span>
+                  <span>导师小诺 (AI 自动执白)</span>
                 </div>
                 <div class="text-3xl font-black text-indigo-900 font-mono">
                   {{ whiteCaptures }} / {{ captureTarget }}
@@ -289,6 +297,7 @@ const changeTarget = (target: number) => {
             <GoBoard
               :game="game"
               :readonly="gameOver || isBotThinking"
+              :manualMove="true"
               :showLiberties="true"
               :showAtari="true"
               :theme="userStore.theme"
@@ -308,10 +317,21 @@ const changeTarget = (target: number) => {
     <div
       v-if="showWinModal"
       class="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-md flex items-center justify-center p-4 select-none animate-fade-in"
+      @click.self="showWinModal = false"
     >
-      <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border-4 border-amber-300 shadow-2xl text-center space-y-4 animate-pop-in">
+      <div class="relative bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border-4 border-amber-300 shadow-2xl text-center space-y-4 animate-pop-in">
+        <!-- Close button in top-right -->
+        <button
+          type="button"
+          @click="showWinModal = false"
+          class="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition cursor-pointer"
+          title="关闭"
+        >
+          <X class="w-5 h-5" />
+        </button>
+
         <div class="text-5xl">{{ winner === 'B' ? '🎉' : '🤗' }}</div>
-        <h2 class="text-2xl font-black text-gray-900">
+        <h2 class="text-2xl font-black text-gray-900 font-cartoon">
           {{ winner === 'B' ? '恭喜获胜！太棒啦！' : '小诺险胜一筹！' }}
         </h2>
         <p class="text-xs sm:text-sm text-gray-600 font-medium">
@@ -323,12 +343,22 @@ const changeTarget = (target: number) => {
           <div class="text-indigo-800">经验奖励 +{{ captureTarget * 25 }} XP</div>
         </div>
 
-        <button
-          @click="initMatch"
-          class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white font-black text-sm shadow-md transition active:scale-95 cursor-pointer"
-        >
-          再战一局 🚀
-        </button>
+        <div class="flex gap-2.5 pt-2">
+          <button
+            type="button"
+            @click="showWinModal = false"
+            class="flex-1 py-3.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-xs sm:text-sm transition active:scale-95 cursor-pointer"
+          >
+            返回棋盘
+          </button>
+          <button
+            type="button"
+            @click="initMatch"
+            class="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white font-black text-sm shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center gap-1"
+          >
+            <span>再战一局 🚀</span>
+          </button>
+        </div>
       </div>
     </div>
 

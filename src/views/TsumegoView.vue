@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { TSUMEGO_PUZZLES, type TsumegoPuzzle } from '../data/tsumegoLibrary';
 import { GoBoard } from '../engine/GoBoard';
 import type { Point } from '../engine/types';
@@ -10,6 +10,7 @@ import { sound } from '../utils/sound';
 import GoBoardComponent from '../components/GoBoard.vue';
 import MascotNuoNuo, { type MascotMood } from '../components/MascotNuoNuo.vue';
 import {
+  Printer,
   Puzzle,
   Lightbulb,
   RotateCcw,
@@ -27,6 +28,7 @@ import {
 const tsumegoStore = useTsumegoStore();
 const userStore = useUserStore();
 const route = useRoute();
+const router = useRouter();
 
 const selectedCategory = ref<string>('all');
 const selectedDifficulty = ref<string>('all');
@@ -271,6 +273,15 @@ const toggleFavorite = () => {
         </div>
 
         <div class="flex items-center gap-3 z-10">
+          <button
+            @click="router.push('/worksheet')"
+            class="px-3.5 py-2.5 bg-white hover:bg-orange-50 text-orange-700 border-2 border-orange-200 rounded-2xl font-black text-xs shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
+            title="生成 A4 纸质死活打印题单"
+          >
+            <Printer class="w-4 h-4" />
+            <span class="hidden sm:inline">A4 纸质打印题单</span>
+          </button>
+
           <div class="bg-rose-50 border border-rose-200 px-4 py-2 sm:py-2.5 rounded-2xl text-center shadow-2xs">
             <div class="text-[10px] sm:text-[11px] font-bold text-rose-700">已攻克题数</div>
             <div class="text-xl sm:text-2xl font-black text-rose-900">

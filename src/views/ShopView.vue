@@ -4,7 +4,8 @@ import { SHOP_THEMES, SHOP_AVATARS, type ShopThemeItem, type ShopAvatarItem } fr
 import { GoGame } from '../engine/GoGame';
 import type { ThemeType } from '../engine/types';
 import { useUserStore } from '../stores/useUserStore';
-import { playButtonSound, playErrorSound, triggerConfetti } from '../lib/audio';
+import { playButtonSound, triggerConfetti } from '../lib/audio';
+import { showAlert } from '../utils/alert';
 import GoBoard from '../components/board/GoBoard.vue';
 import {
   Palette,
@@ -49,8 +50,7 @@ const handleSelectOrBuyTheme = (item: ShopThemeItem) => {
     playButtonSound();
   } else {
     if (userStore.coins < item.price) {
-      playErrorSound();
-      alert('金币不足哦！快去每日死活或闯关中赢取金币吧！');
+      showAlert({ message: '金币余额不足哦！快去每日死活、极速乐园或闯关中赢取金币吧！', type: 'coin' });
       return;
     }
     const ok = userStore.buyTheme(item.id, item.price);
@@ -73,8 +73,7 @@ const handleSelectOrBuyAvatar = (item: ShopAvatarItem) => {
     playButtonSound();
   } else {
     if (userStore.coins < item.price) {
-      playErrorSound();
-      alert('金币不足哦！快去每日死活或闯关中赢取金币吧！');
+      showAlert({ message: '金币余额不足哦！快去每日死活、极速乐园或闯关中赢取金币吧！', type: 'coin' });
       return;
     }
     userStore.buyAvatar(item.avatar, item.price);

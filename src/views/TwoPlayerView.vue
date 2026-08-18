@@ -152,7 +152,7 @@ const changeSize = (size: BoardSize) => {
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center gap-2">
                 <span class="w-5 h-5 rounded-full bg-white border-2 border-gray-400 inline-block shadow-inner"></span>
-                <span class="font-black text-sm text-gray-900">{{ whiteName }}</span>
+                <span class="font-black text-sm text-gray-900">{{ whiteName }} (玩家2 手动下)</span>
               </div>
               <span
                 v-if="currentTurn === 'W'"
@@ -182,7 +182,7 @@ const changeSize = (size: BoardSize) => {
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center gap-2">
                 <span class="w-5 h-5 rounded-full bg-gray-900 inline-block shadow-sm"></span>
-                <span class="font-black text-sm text-gray-900">{{ blackName }}</span>
+                <span class="font-black text-sm text-gray-900">{{ blackName }} (玩家1 手动下)</span>
               </div>
               <span
                 v-if="currentTurn === 'B'"
@@ -259,6 +259,7 @@ const changeSize = (size: BoardSize) => {
         <div class="lg:col-span-8 bg-white rounded-3xl p-5 sm:p-6 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-4">
           <GoBoard
             :game="game"
+            :manualMove="true"
             :showLiberties="showLiberties"
             :showAtari="showAtari"
             :theme="userStore.theme"

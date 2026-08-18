@@ -83,6 +83,7 @@ export const useUserStore = defineStore('userStore', {
     showLibertiesOverlay: true as boolean,
     showAtariAlerts: true as boolean,
     showTerritoryHeatmap: false as boolean,
+    touchConfirmEnabled: false as boolean,
     lastSavedAt: Date.now() as number
   }),
 
@@ -576,6 +577,11 @@ export const useUserStore = defineStore('userStore', {
     setVolume(val: number) {
       this.volume = val;
       sound.volume = val;
+      this.touchSave();
+    },
+
+    toggleTouchConfirm() {
+      this.touchConfirmEnabled = !this.touchConfirmEnabled;
       this.touchSave();
     }
   },

@@ -5,6 +5,8 @@ import { useUserStore } from '../stores/useUserStore';
 import { useTsumegoStore } from '../stores/tsumegoStore';
 import { TSUMEGO_PUZZLES } from '../data/tsumegoLibrary';
 import { BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
+import CertificateModal from '../components/common/CertificateModal.vue';
+import { showAlert, showConfirm } from '../utils/alert';
 import { SHOP_THEMES } from '../data/shopData';
 import { playButtonSound } from '../lib/audio';
 import {
@@ -28,6 +30,28 @@ const tsumegoStore = useTsumegoStore();
 
 const isEditingName = ref(false);
 const newNickname = ref(userStore.nickname);
+const showCertModal = ref(false);
+
+// 5-Dimension Radar Chart Calculation
+const radarStats = computed(() => {
+  const cap = Math.min(100, Math.max(30, (userStore.stats.captureCount * 6 + (userStore.arcadeHighScores.speedCapture || 0) / 4) || 45));
+  const lib = Math.min(100, Math.max(30, (userStore.totalStars * 3 + (userStore.arcadeHighScores.countLiberties || 0) / 4) || 50));
+  const life = Math.min(100, Math.max(30, (userStore.solvedPuzzles.length * 4 + 35) || 40));
+  const macro = Math.min(100, Math.max(30, (userStore.totalStars * 4 + 30) || 45));
+  const grit = Math.min(100, Math.max(40, (userStore.stats.gamesPlayed * 8 + userStore.solvedMistakes.length * 15 + 50) || 65));
+
+  return [
+    { label: '吃子敏锐', value: cap, x: 100, y: 100 - cap * 0.75 },
+    { label: '数气熟练', value: lib, x: 100 + lib * 0.71, y: 100 - lib * 0.23 },
+    { label: '死活做眼', value: life, x: 100 + life * 0.44, y: 100 + life * 0.61 },
+    { label: '大局观念', value: macro, x: 100 - macro * 0.44, y: 100 + macro * 0.61 },
+    { label: '抗挫逆商', value: grit, x: 100 - grit * 0.71, y: 100 - grit * 0.23 }
+  ];
+});
+
+const radarPolygonPoints = computed(() => {
+  return radarStats.value.map(p => `${p.x},${p.y}`).join(' ');
+});
 
 const favoritePuzzlesList = computed(() => {
   return TSUMEGO_PUZZLES.filter(p => tsumegoStore.isFavorite(p.id));
@@ -108,13 +132,20 @@ const exportData = () => {
   URL.revokeObjectURL(url);
 };
 
-const confirmReset = () => {
+const confirmReset = async () => {
   if (!userStore.hasProfile) {
     userStore.openProfileModal();
     return;
   }
-  if (confirm('Reset progress?')) {
+  const ok = await showConfirm({
+    title: '重置当前宝贝进度',
+    message: '确定要重置当前宝贝的所有闯关记录、星星与经验吗？此操作无法恢复！',
+    type: 'delete',
+    confirmText: '确定重置'
+  });
+  if (ok) {
     userStore.resetCurrentProfileProgress();
+    showAlert({ message: '已成功重置当前宝贝的数据。', type: 'info' });
   }
 };
 </script>
@@ -215,8 +246,8 @@ const confirmReset = () => {
               </div>
             </div>
 
-            <!-- EXP Bar -->
-            <div class="bg-gray-50 rounded-2xl p-3 border border-gray-200 space-y-1.5">
+            <!-- EXP Bar & Rank Exam CTA -->
+            <div class="bg-gray-50 rounded-2xl p-3 border border-gray-200 space-y-2">
               <div class="flex items-center justify-between text-xs font-bold">
                 <span class="text-gray-600">段位棋力 (XP)</span>
                 <span class="text-orange-600 font-black">
@@ -228,6 +259,21 @@ const confirmReset = () => {
                   class="bg-gradient-to-r from-orange-500 to-amber-500 h-full rounded-full transition-all"
                   :style="{ width: userStore.rankProgressPercent + '%' }"
                 ></div>
+              </div>
+              <div class="flex items-center gap-1.5 pt-1">
+                <button
+                  @click="router.push('/rank-exam')"
+                  class="flex-1 py-1.5 px-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-[11px] font-black shadow-xs flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Trophy class="w-3.5 h-3.5" />
+                  <span>考级挑战</span>
+                </button>
+                <button
+                  @click="showCertModal = true"
+                  class="flex-1 py-1.5 px-2 bg-white hover:bg-orange-50 text-orange-700 border border-orange-200 rounded-xl text-[11px] font-black shadow-xs flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <span>荣誉证书 📜</span>
+                </button>
               </div>
             </div>
           </div>
@@ -251,6 +297,82 @@ const confirmReset = () => {
             <UserPlus class="w-4 h-4" />
             <span>创建第一位宝贝档案 🚀</span>
           </button>
+        </div>
+      </div>
+
+      <!-- 5-Dimension Learning Analytics Radar Chart Card -->
+      <div v-if="userStore.hasProfile" class="bg-white rounded-3xl p-5 sm:p-7 border-2 border-orange-100 shadow-sm space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="space-y-0.5">
+            <div class="text-[11px] font-black text-orange-600 uppercase tracking-wide">
+              Learning Analytics · 学情诊断
+            </div>
+            <h2 class="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2">
+              <span>📊 宝贝棋力五维成长雷达图</span>
+            </h2>
+          </div>
+          <span class="text-xs font-bold text-gray-500 bg-orange-50 border border-orange-200 px-3 py-1 rounded-full">
+            基于对局、死活与极速反应综合分析
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          <!-- SVG Radar Polygon -->
+          <div class="md:col-span-6 flex justify-center">
+            <div class="relative w-64 h-64">
+              <svg viewBox="0 0 200 200" class="w-full h-full transform">
+                <!-- Background Webs (20%, 40%, 60%, 80%, 100%) -->
+                <polygon points="100,25 171,48 144,132 56,132 29,48" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
+                <polygon points="100,40 157,59 135,126 65,126 43,59" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
+                <polygon points="100,55 143,69 127,119 73,119 57,69" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
+                <polygon points="100,70 128,79 118,113 82,113 72,79" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
+                <polygon points="100,85 114,90 109,106 91,106 86,90" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
+
+                <!-- Axes -->
+                <line x1="100" y1="100" x2="100" y2="25" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
+                <line x1="100" y1="100" x2="171" y2="48" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
+                <line x1="100" y1="100" x2="144" y2="132" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
+                <line x1="100" y1="100" x2="56" y2="132" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
+                <line x1="100" y1="100" x2="29" y2="48" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
+
+                <!-- Data Polygon -->
+                <polygon :points="radarPolygonPoints" fill="rgba(249, 115, 22, 0.25)" stroke="#EA580C" stroke-width="2.5" />
+
+                <!-- Corner Dots -->
+                <circle v-for="pt in radarStats" :key="pt.label" :cx="pt.x" :cy="pt.y" r="4" fill="#EA580C" stroke="#FFFFFF" stroke-width="1.5" />
+
+                <!-- Labels -->
+                <text x="100" y="15" text-anchor="middle" font-size="10" font-weight="900" fill="#9A3412">吃子敏锐</text>
+                <text x="180" y="52" text-anchor="start" font-size="10" font-weight="900" fill="#9A3412">数气熟练</text>
+                <text x="150" y="148" text-anchor="middle" font-size="10" font-weight="900" fill="#9A3412">死活做眼</text>
+                <text x="50" y="148" text-anchor="middle" font-size="10" font-weight="900" fill="#9A3412">大局观念</text>
+                <text x="20" y="52" text-anchor="end" font-size="10" font-weight="900" fill="#9A3412">抗挫逆商</text>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Radar Diagnosis & Tips -->
+          <div class="md:col-span-6 space-y-3">
+            <div class="bg-amber-50 rounded-2xl p-4 border border-amber-200 space-y-1.5">
+              <div class="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                <span>🐼 导师小诺的综合评语：</span>
+              </div>
+              <p class="text-xs sm:text-sm text-gray-700 font-medium leading-relaxed">
+                小棋手 <span class="font-black text-orange-600">{{ userStore.nickname }}</span> 手筋反应敏锐，战意高昂！吃子速度与数气基本功非常扎实，建议继续攻克每日死活与直三、弯四眼位做活练习，将更进一步突破段位瓶颈！
+              </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-center text-xs font-bold">
+              <div class="bg-gray-50 rounded-xl p-2.5 border border-gray-200">
+                <div class="text-gray-400 text-[10px]">死活攻克率</div>
+                <div class="text-emerald-700 font-black text-sm">{{ Math.round((userStore.solvedPuzzles.length / 46) * 100) }}%</div>
+              </div>
+              <div class="bg-gray-50 rounded-xl p-2.5 border border-gray-200">
+                <div class="text-gray-400 text-[10px]">总对局场次</div>
+                <div class="text-indigo-700 font-black text-sm">{{ userStore.stats.gamesPlayed + (userStore.captureGoStats.matches || 0) }} 局</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -487,5 +609,12 @@ const confirmReset = () => {
       </div>
 
     </div>
+    <!-- Certificate Modal -->
+    <CertificateModal
+      :isOpen="showCertModal"
+      :rankTitle="userStore.currentRank.title"
+      :rankLevel="userStore.currentRank.rankLevel"
+      @close="showCertModal = false"
+    />
   </div>
 </template>

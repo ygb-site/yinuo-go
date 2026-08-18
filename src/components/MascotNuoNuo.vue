@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { Volume2 } from 'lucide-vue-next';
+import { isSpeaking, toggleSpeech } from '../utils/speech';
 
 export type MascotMood = 'happy' | 'excited' | 'thinking' | 'cheering' | 'comforting' | 'surprised';
 
@@ -52,6 +54,10 @@ const moodBorderColor = computed(() => {
       return 'border-orange-300 bg-orange-50';
   }
 });
+
+const handleVoice = () => {
+  toggleSpeech(props.message);
+};
 </script>
 
 <template>
@@ -60,16 +66,14 @@ const moodBorderColor = computed(() => {
     <div class="relative flex-shrink-0">
       <div
         class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-amber-300 via-orange-400 to-rose-400 p-1 shadow-lg transform transition-transform hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer border-2 border-white"
+        @click="handleVoice"
       >
-        <!-- Mascot face SVG and emoji -->
         <div class="w-full h-full bg-white rounded-xl flex items-center justify-center relative overflow-hidden">
           <span class="text-3xl sm:text-4xl animate-bounce-subtle">{{ moodEmoji }}</span>
-          <!-- Little ear decoration -->
           <div class="absolute top-0 right-1 w-2.5 h-2.5 bg-orange-400 rounded-full"></div>
           <div class="absolute top-0 left-1 w-2.5 h-2.5 bg-orange-400 rounded-full"></div>
         </div>
       </div>
-      <!-- Little badge -->
       <span class="absolute -bottom-1 -right-1 bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow border border-white">
         9段
       </span>
@@ -81,20 +85,37 @@ const moodBorderColor = computed(() => {
       class="flex-1 relative rounded-2xl p-4 sm:p-5 border-2 shadow-sm transition-all"
       :class="moodBorderColor"
     >
-      <!-- Bubble Pointer Arrow -->
       <div
         class="hidden sm:block absolute top-4 -left-2 w-3.5 h-3.5 rotate-45 border-l-2 border-b-2 border-inherit bg-inherit"
       ></div>
 
-      <!-- Speaker Title -->
+      <!-- Speaker Title & Voice Button -->
       <div class="flex items-center justify-between mb-1.5">
         <span class="font-extrabold text-xs sm:text-sm text-amber-900 flex items-center gap-1.5">
           <span class="inline-block w-2 h-2 rounded-full bg-orange-500 animate-ping"></span>
           {{ speakerName }}
         </span>
-        <span v-if="subtext" class="text-[11px] text-amber-700/80 font-medium">
-          {{ subtext }}
-        </span>
+
+        <div class="flex items-center gap-2">
+          <span v-if="subtext" class="text-[11px] text-amber-700/80 font-medium">
+            {{ subtext }}
+          </span>
+
+          <button
+            type="button"
+            @click="handleVoice"
+            class="p-1 px-2 rounded-xl transition flex items-center gap-1 text-[11px] font-black cursor-pointer active:scale-90"
+            :class="
+              isSpeaking
+                ? 'bg-rose-100 text-rose-700 animate-pulse border border-rose-300'
+                : 'bg-white/80 hover:bg-orange-100 text-orange-800 border border-orange-200'
+            "
+            title="点击朗读小诺说的话"
+          >
+            <Volume2 class="w-3.5 h-3.5" />
+            <span class="hidden sm:inline">{{ isSpeaking ? '正在朗读...' : '听小诺说' }}</span>
+          </button>
+        </div>
       </div>
 
       <!-- Message Body -->

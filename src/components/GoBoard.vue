@@ -23,6 +23,7 @@ const props = withDefaults(
     disabled?: boolean;
     manualMove?: boolean;
     editMode?: 'B' | 'W' | 'empty' | null;
+    confirmTouch?: boolean;
   }>(),
   {
     showCoordinates: true,

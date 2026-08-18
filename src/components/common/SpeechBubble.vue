@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { Volume2 } from 'lucide-vue-next';
+import { isSpeaking, toggleSpeech } from '../../utils/speech';
 
 const props = withDefaults(
   defineProps<{
@@ -26,6 +28,10 @@ const moodEmoji = computed(() => {
     default: return '😊';
   }
 });
+
+const handleVoice = () => {
+  toggleSpeech(props.text);
+};
 </script>
 
 <template>
@@ -49,9 +55,28 @@ const moodEmoji = computed(() => {
           <span class="w-2 h-2 rounded-full bg-orange-500 animate-ping"></span>
           {{ speaker }}
         </span>
-        <span v-if="subtext" class="text-[11px] font-bold text-orange-700/80">
-          {{ subtext }}
-        </span>
+
+        <div class="flex items-center gap-2">
+          <span v-if="subtext" class="text-[11px] font-bold text-orange-700/80">
+            {{ subtext }}
+          </span>
+
+          <!-- Voice Speaker Read Button -->
+          <button
+            type="button"
+            @click="handleVoice"
+            class="p-1 rounded-xl transition flex items-center gap-1 text-[11px] font-black cursor-pointer active:scale-90"
+            :class="
+              isSpeaking
+                ? 'bg-rose-100 text-rose-700 animate-pulse border border-rose-300'
+                : 'bg-white/80 hover:bg-orange-100 text-orange-800 border border-orange-200'
+            "
+            title="点击朗读导师小诺的语音提示"
+          >
+            <Volume2 class="w-3.5 h-3.5" />
+            <span class="hidden sm:inline">{{ isSpeaking ? '正在朗读...' : '听小诺说' }}</span>
+          </button>
+        </div>
       </div>
 
       <p class="text-xs sm:text-sm text-gray-800 font-medium leading-relaxed">

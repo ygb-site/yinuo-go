@@ -39,15 +39,11 @@ const handleGlobalClick = (event: Event) => {
 };
 
 onMounted(() => {
-  window.addEventListener('click', handleGlobalClick, true);
-  window.addEventListener('pointerdown', handleGlobalClick, true);
-  window.addEventListener('touchstart', handleGlobalClick, true);
+  document.addEventListener('pointerdown', handleGlobalClick);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('click', handleGlobalClick, true);
-  window.removeEventListener('pointerdown', handleGlobalClick, true);
-  window.removeEventListener('touchstart', handleGlobalClick, true);
+  document.removeEventListener('pointerdown', handleGlobalClick);
 });
 
 const navItems = [
@@ -81,6 +77,12 @@ const selectOrBuyTheme = (theme: ShopThemeItem) => {
   }
 };
 
+const goToShop = () => {
+  showThemeDropdown.value = false;
+  playButtonSound();
+  router.push('/shop');
+};
+
 const navigateTo = (path: string) => {
   playButtonSound();
   showThemeDropdown.value = false;
@@ -101,16 +103,6 @@ const isNavActive = (itemPath: string) => {
 </script>
 
 <template>
-  <!-- Fullscreen Transparent Backdrop mounted to body to avoid filter/blur stacking context -->
-  <Teleport to="body">
-    <div
-      v-if="showThemeDropdown"
-      class="fixed inset-0 z-[49] bg-transparent cursor-default"
-      @click="showThemeDropdown = false"
-      @touchstart.passive="showThemeDropdown = false"
-    ></div>
-  </Teleport>
-
   <!-- Top Navigation Header (Shared Mobile & Desktop) -->
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-orange-100 shadow-xs select-none">
     <div class="max-w-7xl mx-auto px-2.5 sm:px-5 lg:px-6">
@@ -235,7 +227,7 @@ const isNavActive = (itemPath: string) => {
               <button
                 v-for="item in SHOP_THEMES"
                 :key="item.id"
-                @click="selectOrBuyTheme(item)"
+                @click.stop="selectOrBuyTheme(item)"
                 class="w-full text-left px-2.5 py-1.5 rounded-xl text-xs font-black flex items-center justify-between transition cursor-pointer"
                 :class="
                   userStore.theme === item.id
@@ -259,7 +251,8 @@ const isNavActive = (itemPath: string) => {
 
               <div class="pt-1.5 mt-1 border-t border-gray-100">
                 <button
-                  @click="navigateTo('/shop'); showThemeDropdown = false;"
+                  type="button"
+                  @click.stop="goToShop"
                   class="w-full py-1.5 px-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-[11px] font-black flex items-center justify-center gap-1 shadow-xs cursor-pointer"
                 >
                   <ShoppingBag class="w-3.5 h-3.5" />
