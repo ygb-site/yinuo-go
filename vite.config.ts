@@ -67,7 +67,7 @@ function ttsProxyPlugin(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue(), ttsProxyPlugin()],
-  base: './', // 相对路径确保在 GitHub Pages 子目录或任何静态托管环境下均可正常加载
+  base: '/', // HTML5 History 模式（无 # 号模式）统一使用根路径 /
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
