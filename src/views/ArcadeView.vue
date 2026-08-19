@@ -649,7 +649,7 @@ onUnmounted(() => {
     <!-- Game Over Modal -->
     <div
       v-if="showGameOverModal"
-      class="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-md flex items-center justify-center p-4 select-none animate-fade-in"
+      class="fixed inset-0 z-50 overflow-hidden bg-black no-scrollbar modal-overlay/60 backdrop-blur-md flex items-center justify-center p-4 select-none animate-fade-in"
       @click.self="showGameOverModal = false"
     >
       <div class="relative bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border-4 border-amber-300 shadow-2xl text-center space-y-4 animate-pop-in">

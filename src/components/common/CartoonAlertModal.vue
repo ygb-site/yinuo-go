@@ -30,7 +30,7 @@ const iconInfo = computed(() => {
   <Teleport to="body">
     <div
       v-if="alertState.isOpen"
-      class="fixed inset-0 z-[10000] overflow-y-auto bg-black/60 backdrop-blur-md select-none animate-fade-in flex items-center justify-center p-4"
+      class="fixed inset-0 z-[10000] overflow-hidden bg-black no-scrollbar modal-overlay/60 backdrop-blur-md select-none animate-fade-in flex items-center justify-center p-4"
       @click.self="handleAlertCancel"
     >
       <div

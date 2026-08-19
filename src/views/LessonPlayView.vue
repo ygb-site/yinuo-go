@@ -184,7 +184,20 @@ onMounted(() => {
   initLesson();
 });
 
+watch([showConceptDrawer, showStarModal], ([drawerOpen, starOpen]) => {
+  if (typeof document !== 'undefined') {
+    if (drawerOpen || starOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }
+});
+
 onUnmounted(() => {
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = '';
+  }
   stopSpeech();
 });
 
@@ -614,11 +627,11 @@ const handleBackToMap = () => {
     <Teleport to="body">
       <div
         v-if="showConceptDrawer"
-        class="fixed inset-0 z-[10000] overflow-y-auto bg-black/60 backdrop-blur-sm select-none animate-fade-in flex items-end sm:items-center justify-center p-0 sm:p-4"
+        class="fixed inset-0 z-[10000] overflow-hidden bg-black no-scrollbar modal-overlay/60 backdrop-blur-sm select-none animate-fade-in flex items-end sm:items-center justify-center p-0 sm:p-4"
         @click.self="showConceptDrawer = false"
       >
         <div
-          class="relative w-full max-w-lg rounded-t-3xl sm:rounded-3xl bg-white p-5 sm:p-7 shadow-2xl border-t-4 sm:border-4 border-amber-300 text-left space-y-4 animate-pop-in max-h-[85vh] overflow-y-auto"
+          class="relative w-full max-w-lg rounded-t-3xl sm:rounded-3xl bg-white p-5 sm:p-7 shadow-2xl border-t-4 sm:border-4 border-amber-300 text-left space-y-4 animate-pop-in max-h-[85vh] overflow-y-auto no-scrollbar overscroll-contain modal-card"
         >
           <!-- Drawer Close Button -->
           <button

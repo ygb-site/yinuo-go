@@ -18,7 +18,7 @@ const emit = defineEmits<{
   <Teleport to="body">
     <div
       v-if="isOpen"
-      class="fixed inset-0 z-[9999] overflow-y-auto bg-black/65 backdrop-blur-md select-none animate-fade-in"
+      class="fixed inset-0 z-[9999] overflow-hidden bg-black no-scrollbar modal-overlay/65 backdrop-blur-md select-none animate-fade-in"
       @click.self="emit('close')"
     >
       <div class="flex min-h-screen items-center justify-center p-3 sm:p-6 text-center">

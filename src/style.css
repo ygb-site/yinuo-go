@@ -9,21 +9,57 @@
   }
 }
 
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Custom minimal scrollbar for non-modal desktop content */
+@media (min-width: 768px) {
+  body:not(.modal-open)::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  body:not(.modal-open)::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  body:not(.modal-open)::-webkit-scrollbar-thumb {
+    background: #E2D9C8;
+    border-radius: 9999px;
+  }
+  body:not(.modal-open)::-webkit-scrollbar-thumb:hover {
+    background: #C8BAA3;
+  }
 }
-::-webkit-scrollbar-track {
-  background: #F1E6D0;
-  border-radius: 4px;
+
+/* Hide scrollbars completely on mobile */
+@media (max-width: 767px) {
+  ::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
 }
-::-webkit-scrollbar-thumb {
-  background: #D4A373;
-  border-radius: 4px;
+
+/* Universal Modal & Dialog Scrollbar Complete Suppression */
+.modal-overlay,
+.modal-overlay *,
+.modal-card,
+.modal-card *,
+.no-scrollbar,
+.no-scrollbar * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #BC8A5F;
+
+.modal-overlay::-webkit-scrollbar,
+.modal-overlay *::-webkit-scrollbar,
+.modal-card::-webkit-scrollbar,
+.modal-card *::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar,
+.no-scrollbar *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Wood board texture effect */
@@ -52,18 +88,7 @@
   @apply transition-all duration-150 active:translate-y-1 active:shadow-none font-bold rounded-2xl cursor-pointer;
 }
 
-
 .font-cartoon {
   font-family: 'ZCOOL KuaiLe', 'Fredoka', 'Chalkboard SE', 'Comic Sans MS', 'PingFang SC', sans-serif;
   letter-spacing: 0.03em;
-}
-
-
-/* Utility to hide scrollbars */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }
