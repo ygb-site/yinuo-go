@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { CHAPTERS_DATA, type Lesson, type PuzzleNode } from '../data/chapters';
+import { CHAPTERS_DATA, type Lesson, type PuzzleNode, type LessonSubPuzzle } from '../data/chapters';
 import { GoGame } from '../engine/GoGame';
 import type { Point } from '../engine/types';
 import { useUserStore } from '../stores/useUserStore';
 import { playHintSound, playButtonSound, playErrorSound, playStoneSound, playCaptureSound } from '../lib/audio';
+import { speakText, stopSpeech } from '../utils/speech';
 import GoBoard from '../components/board/GoBoard.vue';
 import SpeechBubble from '../components/common/SpeechBubble.vue';
 import StarModal from '../components/common/StarModal.vue';
@@ -17,6 +18,10 @@ import {
   ArrowLeft,
   Star,
   BookOpen,
+  Volume2,
+  VolumeX,
+  CheckCircle2,
+  Wind
 } from 'lucide-vue-next';
 
 const route = useRoute();
@@ -65,43 +70,107 @@ const isBotThinking = ref(false);
 const earnedStars = ref(3);
 const attemptCount = ref(0);
 
+// Multi-step sub-puzzle state
+const currentStepIndex = ref(0);
+const subPuzzlesList = computed<LessonSubPuzzle[]>(() => {
+  const les = currentLesson.value;
+  if (les.subPuzzles && les.subPuzzles.length > 0) {
+    return les.subPuzzles;
+  }
+  // Fallback to single puzzle step
+  return [
+    {
+      stepIndex: 1,
+      title: les.title,
+      subtitle: les.subtitle,
+      goalText: les.goalText,
+      storyDialogues: les.storyDialogues,
+      boardSize: les.boardSize,
+      initialStones: les.initialStones,
+      playerColor: les.playerColor,
+      targetHighlight: les.targetHighlight,
+      puzzleRoot: les.puzzleRoot,
+      hint: les.hint,
+      explanation: les.explanation
+    }
+  ];
+});
+
+const currentSubPuzzle = computed<LessonSubPuzzle>(() => {
+  const list = subPuzzlesList.value;
+  return list[currentStepIndex.value] || list[0];
+});
+
+const totalSteps = computed(() => subPuzzlesList.value.length);
+
 // Active Branch Tree for Practice Mode
 const currentBranches = ref<PuzzleNode[]>([]);
 const storyDialogueIndex = ref(0);
 
+// Visual Aids
 const showLiberties = ref(true);
 const showAtari = ref(true);
+const showBreathingTubes = ref(true);
+const speechEnabled = ref(true);
 
-const initLesson = () => {
-  const lesson = currentLesson.value;
-  game.value = new GoGame(lesson.boardSize);
+const narrateText = (text: string) => {
+  if (!speechEnabled.value || !userStore.soundEnabled) return;
+  speakText(text);
+};
+
+const toggleVoice = () => {
+  speechEnabled.value = !speechEnabled.value;
+  if (!speechEnabled.value) {
+    stopSpeech();
+  } else {
+    narrateText(mascotDialogue.value);
+  }
+  playButtonSound();
+};
+
+const loadCurrentStep = (stepIdx: number) => {
+  currentStepIndex.value = stepIdx;
+  const sub = subPuzzlesList.value[stepIdx] || subPuzzlesList.value[0];
+  const bSize = sub.boardSize || currentLesson.value.boardSize || 5;
+
+  game.value = new GoGame(bSize);
   lastMove.value = null;
-  highlightPoints.value = [];
-  isLessonComplete.value = false;
-  showStarModal.value = false;
+  highlightPoints.value = sub.targetHighlight ? [...sub.targetHighlight] : [];
   isBotThinking.value = false;
-  earnedStars.value = 3;
-  attemptCount.value = 0;
   storyDialogueIndex.value = 0;
 
-  for (const st of lesson.initialStones) {
+  for (const st of sub.initialStones) {
     game.value.setCell(st.r, st.c, st.color);
   }
-  game.value.turn = lesson.playerColor;
+  game.value.turn = sub.playerColor;
 
-  if (lesson.type === 'story') {
+  if (sub.storyDialogues && sub.storyDialogues.length > 0) {
     mascotMood.value = 'happy';
-    mascotDialogue.value = lesson.storyDialogues && lesson.storyDialogues[0] ? lesson.storyDialogues[0] : lesson.description;
-    highlightPoints.value = lesson.targetHighlight ? [...lesson.targetHighlight] : [];
+    mascotDialogue.value = sub.storyDialogues[0];
   } else {
-    currentBranches.value = lesson.puzzleRoot || [];
+    currentBranches.value = sub.puzzleRoot || [];
     mascotMood.value = 'happy';
-    mascotDialogue.value = `【${lesson.title}】${lesson.description} 目标：${lesson.goalText}`;
+    mascotDialogue.value = '【' + sub.title + '】' + sub.goalText;
   }
+
+  narrateText(mascotDialogue.value);
+};
+
+const initLesson = () => {
+  stopSpeech();
+  isLessonComplete.value = false;
+  showStarModal.value = false;
+  earnedStars.value = 3;
+  attemptCount.value = 0;
+  loadCurrentStep(0);
 };
 
 onMounted(() => {
   initLesson();
+});
+
+onUnmounted(() => {
+  stopSpeech();
 });
 
 watch(() => route.params.id, () => {
@@ -115,24 +184,26 @@ const handleMove = (point: Point) => {
   }
   if (isLessonComplete.value || isBotThinking.value) return;
 
-  const lesson = currentLesson.value;
+  const sub = currentSubPuzzle.value;
   const { r, c } = point;
 
-  // 1. Story Mode
-  if (lesson.type === 'story') {
-    const isTarget = lesson.targetHighlight?.some(p => p.r === r && p.c === c);
-    if (!isTarget && lesson.targetHighlight && lesson.targetHighlight.length > 0) {
+  // 1. Story / Direct target mode
+  if (sub.targetHighlight && sub.targetHighlight.length > 0 && (!sub.puzzleRoot || sub.puzzleRoot.length === 0)) {
+    const isTarget = sub.targetHighlight.some(p => p.r === r && p.c === c);
+    if (!isTarget) {
       playErrorSound();
       mascotMood.value = 'comforting';
       mascotDialogue.value = '请点击闪烁的高亮目标点进行学习演练哦！';
+      narrateText(mascotDialogue.value);
       return;
     }
 
-    const moveRes = game.value.playMove(r, c, lesson.playerColor);
+    const moveRes = game.value.playMove(r, c, sub.playerColor);
     if (!moveRes.success) {
       playErrorSound();
       mascotMood.value = 'comforting';
       mascotDialogue.value = '这个位置已经有棋子啦，换个地方试试吧！';
+      narrateText(mascotDialogue.value);
       return;
     }
     playStoneSound();
@@ -140,30 +211,32 @@ const handleMove = (point: Point) => {
     lastMove.value = point;
     highlightPoints.value = [];
 
-    const remainingTargets = (lesson.targetHighlight || []).filter(p => game.value.getCell(p.r, p.c) === null);
+    const remainingTargets = (sub.targetHighlight || []).filter(p => game.value.getCell(p.r, p.c) === null);
 
-    if (lesson.storyDialogues && storyDialogueIndex.value < lesson.storyDialogues.length - 1 && remainingTargets.length > 0) {
+    if (sub.storyDialogues && storyDialogueIndex.value < sub.storyDialogues.length - 1 && remainingTargets.length > 0) {
       storyDialogueIndex.value++;
       mascotMood.value = 'excited';
-      mascotDialogue.value = lesson.storyDialogues[storyDialogueIndex.value];
+      mascotDialogue.value = sub.storyDialogues[storyDialogueIndex.value];
+      narrateText(mascotDialogue.value);
     } else {
-      triggerWin();
+      advanceStepOrWin();
     }
     return;
   }
 
-  // 2. Practice Mode
-  const branches = currentBranches.value;
+  // 2. Multi-Branch Puzzle Decision Node
+  const branches = sub.puzzleRoot || [];
   const matchedNode = branches.find(b => b.coord.r === r && b.coord.c === c);
 
   if (matchedNode && matchedNode.isCorrect) {
-    const moveRes = game.value.playMove(r, c, lesson.playerColor);
+    const moveRes = game.value.playMove(r, c, sub.playerColor);
     playStoneSound();
     if (moveRes.capturedStones.length > 0) playCaptureSound();
     lastMove.value = point;
     mascotMood.value = 'excited';
     mascotDialogue.value = matchedNode.comment;
     highlightPoints.value = [];
+    narrateText(mascotDialogue.value);
 
     if (matchedNode.opponentResponse) {
       isBotThinking.value = true;
@@ -177,54 +250,73 @@ const handleMove = (point: Point) => {
           lastMove.value = oppPoint;
           mascotMood.value = 'surprised';
           mascotDialogue.value = matchedNode.opponentResponse.comment;
+          narrateText(mascotDialogue.value);
         }
         isBotThinking.value = false;
 
         if (matchedNode.nextBranches && matchedNode.nextBranches.length > 0) {
           currentBranches.value = matchedNode.nextBranches;
         } else {
-          triggerWin();
+          advanceStepOrWin();
         }
       }, 500);
     } else {
       if (matchedNode.nextBranches && matchedNode.nextBranches.length > 0) {
         currentBranches.value = matchedNode.nextBranches;
       } else {
-        triggerWin();
+        advanceStepOrWin();
       }
     }
   } else {
     playErrorSound();
-    userStore.recordMistake(lesson.id);
+    userStore.recordMistake(currentLesson.value.id);
     attemptCount.value++;
     if (attemptCount.value >= 2) {
       earnedStars.value = Math.max(1, earnedStars.value - 1);
     }
     mascotMood.value = 'comforting';
-    mascotDialogue.value = `这步棋没有击中要害！提示：${lesson.hint}`;
+    mascotDialogue.value = '这步棋没有击中要害！提示：' + sub.hint;
+    narrateText(mascotDialogue.value);
+  }
+};
+
+const advanceStepOrWin = () => {
+  if (currentStepIndex.value < totalSteps.value - 1) {
+    playCaptureSound();
+    mascotMood.value = 'cheering';
+    mascotDialogue.value = '太棒啦！第 ' + (currentStepIndex.value + 1) + ' 题攻克成功！进入下一道变式实战！';
+    narrateText(mascotDialogue.value);
+
+    setTimeout(() => {
+      loadCurrentStep(currentStepIndex.value + 1);
+    }, 900);
+  } else {
+    triggerWin();
   }
 };
 
 const triggerWin = () => {
   isLessonComplete.value = true;
   mascotMood.value = 'cheering';
-  mascotDialogue.value = `太棒啦！你完美通关了【${currentLesson.value.title}】！`;
+  mascotDialogue.value = '太棒啦！你完美通关了【' + currentLesson.value.title + '】全部 ' + totalSteps.value + ' 道试炼！';
+  narrateText(mascotDialogue.value);
 
   setTimeout(() => {
     showStarModal.value = true;
-  }, 400);
+  }, 500);
 };
 
 const handleHint = () => {
   playHintSound();
-  const lesson = currentLesson.value;
+  const sub = currentSubPuzzle.value;
   mascotMood.value = 'excited';
-  mascotDialogue.value = `【小诺锦囊】${lesson.hint}`;
+  mascotDialogue.value = '【小诺锦囊】' + sub.hint;
+  narrateText(mascotDialogue.value);
 
-  if (lesson.type === 'story' && lesson.targetHighlight) {
-    highlightPoints.value = [...lesson.targetHighlight];
-  } else if (currentBranches.value.length > 0) {
-    const correctBranch = currentBranches.value.find(b => b.isCorrect);
+  if (sub.targetHighlight && sub.targetHighlight.length > 0) {
+    highlightPoints.value = [...sub.targetHighlight];
+  } else if (sub.puzzleRoot && sub.puzzleRoot.length > 0) {
+    const correctBranch = sub.puzzleRoot.find(b => b.isCorrect);
     if (correctBranch) {
       highlightPoints.value = [correctBranch.coord];
     }
@@ -239,7 +331,7 @@ const handleRestart = () => {
 const handleNextLesson = () => {
   if (nextLessonItem.value) {
     showStarModal.value = false;
-    router.push(`/lesson/${nextLessonItem.value.id}`);
+    router.push('/lesson/' + nextLessonItem.value.id);
   }
 };
 
@@ -250,49 +342,89 @@ const handleBackToMap = () => {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-4 sm:py-6 px-3 sm:px-6 lg:px-8 select-none">
-    <div class="max-w-7xl mx-auto space-y-5">
+  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-3 sm:py-6 px-2.5 sm:px-6 lg:px-8 select-none">
+    <div class="max-w-7xl mx-auto space-y-3 sm:space-y-5">
 
-      <!-- Top Header Navigation -->
-      <div class="flex items-center justify-between bg-white rounded-3xl p-4 sm:p-5 border-2 border-orange-100 shadow-sm">
-        <button
-          @click="handleBackToMap"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-extrabold text-xs sm:text-sm transition active:scale-95"
-        >
-          <ArrowLeft class="w-4 h-4" />
-          <span>关卡大地图</span>
-        </button>
+      <!-- Top Header Navigation & Multi-step Pills -->
+      <div class="bg-white rounded-3xl p-3.5 sm:p-5 border-2 border-orange-100 shadow-sm space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <button
+            @click="handleBackToMap"
+            class="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-2xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-black text-xs sm:text-sm transition active:scale-95 cursor-pointer flex-shrink-0"
+          >
+            <ArrowLeft class="w-4 h-4" />
+            <span class="hidden sm:inline">关卡地图</span>
+            <span class="sm:hidden">返回</span>
+          </button>
 
-        <div class="text-center">
-          <div class="text-[10px] sm:text-xs font-black text-orange-600 uppercase tracking-wide">
-            {{ currentLesson.type === 'story' ? '📖 互动讲解模式' : '🧩 死活实战模式' }}
+          <div class="text-center min-w-0 flex-1">
+            <div class="text-[10px] sm:text-xs font-black text-orange-600 uppercase tracking-wide truncate">
+              {{ currentLesson.chapterId ? '第 ' + currentLesson.chapterId + ' 章 · 阶梯式递进教学' : '启蒙实战教学' }}
+            </div>
+            <h1 class="text-sm sm:text-xl lg:text-2xl font-cartoon font-bold text-gray-900 tracking-wide truncate">
+              {{ currentLesson.title }}
+            </h1>
           </div>
-          <h1 class="text-base sm:text-2xl font-cartoon font-bold text-gray-900 tracking-wide">
-            {{ currentLesson.title }}
-          </h1>
+
+          <!-- Right Action: Voice Speech Toggle & Star Rating -->
+          <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <button
+              @click="toggleVoice"
+              class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-black transition active:scale-90 cursor-pointer shadow-2xs"
+              :class="speechEnabled ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-gray-100 border-gray-200 text-gray-400'"
+              :title="speechEnabled ? '点击关闭语音朗读' : '点击开启语音伴读'"
+            >
+              <Volume2 v-if="speechEnabled" class="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+              <VolumeX v-else class="w-3.5 h-3.5 text-gray-400" />
+              <span class="hidden sm:inline">{{ speechEnabled ? '语音伴读' : '已静音' }}</span>
+            </button>
+
+            <div class="flex items-center gap-0.5 sm:gap-1 bg-amber-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl border border-amber-200 shadow-2xs">
+              <Star
+                v-for="s in 3"
+                :key="s"
+                class="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                :class="s <= earnedStars ? 'text-amber-400 fill-current' : 'text-gray-200'"
+              />
+            </div>
+          </div>
         </div>
 
-        <!-- Star Rating Pill -->
-        <div class="flex items-center gap-1 bg-amber-50 px-3 py-1.5 rounded-2xl border border-amber-200">
-          <Star
-            v-for="s in 3"
-            :key="s"
-            class="w-4 h-4"
-            :class="s <= earnedStars ? 'text-amber-400 fill-current' : 'text-gray-200'"
-          />
+        <!-- 1讲 2~3 练 Sub-puzzle Step Indicator Bar -->
+        <div v-if="totalSteps > 1" class="flex items-center justify-center gap-2 pt-2 border-t border-gray-100 overflow-x-auto no-scrollbar">
+          <div
+            v-for="(sub, sIdx) in subPuzzlesList"
+            :key="sub.stepIndex"
+            @click="loadCurrentStep(sIdx)"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex-shrink-0 whitespace-nowrap"
+            :class="
+              currentStepIndex === sIdx
+                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-xs'
+                : sIdx < currentStepIndex
+                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                : 'bg-gray-100 text-gray-400'
+            "
+          >
+            <CheckCircle2 v-if="sIdx < currentStepIndex" class="w-3.5 h-3.5 text-emerald-600" />
+            <span v-else class="w-4 h-4 rounded-full bg-white/30 flex items-center justify-center text-[10px]">
+              {{ sIdx + 1 }}
+            </span>
+            <span>{{ sub.title.split('：')[1] || sub.title }}</span>
+          </div>
         </div>
       </div>
 
       <!-- Main Two-Column Clean Workspace Layout -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
         
         <!-- Center/Left Column: Large Responsive Board (7 cols) -->
-        <div class="lg:col-span-7 bg-white rounded-3xl p-4 sm:p-6 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-4">
+        <div class="lg:col-span-7 bg-white rounded-3xl p-3.5 sm:p-6 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-3 sm:space-y-4">
           <GoBoard
             :game="game"
             :readonly="isLessonComplete || isBotThinking"
             :showLiberties="showLiberties"
             :showAtari="showAtari"
+            :showBreathingTubes="showBreathingTubes"
             :theme="userStore.theme"
             :manualMove="true"
             :highlightPoints="highlightPoints"
@@ -302,53 +434,66 @@ const handleBackToMap = () => {
           />
 
           <!-- Assistant Toggles -->
-          <div class="w-full flex items-center justify-between pt-2 border-t border-gray-100 text-xs font-bold text-gray-600">
-            <div class="flex items-center gap-2">
+          <div class="w-full flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100 text-xs font-bold text-gray-600">
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <button
+                @click="showBreathingTubes = !showBreathingTubes"
+                class="px-2.5 sm:px-3 py-1.5 rounded-xl border transition flex items-center gap-1 active:scale-95 cursor-pointer"
+                :class="showBreathingTubes ? 'bg-emerald-100 border-emerald-300 text-emerald-900 font-black' : 'bg-gray-50 border-gray-200'"
+                title="开启/关闭具象化呼吸管道特效"
+              >
+                <Wind class="w-3.5 h-3.5 text-emerald-600" />
+                <span>呼吸管</span>
+              </button>
+
               <button
                 @click="showLiberties = !showLiberties"
-                class="px-3 py-1.5 rounded-xl border transition flex items-center gap-1.5 active:scale-95"
+                class="px-2.5 sm:px-3 py-1.5 rounded-xl border transition flex items-center gap-1 active:scale-95 cursor-pointer"
                 :class="showLiberties ? 'bg-amber-100 border-amber-300 text-amber-900 font-black' : 'bg-gray-50 border-gray-200'"
               >
-                <Eye class="w-3.5 h-3.5" />
-                <span>显示气数</span>
+                <Eye class="w-3.5 h-3.5 text-amber-600" />
+                <span>数气</span>
               </button>
 
               <button
                 @click="showAtari = !showAtari"
-                class="px-3 py-1.5 rounded-xl border transition flex items-center gap-1.5 active:scale-95"
+                class="px-2.5 sm:px-3 py-1.5 rounded-xl border transition flex items-center gap-1 active:scale-95 cursor-pointer"
                 :class="showAtari ? 'bg-rose-100 border-rose-300 text-rose-900 font-black' : 'bg-gray-50 border-gray-200'"
               >
-                <AlertTriangle class="w-3.5 h-3.5" />
-                <span>叫吃预警</span>
+                <AlertTriangle class="w-3.5 h-3.5 text-rose-600" />
+                <span>叫吃警报</span>
               </button>
             </div>
 
             <span class="text-[11px] text-gray-400 font-bold">
-              {{ currentLesson.boardSize }}x{{ currentLesson.boardSize }} 棋盘
+              第 {{ currentStepIndex + 1 }} / {{ totalSteps }} 题 · {{ currentSubPuzzle.boardSize }}x{{ currentSubPuzzle.boardSize }} 盘
             </span>
           </div>
         </div>
 
         <!-- Right Column: Story Dialogue & Action Controls (5 cols) -->
-        <div class="lg:col-span-5 space-y-4">
+        <div class="lg:col-span-5 space-y-3.5 sm:space-y-4">
           
-          <!-- Mascot NuoNuo Speech Bubble Guidance -->
-          <SpeechBubble
-            :text="mascotDialogue"
-            :mood="mascotMood"
-            :subtext="`目标：${currentLesson.goalText}`"
-          />
+          <!-- Mascot NuoNuo Speech Bubble Guidance (Clickable to Replay Voice) -->
+          <div @click="narrateText(mascotDialogue)" class="cursor-pointer group" title="点击小诺重新朗读语音">
+            <SpeechBubble
+              :text="mascotDialogue"
+              :mood="mascotMood"
+              :subtext="'目标：' + currentSubPuzzle.goalText"
+            />
+          </div>
 
           <!-- Action Control Buttons Card -->
-          <div class="bg-white rounded-3xl p-5 border-2 border-orange-100 shadow-sm space-y-3">
-            <div class="text-xs font-black text-gray-500 uppercase tracking-wide">
-              本关行动指南 (Actions)
+          <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-orange-100 shadow-sm space-y-3">
+            <div class="text-xs font-black text-gray-500 uppercase tracking-wide flex items-center justify-between">
+              <span>本关行动指南 (Actions)</span>
+              <span class="text-orange-600 font-bold">第 {{ currentStepIndex + 1 }} 题目标：{{ currentSubPuzzle.goalText }}</span>
             </div>
 
             <div class="grid grid-cols-2 gap-2.5">
               <button
                 @click="handleHint"
-                class="py-3 px-4 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-sm shadow-sm flex items-center justify-center gap-2 transition active:scale-95"
+                class="py-2.5 sm:py-3 px-4 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer"
               >
                 <Lightbulb class="w-4 h-4 fill-current" />
                 <span>锦囊提示</span>
@@ -356,7 +501,7 @@ const handleBackToMap = () => {
 
               <button
                 @click="handleRestart"
-                class="py-3 px-4 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-sm flex items-center justify-center gap-2 transition active:scale-95"
+                class="py-2.5 sm:py-3 px-4 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer"
               >
                 <RotateCcw class="w-4 h-4" />
                 <span>重新开始</span>
@@ -365,28 +510,28 @@ const handleBackToMap = () => {
           </div>
 
           <!-- Bilingual Concept Commentary Card -->
-          <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl p-5 border-2 border-orange-200 space-y-2.5">
+          <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl p-4 sm:p-5 border-2 border-orange-200 space-y-2.5 shadow-2xs">
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2 text-xs font-black text-orange-900">
+              <div class="flex items-center gap-1.5 text-xs font-black text-orange-900">
                 <BookOpen class="w-4 h-4 text-orange-600" />
                 <span>名师点睛与双语术语</span>
               </div>
-              <span class="text-xs font-bold text-gray-500 bg-white/80 px-2 py-0.5 rounded-full border border-orange-100">
+              <span class="text-[10px] sm:text-xs font-bold text-gray-500 bg-white/80 px-2 py-0.5 rounded-full border border-orange-100">
                 {{ currentLesson.bilingualTerm.english }}
               </span>
             </div>
 
             <div class="bg-white/90 rounded-2xl p-3 border border-orange-100">
-              <div class="font-black text-sm text-gray-900">
-                {{ currentLesson.bilingualTerm.chinese }}
-                <span class="text-xs text-orange-600 ml-1 font-semibold">{{ currentLesson.bilingualTerm.pinyin }}</span>
+              <div class="font-black text-xs sm:text-sm text-gray-900 flex items-center gap-1">
+                <span>{{ currentLesson.bilingualTerm.chinese }}</span>
+                <span class="text-[10px] sm:text-xs text-orange-600 font-semibold">{{ currentLesson.bilingualTerm.pinyin }}</span>
               </div>
-              <p class="text-xs text-gray-600 font-medium mt-1 leading-relaxed">
+              <p class="text-[11px] sm:text-xs text-gray-600 font-medium mt-1 leading-relaxed">
                 {{ currentLesson.bilingualTerm.concept }}
               </p>
             </div>
 
-            <p class="text-xs text-gray-700 font-medium leading-relaxed">
+            <p class="text-[11px] sm:text-xs text-gray-700 font-medium leading-relaxed">
               {{ currentLesson.explanation }}
             </p>
           </div>
@@ -410,3 +555,4 @@ const handleBackToMap = () => {
     />
   </div>
 </template>
+

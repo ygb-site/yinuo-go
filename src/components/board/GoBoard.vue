@@ -10,6 +10,7 @@ const props = withDefaults(
     game: GoGame;
     readonly?: boolean;
     showLiberties?: boolean;
+    showBreathingTubes?: boolean;
     boardSize?: BoardSize;
     showCoordinates?: boolean;
     showAtari?: boolean;
@@ -25,6 +26,7 @@ const props = withDefaults(
   {
     readonly: false,
     showLiberties: true,
+    showBreathingTubes: true,
     showCoordinates: true,
     showAtari: true,
     showTerritory: false,
@@ -57,9 +59,7 @@ const isTouchConfirmActive = computed(() => {
   return props.confirmTouch ?? userStore.touchConfirmEnabled;
 });
 
-
 const boardVersion = ref(0);
-
 const size = computed(() => props.game?.size || 9);
 
 // 100% Guaranteed Reactive Stone List calculation
@@ -171,6 +171,55 @@ const atariAlertPoints = computed<Set<string>>(() => {
     }
   }
   return set;
+});
+
+// Calculate Tangible Breathing Tubes (具象化呼吸管道)
+interface BreathingTube {
+  id: string;
+  from: Point;
+  to: Point;
+  isAtari: boolean;
+  color: StoneColor;
+}
+
+const breathingTubes = computed<BreathingTube[]>(() => {
+  if (!props.showBreathingTubes || !props.game) return [];
+  void boardVersion.value;
+  void props.game?.version;
+
+  const s = size.value;
+  if (s > 11) return []; // Omit on larger boards to keep clear
+
+  const tubes: BreathingTube[] = [];
+  const visited = new Set<string>();
+  const groups = props.game.getAllGroups();
+
+  for (const g of groups) {
+    const isAtari = g.libertyCount === 1;
+    for (const st of g.stones) {
+      const deltas = [{ r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 }];
+      for (const d of deltas) {
+        const nr = st.r + d.r;
+        const nc = st.c + d.c;
+        if (nr >= 0 && nr < s && nc >= 0 && nc < s) {
+          if (props.game.getCell(nr, nc) === null) {
+            const key = `${st.r},${st.c}->${nr},${nc}`;
+            if (!visited.has(key)) {
+              visited.add(key);
+              tubes.push({
+                id: key,
+                from: { r: st.r, c: st.c },
+                to: { r: nr, c: nc },
+                isAtari,
+                color: g.color
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+  return tubes;
 });
 
 // Active selected stone liberties highlight
@@ -472,6 +521,47 @@ const coordTextColor = computed(() => {
             />
           </g>
 
+          <!-- Tangible Breathing Oxygen Tubes Layer (具象化呼吸管道) -->
+          <g v-if="showBreathingTubes && breathingTubes.length > 0" pointer-events="none">
+            <template v-for="tube in breathingTubes" :key="'tube-' + tube.id">
+              <!-- Outer Glow Beam -->
+              <line
+                :x1="tube.from.c * 100 + 50"
+                :y1="tube.from.r * 100 + 50"
+                :x2="tube.to.c * 100 + 50"
+                :y2="tube.to.r * 100 + 50"
+                :stroke="tube.isAtari ? '#EF4444' : '#10B981'"
+                :stroke-width="tube.isAtari ? 7 : 4.5"
+                stroke-linecap="round"
+                :opacity="tube.isAtari ? 0.9 : 0.65"
+                :class="tube.isAtari ? 'animate-pulse-fast' : ''"
+              />
+              <!-- Inner Core Dotted Stream Line -->
+              <line
+                :x1="tube.from.c * 100 + 50"
+                :y1="tube.from.r * 100 + 50"
+                :x2="tube.to.c * 100 + 50"
+                :y2="tube.to.r * 100 + 50"
+                :stroke="tube.isAtari ? '#FCA5A5' : '#D1FAE5'"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-dasharray="4,4"
+                opacity="0.9"
+              />
+              <!-- Terminal Oxygen Node Indicator -->
+              <circle
+                :cx="tube.to.c * 100 + 50"
+                :cy="tube.to.r * 100 + 50"
+                :r="tube.isAtari ? 11 : 7.5"
+                :fill="tube.isAtari ? '#EF4444' : '#10B981'"
+                :stroke="tube.isAtari ? '#FFFFFF' : '#ECFDF5'"
+                :stroke-width="tube.isAtari ? 2.5 : 1.5"
+                :opacity="tube.isAtari ? 0.95 : 0.75"
+                :class="tube.isAtari ? 'animate-pulse-fast' : ''"
+              />
+            </template>
+          </g>
+
           <!-- Territory Shading Overlay -->
           <g v-if="showTerritory && territoryMap">
             <template v-for="r in size" :key="'terr-r-' + r">
@@ -512,7 +602,7 @@ const coordTextColor = computed(() => {
                 :cy="p.r * 100 + 50"
                 r="38"
                 fill="#FFD43B"
-                fill-opacity="0.3"
+                fill-opacity="0.35"
                 stroke="#FAB005"
                 stroke-width="4"
                 stroke-dasharray="6,4"
@@ -557,15 +647,15 @@ const coordTextColor = computed(() => {
                 class="transition-transform duration-150"
                 pointer-events="none"
               >
-                <!-- Atari Pulsing Aura Ring (叫吃呼吸红光) -->
+                <!-- Atari Pulsing Danger Ring (叫吃呼吸红光) -->
                 <circle
                   v-if="atariAlertPoints.has(stone.r + ',' + stone.c)"
                   cx="0"
                   cy="0"
-                  r="48"
+                  r="49"
                   fill="none"
                   stroke="#EF4444"
-                  stroke-width="4"
+                  stroke-width="4.5"
                   stroke-dasharray="6,4"
                   class="animate-pulse-fast"
                 />
@@ -750,6 +840,16 @@ const coordTextColor = computed(() => {
 }
 
 .animate-ping-once {
-  animation: pingOnce 0.3s cubic-bezier(0, 0, 0.2, 1);
+  animation: pingOnce 0.6s ease-out forwards;
+}
+
+.animate-pulse-fast {
+  animation: pulseFast 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulseFast {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 </style>
+
