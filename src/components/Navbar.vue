@@ -13,8 +13,7 @@ import {
   Star,
   Gamepad2,
   Compass,
-  Puzzle,
-  Zap,
+  Flame,
   Swords,
   ShoppingBag,
   UserCheck,
@@ -46,13 +45,12 @@ onUnmounted(() => {
   document.removeEventListener('pointerdown', handleGlobalClick);
 });
 
+// 5 Core Focused Navigation Tabs
 const navItems = [
   { path: '/', name: '首页', shortName: '首页', icon: Compass },
-  { path: '/learn', name: '趣味闯关', shortName: '闯关', icon: Gamepad2 },
-  { path: '/arcade', name: '反应乐园', shortName: '乐园', icon: Zap },
-  { path: '/capture-go', name: '吃子对弈', shortName: '吃子', icon: Swords },
-  { path: '/tsumego', name: '每日死活', shortName: '死活', icon: Puzzle },
-  { path: '/shop', name: '装扮商城', shortName: '商城', icon: ShoppingBag },
+  { path: '/learn', name: '启蒙闯关', shortName: '闯关', icon: Gamepad2 },
+  { path: '/practice', name: '技能训练', shortName: '练习', icon: Flame },
+  { path: '/battle', name: '对弈竞技', shortName: '对弈', icon: Swords },
   { path: '/profile', name: '成长中心', shortName: '我的', icon: UserCheck }
 ];
 
@@ -98,6 +96,33 @@ const isNavActive = (itemPath: string) => {
       route.path.startsWith('/adventure')
     );
   }
+  if (itemPath === '/practice') {
+    return (
+      route.path === '/practice' ||
+      route.path.startsWith('/arcade') ||
+      route.path.startsWith('/tsumego') ||
+      route.path.startsWith('/mistakes') ||
+      route.path.startsWith('/worksheet')
+    );
+  }
+  if (itemPath === '/battle') {
+    return (
+      route.path === '/battle' ||
+      route.path.startsWith('/capture-go') ||
+      route.path.startsWith('/two-player') ||
+      route.path.startsWith('/ai-match') ||
+      route.path.startsWith('/rank-exam')
+    );
+  }
+  if (itemPath === '/profile') {
+    return (
+      route.path === '/profile' ||
+      route.path.startsWith('/shop') ||
+      route.path.startsWith('/rhymes') ||
+      route.path.startsWith('/dictionary') ||
+      route.path.startsWith('/free-board')
+    );
+  }
   return route.path.startsWith(itemPath);
 };
 </script>
@@ -135,12 +160,12 @@ const isNavActive = (itemPath: string) => {
         </div>
 
         <!-- Center: Desktop Capsule Navigation Tabs -->
-        <nav class="hidden lg:flex items-center bg-amber-50/80 border border-orange-200/80 p-1 rounded-2xl shadow-inner gap-0.5 xl:gap-1 flex-shrink-0">
+        <nav class="hidden lg:flex items-center bg-amber-50/80 border border-orange-200/80 p-1 rounded-2xl shadow-inner gap-1 xl:gap-1.5 flex-shrink-0">
           <button
             v-for="item in navItems"
             :key="item.path"
             @click="navigateTo(item.path)"
-            class="flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all duration-200 whitespace-nowrap flex-shrink-0 cursor-pointer"
+            class="flex items-center gap-1.5 px-3.5 xl:px-4 py-1.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all duration-200 whitespace-nowrap flex-shrink-0 cursor-pointer"
             :class="
               isNavActive(item.path)
                 ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm font-black'
@@ -267,7 +292,7 @@ const isNavActive = (itemPath: string) => {
     </div>
   </header>
 
-  <!-- Mobile Bottom Navigation Bar (📱 手机端固定底部快捷导航栏) -->
+  <!-- Mobile Bottom Navigation Bar (📱 手机端固定底部快捷导航栏 5 大核心) -->
   <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-orange-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-1 pt-1.5 pb-[max(0.4rem,env(safe-area-inset-bottom))] flex items-center justify-around select-none">
     <button
       v-for="item in navItems"
@@ -297,3 +322,4 @@ const isNavActive = (itemPath: string) => {
     </button>
   </nav>
 </template>
+

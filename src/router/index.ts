@@ -3,8 +3,8 @@ import { stopSpeech } from '../utils/speech';
 import HomeView from '../views/HomeView.vue';
 import LearnView from '../views/LearnView.vue';
 import LessonPlayView from '../views/LessonPlayView.vue';
-import AdventureView from '../views/AdventureView.vue';
-import LevelPlayView from '../views/LevelPlayView.vue';
+import PracticeView from '../views/PracticeView.vue';
+import BattleView from '../views/BattleView.vue';
 import TsumegoView from '../views/TsumegoView.vue';
 import AiMatchView from '../views/AiMatchView.vue';
 import FreeBoardView from '../views/FreeBoardView.vue';
@@ -27,8 +27,10 @@ const router = createRouter({
     { path: '/', name: 'home', component: HomeView },
     { path: '/learn', name: 'learn', component: LearnView },
     { path: '/lesson/:id', name: 'lesson-play', component: LessonPlayView },
-    { path: '/adventure', name: 'adventure', component: AdventureView },
-    { path: '/adventure/:id', name: 'level-play', component: LevelPlayView },
+    { path: '/adventure', redirect: '/learn' },
+    { path: '/adventure/:id', redirect: to => `/lesson/${to.params.id}` },
+    { path: '/practice', name: 'practice', component: PracticeView },
+    { path: '/battle', name: 'battle', component: BattleView },
     { path: '/tsumego', name: 'tsumego', component: TsumegoView },
     { path: '/arcade', name: 'arcade', component: ArcadeView },
     { path: '/capture-go', name: 'capture-go', component: CaptureGoView },

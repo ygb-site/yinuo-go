@@ -4,7 +4,8 @@ import { Star, Coins, Zap, ArrowRight, RotateCcw, Map, BookOpen, X } from 'lucid
 import type { Lesson } from '../../data/chapters';
 import { playVictorySound, triggerConfetti } from '../../lib/audio';
 import { useAdventureStore } from '../../stores/adventureStore';
-import { useUserStore } from '../../stores/userStore';
+import { useUserStore } from '../../stores/useUserStore';
+import { useUnlockStore } from '../../stores/unlockStore';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -22,6 +23,7 @@ const emit = defineEmits<{
 
 const adventureStore = useAdventureStore();
 const userStore = useUserStore();
+const unlockStore = useUnlockStore();
 
 // Random encouraging voice lines from NuoNuo
 const encouragingQuotes = [
@@ -43,12 +45,20 @@ watch(
       playVictorySound();
       triggerConfetti();
 
+      const prevCompleted = unlockStore.completedLessonsCount;
+
       // Automatically sync progress to Pinia Store & LocalStorage
       adventureStore.completeLevel(props.lesson.id, props.stars, {
         exp: props.lesson.rewards.exp,
         coins: props.lesson.rewards.coins
       });
       userStore.recordPuzzleSolved();
+
+      const newCompleted = unlockStore.completedLessonsCount;
+      // Check if this completion unlocked a new game mode
+      setTimeout(() => {
+        unlockStore.checkNewUnlocks(prevCompleted, newCompleted);
+      }, 500);
     }
   }
 );

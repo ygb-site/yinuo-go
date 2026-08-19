@@ -63,49 +63,49 @@ export interface Chapter {
 
 export const CHAPTERS_DATA: Chapter[] = [
   // ==========================================
-  // 第一章：棋盘地图与神秘地名（棋盘认知启蒙）
+  // 第一章：小精灵的呼吸与吃子魔法（规则启蒙与气）
   // ==========================================
   {
     id: 1,
-    title: '第一章：棋盘地图与神秘地名（棋盘启蒙）',
-    titleEn: 'Chapter 1: The Board Map & Sacred Locations',
-    icon: '🧭',
+    title: '第一章：小精灵的呼吸与吃子魔法（规则与气）',
+    titleEn: 'Chapter 1: Stone Spirits & The Magic of Capture',
+    icon: '✨',
     themeColor: 'from-emerald-400 to-teal-500',
-    description: '探索棋盘宇宙！认识天元、星位、三三、小目，掌握奇妙的死亡线、逃生线、实地线与势力线！',
+    description: '欢迎来到围棋世界！认识棋盘交叉点、棋子的呼吸管（气）、叫吃预警与吃子魔法！通关解锁【吃子对弈场】！',
     lessons: [
       {
         id: 'lesson_1_1',
         chapterId: 1,
         type: 'story',
-        title: '1-1 棋盘宇宙中心：天元',
-        titleEn: 'Tengen: Center of the Universe',
+        title: '1-1 棋盘与黑白小精灵',
+        titleEn: '1-1 Board & Spirit Stones',
         subtitle: '认识交叉点与正中心天元',
-        description: '围棋是下在“横线与竖线的交叉点”上的，最正中的大黑点叫【天元】！',
+        description: '围棋棋子不下在方格子里，而是住在“横线与竖线的交叉点”上！黑先白后，一人下一颗。',
         storyDialogues: [
-          '你好呀！我是小诺~ 欢迎来到神奇的围棋宇宙！',
-          '请看棋盘：棋子不是放在方格子里，而是放在线与线相交的【交叉点】上！',
-          '棋盘正中间那个最亮的大黑点，叫做【天元】（Tengen），象征宇宙的原点！快在正中心的天元 C3 交叉点落下你的第一颗黑子吧！'
+          '你好呀！我是导师小诺~ 欢迎来到神奇的围棋世界！🐼',
+          '请仔细看棋盘：围棋棋子不是放在方格子里，而是稳稳落在【交叉点】上！',
+          '棋盘正中间那个最亮的点叫做【天元】（Tengen）。快在正中间的交叉点（C3）落下你的第一颗黑精灵吧！'
         ],
         boardSize: 5,
         initialStones: [],
         playerColor: 'B',
-        goalText: '点击棋盘正中心的天元星位（C3 交叉点）放置黑子！',
+        goalText: '点击棋盘正中心天元（C3 交叉点）放置第一颗黑子！',
         goalTextEn: 'Click the center Tengen point (C3) to place your stone!',
         targetHighlight: [{ r: 2, c: 2 }],
         puzzleRoot: [
           {
             coord: { r: 2, c: 2 },
-            comment: '太棒啦！这就是棋盘的正中心——天元星位（Tengen）！',
+            comment: '太棒啦！棋子稳稳落在交叉点上！黑白小精灵正式开启冒险之旅！',
             isCorrect: true
           }
         ],
-        hint: '请点击正中间闪闪发光的天元星位 C3。',
-        explanation: '围棋棋盘由纵横直线组成，棋子下在交叉点上。棋盘中心的特殊标记点称为“天元”（Tengen），是整块棋盘的核心坐标基准。',
+        hint: '请点击正中间闪闪发光的交叉点 C3。',
+        explanation: '围棋棋盘由纵横交叉的直线构成，棋子必须下在线与线的交叉点上。黑棋先下，白棋后下，轮流落子，落子后不能随意移动。',
         bilingualTerm: {
-          chinese: '天元',
-          pinyin: 'tiān yuán',
-          english: 'Tengen (Center Star)',
-          concept: '棋盘正中心的星位交叉点，象征宇宙的中心，具有统领全局的象征意义。'
+          chinese: '交叉点与天元',
+          pinyin: 'jiāo chā diǎn & tiān yuán',
+          english: 'Intersections & Tengen',
+          concept: '棋子着点必须是纵横线交叉处，正中心最醒目的星位称为天元。'
         },
         rewards: { stars: 3, coins: 25, exp: 60 }
       },
@@ -113,327 +113,157 @@ export const CHAPTERS_DATA: Chapter[] = [
         id: 'lesson_1_2',
         chapterId: 1,
         type: 'story',
-        title: '1-2 守护四方的守护星：星位',
-        titleEn: 'Star Points (Hoshi)',
-        subtitle: '认识角星位与边星',
-        description: '除了中心天元，棋盘四周还有守护四方的黑色大圆点，叫做【星位】！',
+        title: '1-2 棋子的呼吸通道：气',
+        titleEn: '1-2 Stone Breathing (Liberties)',
+        subtitle: '数清棋子四周的4条呼吸管',
+        description: '棋子就像小精灵一样需要呼吸！紧挨着它四周的直线就是它的【呼吸管道（气）】。',
         storyDialogues: [
-          '棋盘上除了天元，还有几个特别闪耀的黑点，叫做【星位】（Hoshi）！',
-          '星位就像夜空中的北极星，是小棋手们开局占领地盘最稳健的高效基地。',
-          '快点击左上方的角星位 B4 交叉点，点亮一颗守护之星吧！'
+          '黑子落下了，它也是有生命的哦！看它上下左右连着的4条直线，就是它的【气】（呼吸管道）！',
+          '中间的子有4口气，边上的子有3口气，角落的子只有2口气！',
+          '如果让两个黑子手拉手连在一起，气就会合在一起变多！快在黑子上方（C2）下子，帮它们连手长气吧！'
         ],
         boardSize: 5,
-        initialStones: [],
+        initialStones: [{ r: 2, c: 2, color: 'B' }],
         playerColor: 'B',
-        goalText: '点击左上角星位（B4 交叉点）落下黑子！',
-        goalTextEn: 'Click the top-left star point (B4) to place your stone!',
-        targetHighlight: [{ r: 1, c: 1 }],
+        goalText: '在黑子上方（C2）落子，手拉手连起来增加呼吸管！',
+        goalTextEn: 'Play on C2 to connect with the black stone and increase liberties!',
+        targetHighlight: [{ r: 1, c: 2 }],
         puzzleRoot: [
           {
-            coord: { r: 1, c: 1 },
-            comment: '太棒啦！星位既高高在上俯瞰全局，又紧邻金角实地，是开局最好的起手点！',
+            coord: { r: 1, c: 2 },
+            comment: '手拉手好朋友！两颗黑子连成一体，呼吸管（气）一下子变成6条啦！',
             isCorrect: true
           }
         ],
-        hint: '请点击左上角的星位交叉点 B4。',
-        explanation: '星位（Hoshi）是棋盘上预先标有黑色实心小圆点的交叉点。19路盘上有9个星位（4个角星、4个边星、1个天元），9路盘上有5个星位。',
+        hint: '点击黑子正上方的交叉点 C2。',
+        explanation: '与棋子直接相邻且未被占领的交叉点称为“气”（Liberties）。单子在中央有4气，边上有3气，角上有2气。互相紧挨连接的同色棋子共享所有气！',
         bilingualTerm: {
-          chinese: '星位',
-          pinyin: 'xīng wèi',
-          english: 'Star Point (Hoshi)',
-          concept: '棋盘上标记的重要基准点，开局占角取势的首选要点。'
+          chinese: '气',
+          pinyin: 'qì',
+          english: 'Liberties (Qi)',
+          concept: '棋子在棋盘上生存所依赖的相邻空交叉点，无气则死。'
         },
         rewards: { stars: 3, coins: 25, exp: 60 }
       },
       {
         id: 'lesson_1_3',
         chapterId: 1,
-        type: 'story',
-        title: '1-3 奇妙的四条线：死亡线与逃生线',
-        titleEn: 'Line 1 (Death) & Line 2 (Escape)',
-        subtitle: '一路悬崖死亡线，二路贴地逃生线',
-        description: '从棋盘边缘往里数：第一条线叫死亡线，第二条线叫逃生线！',
-        storyDialogues: [
-          '棋盘上的每一条线都有神奇的名字哦！',
-          '最外边缘的一路线叫【死亡线】：就像悬崖边缘，棋子下在这一路只有很少的气，容易掉下悬崖被吃！',
-          '从边缘数第二条线叫【二路线（逃生线）】：专门用来低头逃跑或连接，但很难围出大房子。',
-          '请点击二路逃生线上的 B2 交叉点，体验贴地连络的脚步！'
-        ],
+        type: 'puzzle',
+        title: '1-3 危险警报拉响：叫吃（打吃）',
+        titleEn: '1-3 Danger Alarm: Atari!',
+        subtitle: '只剩最后一口气的危险预警',
+        description: '当对方棋子的气被堵得只剩下【最后1口】时，就叫【叫吃】（Atari）！危险红灯闪烁！',
         boardSize: 5,
-        initialStones: [],
+        initialStones: [
+          { r: 2, c: 2, color: 'W' },
+          { r: 1, c: 2, color: 'B' },
+          { r: 3, c: 2, color: 'B' }
+        ],
         playerColor: 'B',
-        goalText: '点击二路线上的 B2 交叉点体验逃生线！',
-        goalTextEn: 'Click the point B2 on the 2nd Line (Escape Line)!',
-        targetHighlight: [{ r: 3, c: 1 }],
+        goalText: '在白子左侧（B3）落子，堵住它左边的呼吸管，形成【叫吃】！',
+        goalTextEn: 'Play on B3 to reduce the white stone to its final liberty (Atari)!',
+        targetHighlight: [{ r: 2, c: 1 }],
         puzzleRoot: [
           {
-            coord: { r: 3, c: 1 },
-            comment: '好样的！记住：平时尽量不要在悬崖一路线落子，遇到危险时走二路线逃生！',
+            coord: { r: 2, c: 1 },
+            comment: '滴嘟滴嘟！白棋现在只剩右边最后1口气啦！打吃成功！',
             isCorrect: true
           }
         ],
-        hint: '点击下方的二路交叉点 B2。',
-        explanation: '【一路线（死亡线）】：靠紧边缘，气极少且无法伸展；【二路线（逃生线/败退线）】：通常用于联络或破空，但二路爬行难以围得大目数。',
+        hint: '在白子左侧交叉点 B3（r:2, c:1）下黑子堵住气。',
+        explanation: '当一方落子后，使对方某块棋子仅剩最后一口气，下一步即可提掉的状态称为“叫吃”（打吃 / Atari）。',
         bilingualTerm: {
-          chinese: '一路线 / 二路线',
-          pinyin: 'yī lù xiàn / èr lù xiàn',
-          english: '1st Line (Death) / 2nd Line (Escape)',
-          concept: '一路紧贴悬崖为死亡线，二路贴地爬行为逃生线。'
+          chinese: '叫吃（打吃）',
+          pinyin: 'jiào chī / dǎ chī',
+          english: 'Atari',
+          concept: '棋子只剩下最后一口气的紧迫状态，对方下一步就能提走。'
         },
         rewards: { stars: 3, coins: 30, exp: 70 }
       },
       {
         id: 'lesson_1_4',
         chapterId: 1,
-        type: 'story',
-        title: '1-4 黄金宝藏线：三路实地与四路势力',
-        titleEn: 'Line 3 (Territory) & Line 4 (Influence)',
-        subtitle: '三路圈地黄金线，四路辐射大宇宙',
-        description: '第三条线叫【实地地盘线】，第四条线叫【势力外势线】！',
-        storyDialogues: [
-          '现在认识最重要的两条线：三路线和四路线！',
-          '从边缘数第三条线叫【三路（实地线）】：这是围棋的黄金线！下在三路最容易稳固筑城，把地盘金币牢牢装进兜里！',
-          '第四条线叫【四路（势力线）】：站得高看得远，向着宇宙中央发射强大的威慑力量！',
-          '快点击三路线上的 C4 交叉点，建立你的黄金地盘城堡！'
-        ],
+        type: 'puzzle',
+        title: '1-4 抓捕白怪大作战：提子',
+        titleEn: '1-4 Capture the Spirit: Capture!',
+        subtitle: '拔掉最后一口气，把被吃的白子抓出棋盘',
+        description: '白棋已经只剩最后1口气啦！把这最后一口气堵死，就能把白子提离棋盘，收入俘虏盒！',
         boardSize: 5,
-        initialStones: [],
+        initialStones: [
+          { r: 2, c: 2, color: 'W' },
+          { r: 1, c: 2, color: 'B' },
+          { r: 3, c: 2, color: 'B' },
+          { r: 2, c: 1, color: 'B' }
+        ],
         playerColor: 'B',
-        goalText: '点击三路实地线上的 C4 交叉点稳健圈地！',
-        goalTextEn: 'Click the point C4 on the 3rd Line (Territory Line)!',
-        targetHighlight: [{ r: 1, c: 2 }],
+        goalText: '在白子右侧最后一口气（D3）落子，完成【提子】！',
+        goalTextEn: 'Place black on D3 to completely surround and capture the white stone!',
+        targetHighlight: [{ r: 2, c: 3 }],
         puzzleRoot: [
           {
-            coord: { r: 1, c: 2 },
-            comment: '完美！三路是实地黄金线，四路是势力线，“高低搭配”才能下出最棒的棋！',
+            coord: { r: 2, c: 3 },
+            comment: '啪！清脆提子！白棋四周全部没气，被吃掉拿走啦！太爽啦！',
             isCorrect: true
           }
         ],
-        hint: '点击上方三路线的正中交叉点 C4。',
-        explanation: '【三路线（实地线）】：围地效率最高，防守稳固；【四路线（势力线）】：向中央辐射影响力，便于向外攻击拓展。“三路取地，四路取势”是围棋经典棋理。',
+        hint: '请点击白子右侧唯一的呼吸空位 D3（r:2, c:3）。',
+        explanation: '当下下一子使对方棋子完全失去所有的气时，该棋子立即被提走移出棋盘，称为“提子”（Capture）。提走的棋子为俘虏（死子）。',
         bilingualTerm: {
-          chinese: '三路线 / 四路线',
-          pinyin: 'sān lù xiàn / sì lù xiàn',
-          english: '3rd Line (Territory) / 4th Line (Influence)',
-          concept: '三路为围取实地的黄金线，四路为向中央发展的大局势力线。'
+          chinese: '提子',
+          pinyin: 'tí zǐ',
+          english: 'Capture / Take Stones',
+          concept: '下子拔掉对方最后一口气，将无气敌子移出棋盘的动作。'
         },
-        rewards: { stars: 3, coins: 30, exp: 70 }
+        rewards: { stars: 3, coins: 35, exp: 80 }
       },
       {
         id: 'lesson_1_5',
         chapterId: 1,
-        type: 'story',
-        title: '1-5 角部金库两大穴位：三·三与小目',
-        titleEn: 'San-San & Komoku',
-        subtitle: '三三占金库，小目攻守兼备',
-        description: '在角部，距离两条边线都是3路的位置叫【三·三】，一侧3路一侧4路叫【小目】！',
-        storyDialogues: [
-          '除了星位，角部还有两位超级明星位置：',
-          '【三·三（San-San）】：两边都是第3条线，落子直接把角部金库大门锁死，别人抢不走！',
-          '【小目（Komoku）】：一边在3路（稳守地盘），一边在4路（向外进攻），攻守兼备！',
-          '请点击右上角的三·三要点 D4 交叉点，牢牢锁住角部宝藏！'
-        ],
+        type: 'puzzle',
+        title: '1-5 危险自救：逃跑与长气',
+        titleEn: '1-5 Escape and Extend Liberties',
+        subtitle: '黑子被叫吃了，快逃到安全空旷的地方！',
+        description: '黑子被白棋包围叫吃，只剩上方最后1口气！快往空旷上方逃跑，增加呼吸管！',
         boardSize: 5,
-        initialStones: [],
+        initialStones: [
+          { r: 2, c: 2, color: 'B' },
+          { r: 3, c: 2, color: 'W' },
+          { r: 2, c: 1, color: 'W' },
+          { r: 2, c: 3, color: 'W' }
+        ],
         playerColor: 'B',
-        goalText: '点击右上角的三·三要点（D4 交叉点）占领角地！',
-        goalTextEn: 'Click the San-San point (D4) to secure corner territory!',
-        targetHighlight: [{ r: 1, c: 3 }],
+        goalText: '在上方（C2）落子逃跑，帮黑子长出更多气！',
+        goalTextEn: 'Play on C2 to extend liberties and escape the danger!',
+        targetHighlight: [{ r: 1, c: 2 }],
         puzzleRoot: [
           {
-            coord: { r: 1, c: 3 },
-            comment: '真聪明！三·三一子占角，是千百年来最坚固的实地要塞！',
+            coord: { r: 1, c: 2 },
+            comment: '太棒啦！黑子成功逃出生天，手拉手长出了3条新气，安全啦！',
             isCorrect: true
           }
         ],
-        hint: '请点击右上角的三·三位置 D4。',
-        explanation: '【三·三】：距离两边线均为3路，具有极强的实地属性；【小目】：一侧3路一侧4路，兼顾实地与外势，是传统围棋布局使用频率最高的位置之一。',
+        hint: '点击上方唯一的逃生出口 C2（r:1, c:2）。',
+        explanation: '当自己的棋子被叫吃时，若不想被对方提掉，可以通过向宽广处逃跑（长气 / 连回）来摆脱危机。',
         bilingualTerm: {
-          chinese: '三·三 / 小目',
-          pinyin: 'sān sān / xiǎo mù',
-          english: 'San-San (3-3) / Komoku (3-4)',
-          concept: '角部的核心定点，三三为纯地盘坚固堡垒，小目为攻守兼备的经典定点。'
+          chinese: '长气与逃跑',
+          pinyin: 'zhǎng qì & táo pǎo',
+          english: 'Extend Liberties & Escape',
+          concept: '增加自身棋子气数的下法，是防守自救的基本功。'
         },
-        rewards: { stars: 3, coins: 35, exp: 80 }
+        rewards: { stars: 3, coins: 30, exp: 70 }
       },
       {
         id: 'lesson_1_6',
         chapterId: 1,
         type: 'story',
-        title: '1-6 空间第一口诀：金角、银边、草肚皮',
-        titleEn: 'Corners Gold, Sides Silver, Center Grass',
-        subtitle: '围棋占地效率最高的黄金法则',
-        description: '在角上盖房子只需要砌两面墙（金角），边上需三面墙（银边），中间要砌四面墙（草肚皮）！',
-        storyDialogues: [
-          '围棋第一大口诀：【金角、银边、草肚皮】！',
-          '为什么角是“金”做的？因为角上有棋盘天然的两面墙壁，只要极少的棋子就能围出大领地！',
-          '边上是“银”做的，需要借一面墙；而中间（草肚皮）四面漏风，要很多棋子才能围住！',
-          '快点击金角之地的 B4 星位，开启你的金库大门吧！'
-        ],
-        boardSize: 5,
-        initialStones: [],
-        playerColor: 'B',
-        goalText: '点击金角星位 B4，率先抢占金角！',
-        goalTextEn: 'Click the golden corner star point B4!',
-        targetHighlight: [{ r: 1, c: 1 }],
-        puzzleRoot: [
-          {
-            coord: { r: 1, c: 1 },
-            comment: '太棒啦！开局先占金角，再拆银边，最后逐鹿中原，你已经掌握了围棋大局观的秘密！',
-            isCorrect: true
-          }
-        ],
-        hint: '点击左上角金角星位 B4。',
-        explanation: '“金角银边草肚皮”是围棋效率规律：角部有天然两边边界，效率最高；边部次之；中腹需从零构筑四周城墙，圈地最难。',
-        bilingualTerm: {
-          chinese: '金角银边草肚皮',
-          pinyin: 'jīn jiǎo yín biān cǎo dù pí',
-          english: 'Corners Gold, Sides Silver, Belly Grass',
-          concept: '围地效率角部最高（金），边上次之（银），中央最难围（草）。'
-        },
-        rewards: { stars: 3, coins: 35, exp: 80 }
-      }
-    ]
-  },
-
-  // ==========================================
-  // 第二章：棋子的呼吸与吃子魔法（基础规则与气）
-  // ==========================================
-  {
-    id: 2,
-    title: '第二章：棋子的呼吸与吃子魔法（规则与气）',
-    titleEn: 'Chapter 2: The Breath & Capture Magic',
-    icon: '✨',
-    themeColor: 'from-amber-400 to-orange-500',
-    description: '掌握棋子的呼吸通道“气”，学会叫吃预警、提子吃子与避开自杀禁区！',
-    lessons: [
-      {
-        id: 'lesson_2_1',
-        chapterId: 2,
-        type: 'story',
-        title: '2-1 棋子的呼吸通道：气',
-        titleEn: 'The Breath of a Stone: Liberties',
-        subtitle: '数清棋子四周的氧气管',
-        description: '紧挨着棋子上下左右的空交叉点就是棋子的【气】（Liberties）！',
-        storyDialogues: [
-          '棋子也是有生命的精灵，它们需要呼吸哦！',
-          '紧挨着一颗棋子上下左右的 4 个空交叉点，就是它的【气】（Liberties）！',
-          '点击黑子右侧的 D3 交叉点连上小伙伴，气就会变多变强壮！'
-        ],
-        boardSize: 5,
-        initialStones: [{ r: 2, c: 2, color: 'B' }],
-        playerColor: 'B',
-        goalText: '点击黑子右侧的 D3 交叉点，连接棋子扩张气数！',
-        goalTextEn: 'Place stone at D3 to connect and expand liberties!',
-        targetHighlight: [{ r: 2, c: 3 }],
-        puzzleRoot: [
-          {
-            coord: { r: 2, c: 3 },
-            comment: '两颗黑子手拉手连在一起，共同拥有了 6 口气，变得更强壮啦！',
-            isCorrect: true
-          }
-        ],
-        hint: '点击中心黑子右侧的 D3 交叉点。',
-        explanation: '与棋子直接相连的空交叉点称为“气”（Liberties）。中腹单子有4气，边上3气，角上2气。相连的同色棋子形成连通块，共享所有外气。',
-        bilingualTerm: {
-          chinese: '气',
-          pinyin: 'qì',
-          english: 'Liberties',
-          concept: '棋子生存必须依赖的相邻空交叉点。'
-        },
-        rewards: { stars: 3, coins: 25, exp: 60 }
-      },
-      {
-        id: 'lesson_2_2',
-        chapterId: 2,
-        type: 'puzzle',
-        title: '2-2 危险警报拉响：叫吃',
-        titleEn: 'Danger Alert: Atari',
-        subtitle: '只剩最后一口气的紧迫状态',
-        description: '当对方棋子只剩下最后一口气时，称为【叫吃】（Atari）！',
-        storyDialogues: [
-          '快看！白子已经被我们包围了三面，只剩下右边 D3 最后一口气！',
-          '这种只剩一口气的危险状态叫【叫吃】（Atari）！白子头顶正在闪烁警报！'
-        ],
-        boardSize: 5,
-        initialStones: [
-          { r: 2, c: 2, color: 'W' },
-          { r: 1, c: 2, color: 'B' },
-          { r: 3, c: 2, color: 'B' },
-          { r: 2, c: 1, color: 'B' }
-        ],
-        playerColor: 'B',
-        goalText: '点击右侧 D3 交叉点，堵死白子最后一口气！',
-        goalTextEn: 'Click D3 to take the last liberty of the white stone!',
-        targetHighlight: [{ r: 2, c: 3 }],
-        puzzleRoot: [
-          {
-            coord: { r: 2, c: 3 },
-            comment: '叫吃成功！最后一口气被封堵，白子被提走！',
-            isCorrect: true
-          }
-        ],
-        hint: '点击右边发光的 D3 交叉点。',
-        explanation: '当某颗或某块棋子只剩下一口气时，称为“叫吃”（Atari）。下一步对手只要落在最后一口气上，即可将其提吃。',
-        bilingualTerm: {
-          chinese: '叫吃 / 打吃',
-          pinyin: 'jiào chī / dǎ chī',
-          english: 'Atari',
-          concept: '棋子仅剩最后1气的危险预警状态。'
-        },
-        rewards: { stars: 3, coins: 30, exp: 70 }
-      },
-      {
-        id: 'lesson_2_3',
-        chapterId: 2,
-        type: 'puzzle',
-        title: '2-3 抓捕第一只小白怪：提子',
-        titleEn: 'Capture the Stone',
-        subtitle: '拔掉最后一口气，拿走被吃棋子',
-        description: '堵住敌方最后一口气，就能将其提离棋盘作为战利品！',
-        storyDialogues: [
-          '白子被上下左右团团包围，只剩右边 D3 一口气啦！',
-          '落子在 D3，执行【提子】（Capture），收下战利品！'
-        ],
-        boardSize: 5,
-        initialStones: [
-          { r: 2, c: 2, color: 'W' },
-          { r: 1, c: 2, color: 'B' },
-          { r: 3, c: 2, color: 'B' },
-          { r: 2, c: 1, color: 'B' }
-        ],
-        playerColor: 'B',
-        goalText: '在 D3 落子完成提子吃子！',
-        goalTextEn: 'Play at D3 to capture the white stone!',
-        targetHighlight: [{ r: 2, c: 3 }],
-        puzzleRoot: [
-          {
-            coord: { r: 2, c: 3 },
-            comment: '爽快！白子瞬间被提走，黑棋大获全胜！',
-            isCorrect: true
-          }
-        ],
-        hint: '点击右侧 D3 堵住最后一口气完成提子。',
-        explanation: '当落子使得对方棋子气数为0时，该棋子立即被提离棋盘，称为“提子”（Capture）。',
-        bilingualTerm: {
-          chinese: '提子 / 吃子',
-          pinyin: 'tí zǐ',
-          english: 'Capture',
-          concept: '将完全无气的对方棋子从棋盘上移除。'
-        },
-        rewards: { stars: 3, coins: 30, exp: 70 }
-      },
-      {
-        id: 'lesson_2_4',
-        chapterId: 2,
-        type: 'puzzle',
-        title: '2-4 危险的禁区：禁着点与自杀步',
-        titleEn: 'Forbidden Zone: Illegal Move / Suicide',
+        title: '1-6 危险禁区：禁着点（不能自杀）',
+        titleEn: '1-6 Forbidden Point (No Suicide)',
         subtitle: '自身无气且不能吃对方的位置严禁落子',
-        description: '围棋严禁自杀！如果落子后自己没气且不能吃掉敌子，就是禁着点！',
+        description: '四周都被敌人堵死且没有气的地方，自己跳进去就是自杀，围棋规则严禁下在【禁着点】！但若能提吃敌人就可以下！',
         storyDialogues: [
-          '注意看！中央 C3 点四面全是白子，如果黑子下进去自己一口气都没有，又吃不掉白子，那就是【禁着点（自杀步）】！',
-          '请不要跳入自杀陷阱，而在左上角安全的 A5 稳健占角！'
+          '小棋手注意啦！棋盘上有一些“无底深渊”，掉进去自己就会没命！',
+          '请看中间被4颗白棋紧紧围住的那个十字路口，黑子放进去自身立刻0气，且吃不掉任何白棋，这就是【禁着点】（禁止落子）！',
+          '聪明的小棋手不会自投罗网，我们在安全的开阔星位（D4）下子吧！'
         ],
         boardSize: 5,
         initialStones: [
@@ -443,23 +273,195 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 2, c: 3, color: 'W' }
         ],
         playerColor: 'B',
-        goalText: '避开 C3 自杀禁区，在安全的 A5 交叉点落子！',
-        goalTextEn: 'Avoid suicide move at C3 and play at A5!',
-        targetHighlight: [{ r: 0, c: 0 }],
+        goalText: '避开中间的自杀禁着点，在安全开阔的右下星位（D4）落子！',
+        goalTextEn: 'Avoid the suicide trap and place your stone safely on D4!',
+        targetHighlight: [{ r: 3, c: 3 }],
         puzzleRoot: [
           {
-            coord: { r: 0, c: 0 },
-            comment: '聪明！绝不给敌人送子，在开阔的角部稳健生根！',
+            coord: { r: 3, c: 3 },
+            comment: '太机智啦！识破自杀陷阱，下在安全大路上！第一章圆满毕业！',
             isCorrect: true
           }
         ],
-        hint: '点击左上角发光的 A5 交叉点。',
-        explanation: '禁着点（Illegal Move / Suicide）：落子后自身完全无气且不能同时提吃对方任何棋子，规则严禁落子。',
+        hint: '请点击右下角安全的星位 D4（r:3, c:3）。',
+        explanation: '围棋规则禁止“自杀”：如果某交叉点落子后自身无气，且无法提掉对方任何棋子，则该点为“禁着点”。但若落子能提掉对方，则该步合法且属于提子。',
         bilingualTerm: {
-          chinese: '禁着点 / 自杀步',
-          pinyin: 'jìn zhuó diǎn / zì shā',
-          english: 'Illegal Move / Suicide',
-          concept: '落子后自身无气且不能吃子的位置为禁着点。'
+          chinese: '禁着点',
+          pinyin: 'jìn zhuó diǎn',
+          english: 'Forbidden Point / Suicide Point',
+          concept: '落子后自身处于无气状态且不能提吃敌子的交叉点，规则禁止落子。'
+        },
+        rewards: { stars: 3, coins: 40, exp: 90 }
+      }
+    ]
+  },
+
+  // ==========================================
+  // 第二章：捕鱼小达人（经典吃子手筋与武器库）
+  // ==========================================
+  {
+    id: 2,
+    title: '第二章：捕鱼小达人（经典吃子手筋）',
+    titleEn: 'Chapter 2: Tactical Capture Arsenal (Tesuji)',
+    icon: '🎣',
+    themeColor: 'from-amber-400 to-orange-500',
+    description: '掌握双叫吃、抱吃、门吃、扭羊头、大网飞枷与神奇倒扑！通关解锁【60秒反应乐园】与【双人面对面】！',
+    lessons: [
+      {
+        id: 'lesson_2_1',
+        chapterId: 2,
+        type: 'puzzle',
+        title: '2-1 双叫吃：一石二鸟',
+        titleEn: '2-1 Double Atari (Two Birds One Stone)',
+        subtitle: '一子落下，同时叫吃两处敌子',
+        description: '一箭双雕！一颗黑子落下来，同时把左右两个小白怪都打到只剩1口气！对方顾得了头顾不了尾！',
+        boardSize: 5,
+        initialStones: [
+          { r: 1, c: 2, color: 'W' },
+          { r: 2, c: 1, color: 'W' },
+          { r: 0, c: 2, color: 'B' },
+          { r: 2, c: 0, color: 'B' }
+        ],
+        playerColor: 'B',
+        goalText: '在交叉点（B2）落子，同时叫吃两颗白子！',
+        goalTextEn: 'Play on B2 to deliver a devastating Double Atari!',
+        targetHighlight: [{ r: 1, c: 1 }],
+        puzzleRoot: [
+          {
+            coord: { r: 1, c: 1 },
+            comment: '漂亮的一箭双雕！两颗白子同时被叫吃，必吃其一！',
+            isCorrect: true,
+            opponentResponse: {
+              coord: { r: 1, c: 3 },
+              comment: '白棋试图救上方白子，但另一颗已经逃不掉啦！'
+            }
+          }
+        ],
+        hint: '请点击两颗白子夹角的中间要害点 B2（r:1, c:1）。',
+        explanation: '“双叫吃”（Double Atari）是一子落下同时使对方两处棋子各剩一口气的绝妙战术，对方只能救一处，我方必能提吃另一处。',
+        bilingualTerm: {
+          chinese: '双叫吃',
+          pinyin: 'shuāng jiào chī',
+          english: 'Double Atari (Ryō-atari)',
+          concept: '一步棋同时叫吃对方两块不同的棋子，是启蒙实战杀伤力最大的手筋。'
+        },
+        rewards: { stars: 3, coins: 30, exp: 70 }
+      },
+      {
+        id: 'lesson_2_2',
+        chapterId: 2,
+        type: 'puzzle',
+        title: '2-2 抱吃（往怀里赶）',
+        titleEn: '2-2 Hug Capture (Embrace)',
+        subtitle: '把敌子往自家怀里赶，堵住逃跑路线',
+        description: '白棋想往外逃？像张开双臂抱抱一样，把白棋往自家棋子多的怀里赶！',
+        boardSize: 5,
+        initialStones: [
+          { r: 2, c: 2, color: 'W' },
+          { r: 1, c: 2, color: 'B' },
+          { r: 3, c: 2, color: 'B' },
+          { r: 2, c: 4, color: 'B' }
+        ],
+        playerColor: 'B',
+        goalText: '在左侧（B3）落子，把白子往右边黑子的怀里赶！',
+        goalTextEn: 'Play on B3 to steer the white stone into your friendly embrace!',
+        targetHighlight: [{ r: 2, c: 1 }],
+        puzzleRoot: [
+          {
+            coord: { r: 2, c: 1 },
+            comment: '抱吃成功！白子被赶进黑子大本营的怀里，插翅难飞！',
+            isCorrect: true
+          }
+        ],
+        hint: '请在白子左侧 B3（r:2, c:1）叫吃，逼它往右边怀里撞。',
+        explanation: '“抱吃”是顺应对方逃跑方向，将其往己方坚实阵地或棋盘边缘逼赶的叫吃方法。',
+        bilingualTerm: {
+          chinese: '抱吃',
+          pinyin: 'bào chī',
+          english: 'Embrace / Hug Capture',
+          concept: '从敌子背后叫吃，将其逼入己方重兵包围圈中顺势提吃。'
+        },
+        rewards: { stars: 3, coins: 30, exp: 70 }
+      },
+      {
+        id: 'lesson_2_3',
+        chapterId: 2,
+        type: 'puzzle',
+        title: '2-3 门吃（双子关门）',
+        titleEn: '2-3 Door / Gate Capture',
+        subtitle: '两扇大门一关，插上门闩',
+        description: '两颗黑子就像两扇大门，敌人从门缝钻出来，立刻关门上闩把它吃掉！',
+        boardSize: 5,
+        initialStones: [
+          { r: 2, c: 2, color: 'W' },
+          { r: 2, c: 1, color: 'B' },
+          { r: 2, c: 3, color: 'B' },
+          { r: 3, c: 2, color: 'B' }
+        ],
+        playerColor: 'B',
+        goalText: '在上方门头（C2）落子，关门打狗，吃掉白子！',
+        goalTextEn: 'Play on C2 to slam the door shut and capture the trapped stone!',
+        targetHighlight: [{ r: 1, c: 2 }],
+        puzzleRoot: [
+          {
+            coord: { r: 1, c: 2 },
+            comment: '大门关上，门闩插好！白子被牢牢关在门里提走啦！',
+            isCorrect: true
+          }
+        ],
+        hint: '请在上方门口 C2（r:1, c:2）落子提吃。',
+        explanation: '利用两旁已存在的己方棋子作为“门框”，在敌子逃跑前方落子阻截并将其提吃，形象称为“门吃”。',
+        bilingualTerm: {
+          chinese: '门吃',
+          pinyin: 'mén chī',
+          english: 'Door / Gate Capture',
+          concept: '利用两侧棋子如同门框的形状，在正前方关门截杀敌子。'
+        },
+        rewards: { stars: 3, coins: 30, exp: 70 }
+      },
+      {
+        id: 'lesson_2_4',
+        chapterId: 2,
+        type: 'puzzle',
+        title: '2-4 征吃（扭羊头）',
+        titleEn: '2-4 The Ladder (Shicho)',
+        subtitle: '连续交替叫吃，一路追杀到悬崖边',
+        description: '像小羊扭头一样左右连续叫吃，白棋跑一步就叫吃一步，一路追到悬崖边！',
+        boardSize: 7,
+        initialStones: [
+          { r: 2, c: 2, color: 'W' },
+          { r: 1, c: 2, color: 'B' },
+          { r: 2, c: 1, color: 'B' }
+        ],
+        playerColor: 'B',
+        goalText: '在右侧（D3）叫吃，逼白子往下方逃跑！',
+        goalTextEn: 'Play on D3 to deliver the first step of the relentless Ladder!',
+        targetHighlight: [{ r: 2, c: 3 }],
+        puzzleRoot: [
+          {
+            coord: { r: 2, c: 3 },
+            comment: '第一步叫吃！白棋只能往下逃！',
+            isCorrect: true,
+            opponentResponse: {
+              coord: { r: 3, c: 2 },
+              comment: '白子试图向下逃跑！'
+            },
+            nextBranches: [
+              {
+                coord: { r: 3, c: 1 },
+                comment: '漂亮！再次从左侧叫吃，扭羊头成功捕获！',
+                isCorrect: true
+              }
+            ]
+          }
+        ],
+        hint: '从右边 D3（r:2, c:3）封堵叫吃，逼迫白子转向。',
+        explanation: '“征吃”（又称扭羊头 / Ladder）是连续以之字形折线反复叫吃敌子，直至将其赶到棋盘边缘或撞上己方厚势提吃的经典杀法。',
+        bilingualTerm: {
+          chinese: '征吃（扭羊头）',
+          pinyin: 'zhēng chī / niǔ yáng tóu',
+          english: 'The Ladder (Shicho)',
+          concept: '交替从两侧连续叫吃，呈阶梯状逼死逃跑敌子的手筋。'
         },
         rewards: { stars: 3, coins: 35, exp: 80 }
       },
@@ -467,239 +469,83 @@ export const CHAPTERS_DATA: Chapter[] = [
         id: 'lesson_2_5',
         chapterId: 2,
         type: 'puzzle',
-        title: '2-5 乒乓球规则：打劫与劫争',
-        titleEn: 'Ko Rule: No Infinite Loop',
-        subtitle: '禁止立即原位反提，一人一手找劫材',
-        description: '打劫规则防止双方在同一个位置无限来回互吃！',
-        storyDialogues: [
-          '黑棋下在 C3 提掉一颗白子！此时白棋不能立刻回提 C3，必须先去别处走一手（找劫材）！',
-          '请黑棋在 C3 落下第一提，体验劫争法则！'
-        ],
-        boardSize: 5,
-        initialStones: [
-          { r: 1, c: 2, color: 'B' },
-          { r: 3, c: 2, color: 'B' },
-          { r: 2, c: 1, color: 'B' },
-          { r: 1, c: 3, color: 'W' },
-          { r: 3, c: 3, color: 'W' },
-          { r: 2, c: 4, color: 'W' },
-          { r: 2, c: 3, color: 'W' }
-        ],
-        playerColor: 'B',
-        goalText: '在 C3 交叉点落子提掉白子！',
-        goalTextEn: 'Play at C3 to capture white stone in Ko!',
-        targetHighlight: [{ r: 2, c: 2 }],
-        puzzleRoot: [
-          {
-            coord: { r: 2, c: 2 },
-            comment: '提劫成功！白棋下一步不能立刻回提 C3，这就是围棋的劫争（Ko）法则！',
-            isCorrect: true
-          }
-        ],
-        hint: '点击中心的 C3 交叉点提掉白子。',
-        explanation: '劫争规则（Ko Rule）：一方提劫后，对方不能立刻反提，必须在其他地方走一手（找劫材），若对方应答，方可回提。',
-        bilingualTerm: {
-          chinese: '劫争 / 打劫',
-          pinyin: 'jié zhēng / dǎ jié',
-          english: 'Ko Rule',
-          concept: '禁止全局同形反复的围棋核心规则。'
-        },
-        rewards: { stars: 3, coins: 40, exp: 90 }
-      }
-    ]
-  },
-
-  // ==========================================
-  // 第三章：捕鱼小达人（经典吃子手筋）
-  // ==========================================
-  {
-    id: 3,
-    title: '第三章：捕鱼小达人（经典吃子手筋）',
-    titleEn: 'Chapter 3: Master of Capture (Tesuji)',
-    icon: '🎣',
-    themeColor: 'from-blue-400 to-indigo-500',
-    description: '学会抱吃、门吃、征吃（扭羊头）、枷吃与倒扑，掌握少儿吃子必杀绝技！',
-    lessons: [
-      {
-        id: 'lesson_3_1',
-        chapterId: 3,
-        type: 'puzzle',
-        title: '3-1 抱吃（往怀里赶）',
-        titleEn: 'Embrace Capture (Driving toward edge)',
-        subtitle: '把敌子往怀里或棋盘边缘赶',
-        description: '从外侧包抄叫吃，逼迫敌子撞向边缘死路！',
-        boardSize: 5,
-        initialStones: [
-          { r: 2, c: 2, color: 'W' },
-          { r: 2, c: 1, color: 'B' },
-          { r: 3, c: 2, color: 'B' }
-        ],
-        playerColor: 'B',
-        goalText: '在 C4 (上方) 叫吃，把白子赶入下边包围网！',
-        goalTextEn: 'Play at C4 to embrace and capture!',
-        targetHighlight: [{ r: 1, c: 2 }],
-        puzzleRoot: [
-          {
-            coord: { r: 1, c: 2 },
-            comment: '好一手抱吃！白子只能往边缘逃窜，必死无疑！',
-            isCorrect: true
-          }
-        ],
-        hint: '在上方 C4 叫吃，切断白子往上逃跑的路线。',
-        explanation: '抱吃是将对方逃跑方向封堵在己方子力怀抱中或棋盘边缘的吃子手筋。',
-        bilingualTerm: {
-          chinese: '抱吃',
-          pinyin: 'bào chī',
-          english: 'Embrace Capture',
-          concept: '将敌子赶向己方厚势或边缘的吃法。'
-        },
-        rewards: { stars: 3, coins: 30, exp: 70 }
-      },
-      {
-        id: 'lesson_3_2',
-        chapterId: 3,
-        type: 'puzzle',
-        title: '3-2 门吃（双子关门）',
-        titleEn: 'Gate Capture',
-        subtitle: '两扇大门一关，插上门闩',
-        description: '利用两颗并立的友军棋子如同大门两框，在正前方关门堵截！',
-        boardSize: 5,
-        initialStones: [
-          { r: 2, c: 2, color: 'W' },
-          { r: 1, c: 1, color: 'B' },
-          { r: 3, c: 1, color: 'B' },
-          { r: 2, c: 0, color: 'B' }
-        ],
-        playerColor: 'B',
-        goalText: '在 B3 关上大门，叫吃并消灭逃跑白子！',
-        goalTextEn: 'Play at B3 to close the gate!',
-        targetHighlight: [{ r: 2, c: 1 }],
-        puzzleRoot: [
-          {
-            coord: { r: 2, c: 1 },
-            comment: '大门关上，门闩插紧！白子插翅难逃！',
-            isCorrect: true
-          }
-        ],
-        hint: '在两颗黑子正前方的 B3 关上大门。',
-        explanation: '利用两子之间的空档，在敌子试图突围时正面关门封锁，称为门吃。',
-        bilingualTerm: {
-          chinese: '门吃',
-          pinyin: 'mén chī',
-          english: 'Gate Capture',
-          concept: '借助两侧友军如门框般封堵敌子的手筋。'
-        },
-        rewards: { stars: 3, coins: 30, exp: 70 }
-      },
-      {
-        id: 'lesson_3_3',
-        chapterId: 3,
-        type: 'puzzle',
-        title: '3-3 征吃（扭羊头）',
-        titleEn: 'Ladder (Chasing Zig-Zag)',
-        subtitle: '连续交替叫吃，一路追到天涯海角',
-        description: '像走楼梯一样左右交替叫吃，让白子只能走 Z 字形死路！',
-        boardSize: 5,
-        initialStones: [
-          { r: 1, c: 1, color: 'W' },
-          { r: 0, c: 1, color: 'B' },
-          { r: 1, c: 0, color: 'B' }
-        ],
-        playerColor: 'B',
-        goalText: '在 B3 (下方) 叫吃，开启征子追击！',
-        goalTextEn: 'Play at B3 to start the ladder attack!',
-        targetHighlight: [{ r: 2, c: 1 }],
-        puzzleRoot: [
-          {
-            coord: { r: 2, c: 1 },
-            comment: '精准叫吃！白子扭动羊头也逃不出征子大网！',
-            isCorrect: true
-          }
-        ],
-        hint: '在下方 B3 叫吃，逼白子往右逃。',
-        explanation: '征吃又称“扭羊头”，连续交替从两侧叫吃，逼迫敌子走出阶梯状线路直至被提吃。',
-        bilingualTerm: {
-          chinese: '征吃 / 扭羊头',
-          pinyin: 'zhēng chī / niǔ yáng tóu',
-          english: 'Ladder',
-          concept: '连续斜向交替叫吃的追击战术。'
-        },
-        rewards: { stars: 3, coins: 35, exp: 80 }
-      },
-      {
-        id: 'lesson_3_4',
-        chapterId: 3,
-        type: 'puzzle',
-        title: '3-4 枷吃（飞枷织大网）',
-        titleEn: 'Net (Loose Capture)',
+        title: '2-5 枷吃（飞枷织大网）',
+        titleEn: '2-5 The Net (Geta)',
         subtitle: '天罗地网，虚虚罩住敌方逃路',
-        description: '不直接贴身叫吃，而是从外围虚虚罩住，让敌子怎么冲都撞入死网！',
+        description: '不用贴身硬拼，在白子前方飞一步织一张大网，白棋怎么钻都逃不出大网！',
         boardSize: 5,
         initialStones: [
           { r: 2, c: 2, color: 'W' },
-          { r: 1, c: 1, color: 'B' },
-          { r: 3, c: 1, color: 'B' }
+          { r: 3, c: 2, color: 'B' },
+          { r: 2, c: 1, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在 D4 轻轻撒下一张捕鱼大网！',
-        goalTextEn: 'Play at D4 to net the white stone!',
+        goalText: '在斜上方（D2）飞枷织网，罩住白子逃跑路线！',
+        goalTextEn: 'Play on D2 to cast a loose yet inescapable net over the white stone!',
         targetHighlight: [{ r: 1, c: 3 }],
         puzzleRoot: [
           {
             coord: { r: 1, c: 3 },
-            comment: '绝妙的飞枷！天罗地网一收，白子无路可冲！',
+            comment: '神之一枷！大网张开，白子无论往哪跑都是死路一条！',
             isCorrect: true
           }
         ],
-        hint: '在右上方的 D4 轻轻布下大网。',
-        explanation: '枷吃不直接紧贴敌子叫吃，而是利用飞或虚罩封住逃跑路线，高效省力。',
+        hint: '在白子斜上方交叉点 D2（r:1, c:3）落子织网。',
+        explanation: '“枷吃”（Geta / The Net）是不直接贴身叫吃，而是拉开一格距离虚扣在敌子前方，封死其所有逃生分支的精妙手筋。比征子更稳健，不受引征影响。',
         bilingualTerm: {
-          chinese: '枷吃 / 飞枷',
-          pinyin: 'jiā chī / fēi jiā',
-          english: 'Net (Loose Capture)',
-          concept: '从外围虚罩敌子断绝其逃跑路线的高级手筋。'
+          chinese: '枷吃（飞枷）',
+          pinyin: 'jiā chī',
+          english: 'The Net (Geta)',
+          concept: '不贴身叫吃，而是隔一路虚罩封锁敌子逃路的高效手筋。'
         },
         rewards: { stars: 3, coins: 35, exp: 80 }
       },
       {
-        id: 'lesson_3_5',
-        chapterId: 3,
+        id: 'lesson_2_6',
+        chapterId: 2,
         type: 'puzzle',
-        title: '3-5 倒扑（诱敌入网的魔术）',
-        titleEn: 'Snapback: The Magic Trap',
+        title: '2-6 倒扑（诱敌深入的魔术）',
+        titleEn: '2-6 The Snapback (Uttegaeshi)',
         subtitle: '故意送给敌人一口，随后反提整块大鱼',
-        description: '看似送死，实则把敌人的气压缩到1气，提吃后立即原位反提！',
+        description: '神奇的围棋魔术！故意送1颗黑子给白棋吃，等白棋吃了它自己只剩1口气，立刻反手提走整串白棋！',
         boardSize: 5,
         initialStones: [
           { r: 1, c: 2, color: 'W' },
-          { r: 1, c: 3, color: 'W' },
-          { r: 2, c: 3, color: 'W' },
+          { r: 2, c: 2, color: 'W' },
           { r: 0, c: 2, color: 'B' },
-          { r: 0, c: 3, color: 'B' },
           { r: 1, c: 1, color: 'B' },
           { r: 2, c: 1, color: 'B' },
-          { r: 3, c: 2, color: 'B' },
-          { r: 3, c: 3, color: 'B' },
-          { r: 2, c: 4, color: 'B' }
+          { r: 3, c: 2, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '勇敢把黑子投入 C3 虎口诱饵点！',
-        goalTextEn: 'Sacrifice stone at C3 for snapback!',
-        targetHighlight: [{ r: 2, c: 2 }],
+        goalText: '在白棋虎口要害（D2 / r:1, c:3）投子倒扑！',
+        goalTextEn: 'Sacrifice a stone into the tiger mouth at D2 to trigger a snapback!',
+        targetHighlight: [{ r: 1, c: 3 }],
         puzzleRoot: [
           {
-            coord: { r: 2, c: 2 },
-            comment: '倒扑魔术大成功！白子提吃后瞬间进入叫吃，黑棋反手提光！',
-            isCorrect: true
+            coord: { r: 1, c: 3 },
+            comment: '诱饵投下！白棋吃了这颗黑子，自身立刻变成1口气！',
+            isCorrect: true,
+            opponentResponse: {
+              coord: { r: 1, c: 3 },
+              comment: '白棋贪吃提走黑子，但自己只剩最后一口气啦！'
+            },
+            nextBranches: [
+              {
+                coord: { r: 1, c: 3 },
+                comment: '反提！整串白棋全部被提掉！倒扑大获全胜！',
+                isCorrect: true
+              }
+            ]
           }
         ],
-        hint: '在白棋虎口 C3 投下诱饵黑子。',
-        explanation: '倒扑（Snapback）：主动舍弃一颗诱饵子进入敌阵，使敌方气数压缩为1气，随后立即原位反提整块敌子。',
+        hint: '在白棋右侧的虎口心窝 D2（r:1, c:3）送入一颗黑子。',
+        explanation: '“倒扑”（Snapback / Uttegaeshi）是故意弃子送入对方虎口中被提，使对方棋子气数减至一口，进而立即反提对方整块棋子的奇妙手筋。',
         bilingualTerm: {
           chinese: '倒扑',
           pinyin: 'dào pū',
-          english: 'Snapback',
-          concept: '弃子诱敌后立即反提整块敌子的必杀手筋。'
+          english: 'The Snapback (Uttegaeshi)',
+          concept: '弃子诱敌自紧其气，随后反提对方多颗棋子的战术。'
         },
         rewards: { stars: 3, coins: 40, exp: 90 }
       }
@@ -707,28 +553,28 @@ export const CHAPTERS_DATA: Chapter[] = [
   },
 
   // ==========================================
-  // 第四章：死活城堡与两只眼（两眼活棋）
+  // 第三章：死活城堡与无敌安全屋（眼位与活棋）
   // ==========================================
   {
-    id: 4,
-    title: '第四章：死活城堡与两只眼（两眼活棋）',
-    titleEn: 'Chapter 4: Life & Death (Two Real Eyes)',
+    id: 3,
+    title: '第三章：死活城堡与无敌安全屋（眼位与活棋）',
+    titleEn: 'Chapter 3: The Living Castle (Eyes & Life)',
     icon: '🏰',
-    themeColor: 'from-purple-400 to-pink-500',
-    description: '探秘眼位的奥秘，学会辨别真眼与假眼，做出两只独立真眼实现万世长存！',
+    themeColor: 'from-rose-400 to-amber-500',
+    description: '认识小鸟安全屋（眼位）、真假眼识别、两眼活棋不死身与直三破眼！通关解锁【每日死活练兵场】与【错题本】！',
     lessons: [
       {
-        id: 'lesson_4_1',
-        chapterId: 4,
+        id: 'lesson_3_1',
+        chapterId: 3,
         type: 'story',
-        title: '4-1 认识眼位：小鸟的安全屋',
-        titleEn: 'The Eye: Safe Sanctuary',
+        title: '3-1 认识眼位：小鸟的安全屋',
+        titleEn: '3-1 Eye Space: The Safe Haven',
         subtitle: '被己方完全包围的空交叉点',
-        description: '被完全包围的空交叉点叫做【眼位】。敌人下进去就是自杀！',
+        description: '被黑棋紧紧包围在中间的空交叉点叫做【眼】！敌人跳进来就是自杀禁着点，完全下不进来！',
         storyDialogues: [
-          '小棋手们看：由黑棋围出来的这个独立空点，叫做【眼位】（Eye）！',
-          '只要眼位完全属于我们，白棋单独下一颗进来就是自杀禁着点，永远进不来！',
-          '点击 C3 点巩固你的眼位安全屋！'
+          '小棋手，你想让你的棋子永远不被敌人吃掉吗？',
+          '答案就是——建造【安全屋（眼位）】！',
+          '请看中间被黑棋团团围住的交叉点 C3，白棋根本不敢下进来（自杀违规）！快在边上落子加固城墙吧！'
         ],
         boardSize: 5,
         initialStones: [
@@ -737,109 +583,116 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 2, c: 1, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在 D3 补强，筑造完美眼位！',
-        goalTextEn: 'Play at D3 to complete the eye!',
+        goalText: '在右侧（D3）落子，把城墙完全合拢，形成完美的【眼位】！',
+        goalTextEn: 'Play on D3 to enclose a complete safe eye space!',
         targetHighlight: [{ r: 2, c: 3 }],
         puzzleRoot: [
           {
             coord: { r: 2, c: 3 },
-            comment: '漂亮！安全屋筑造完毕，黑棋眼位坚不可摧！',
+            comment: '完美的眼位建好啦！中间空地变成了敌人的自杀禁区！',
             isCorrect: true
           }
         ],
-        hint: '点击右侧 D3 封住大门完成眼位。',
-        explanation: '眼位（Eye）是被同一方棋子四周完整包围的空交叉点。对手单独落入眼位属于自杀禁着点。',
+        hint: '点击右侧空位 D3（r:2, c:3）闭合眼位。',
+        explanation: '由同一色棋子完全包围而形成的一个或多个空交叉点称为“眼”（Eye）。由于对方无法在无气情况下自杀落入，眼位构成了防守的核心屏障。',
         bilingualTerm: {
           chinese: '眼位',
           pinyin: 'yǎn wèi',
-          english: 'Eye',
-          concept: '被己方棋子完整包围的安全空点。'
+          english: 'Eye / Eye Space',
+          concept: '被己方棋子完全包围的空交叉点，是做活的基本单元。'
         },
         rewards: { stars: 3, coins: 30, exp: 70 }
       },
       {
-        id: 'lesson_4_2',
-        chapterId: 4,
+        id: 'lesson_3_2',
+        chapterId: 3,
         type: 'puzzle',
-        title: '4-2 辨别真眼与假眼',
-        titleEn: 'Real Eye vs False Eye',
-        subtitle: '对角破损的假眼不是安全屋',
-        description: '真眼坚不可摧，而假眼对角被占，关键时刻会被提吃！',
+        title: '3-2 辨别真眼与假眼',
+        titleEn: '3-2 Real Eye vs False Eye',
+        subtitle: '对角漏风的假眼不是安全屋，会被分断提走',
+        description: '小心陷阱！如果眼位的对角被敌人占领，城墙就会漏风，变成【假眼】！快补强关键连接点！',
         boardSize: 5,
         initialStones: [
           { r: 1, c: 2, color: 'B' },
           { r: 2, c: 1, color: 'B' },
           { r: 3, c: 2, color: 'B' },
-          { r: 1, c: 3, color: 'W' },
-          { r: 3, c: 3, color: 'W' }
+          { r: 2, c: 3, color: 'B' },
+          { r: 1, c: 1, color: 'W' },
+          { r: 3, c: 1, color: 'W' }
         ],
         playerColor: 'B',
-        goalText: '在 D3 补上一子，把破损假眼修复为真眼！',
-        goalTextEn: 'Play at D3 to fix the false eye into a real eye!',
-        targetHighlight: [{ r: 2, c: 3 }],
+        goalText: '在关键斜角（D2）落子补强，把假眼变成固若金汤的真眼！',
+        goalTextEn: 'Play on D2 to secure the diagonal and solidify a true eye!',
+        targetHighlight: [{ r: 1, c: 3 }],
         puzzleRoot: [
           {
-            coord: { r: 2, c: 3 },
-            comment: '神医妙手！及时修补，假眼成功蜕变成坚固真眼！',
+            coord: { r: 1, c: 3 },
+            comment: '火眼金睛！斜角守护住，假眼成功变真眼，敌人再也无法破坏！',
             isCorrect: true
           }
         ],
-        hint: '在右侧 D3 补上一颗黑子完成防守。',
-        explanation: '中腹真眼需要至少占据3个对角点；若对角被对手占领，则眼位为假眼，终将被紧气提吃。',
+        hint: '请点击右上角斜角关键防守点 D2（r:1, c:3）。',
+        explanation: '“真眼”四周连接紧密，对角斜点有己方棋子保护；若斜角关键点被对方占领过多，导致连接存在缺陷，最终会被对方叫吃提子，称为“假眼”。',
         bilingualTerm: {
-          chinese: '真眼 vs 假眼',
-          pinyin: 'zhēn yǎn vs jiǎ yǎn',
+          chinese: '真眼与假眼',
+          pinyin: 'zhēn yǎn & jiǎ yǎn',
           english: 'Real Eye vs False Eye',
-          concept: '真眼坚固不可入，假眼因对角受制终将破碎。'
+          concept: '真眼永久安全，假眼在紧气后会暴露缺陷被敌方分断提吃。'
         },
         rewards: { stars: 3, coins: 35, exp: 80 }
       },
       {
-        id: 'lesson_4_3',
-        chapterId: 4,
+        id: 'lesson_3_3',
+        chapterId: 3,
         type: 'puzzle',
-        title: '4-3 两只真眼保平安（双眼活棋）',
-        titleEn: 'Two Real Eyes Make Life',
-        subtitle: '围棋终极生存法则：两眼活棋',
-        description: '一块棋拥有两只完全独立的真眼，敌人永远不能同时下两子，宣布活棋！',
-        boardSize: 5,
+        title: '3-3 两只真眼保平安（双眼活棋）',
+        titleEn: '3-3 Two Eyes for Immortality (Life)',
+        subtitle: '围棋终极生存法则：拥有两只真眼，永生不灭',
+        description: '只要一块棋拥有【两只互不相连的真眼】，白棋永远无法同时堵住两只眼，黑棋就获得了永不被吃的不死神功！',
+        boardSize: 7,
         initialStones: [
-          { r: 1, c: 1, color: 'B' },
-          { r: 1, c: 3, color: 'B' },
-          { r: 2, c: 0, color: 'B' },
+          { r: 2, c: 1, color: 'B' },
+          { r: 2, c: 2, color: 'B' },
+          { r: 2, c: 3, color: 'B' },
           { r: 2, c: 4, color: 'B' },
+          { r: 2, c: 5, color: 'B' },
+          { r: 4, c: 1, color: 'B' },
+          { r: 4, c: 2, color: 'B' },
+          { r: 4, c: 3, color: 'B' },
+          { r: 4, c: 4, color: 'B' },
+          { r: 4, c: 5, color: 'B' },
           { r: 3, c: 1, color: 'B' },
-          { r: 3, c: 3, color: 'B' }
+          { r: 3, c: 5, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在中心 C3 下子，一分为二做出两只真眼！',
-        goalTextEn: 'Play at C3 to split into two real eyes!',
-        targetHighlight: [{ r: 2, c: 2 }],
+        goalText: '在中间（D4 / r:3, c:3）落子，一分为二，做出两只独立的真眼！',
+        goalTextEn: 'Play on D4 to divide the space into two independent living eyes!',
+        targetHighlight: [{ r: 3, c: 3 }],
         puzzleRoot: [
           {
-            coord: { r: 2, c: 2 },
-            comment: '两眼活棋！白棋进任何一眼都是自杀，黑棋万世长存！',
+            coord: { r: 3, c: 3 },
+            comment: '两眼做活！左边一只眼，右边一只眼，白棋怎么也吃不掉这块黑大龙啦！',
             isCorrect: true
           }
         ],
-        hint: '点击中心正中 C3，把大空间分割成两个独立小房间。',
-        explanation: '围棋核心规则：对手一次只能下一子，不可能同时下入两个独立眼位，因此拥有两只真眼的棋块绝对无法被提吃，称为活棋（Life）。',
+        hint: '在正中央下黑子 D4（r:3, c:3），把大眼隔成左右两个独立小真眼。',
+        explanation: '一块棋拥有两个或两个以上独立的真眼时，对方在任何一个眼里落子都构成自杀禁着点，因此该块棋永远无法被提吃，称为“活棋”（Life）。',
         bilingualTerm: {
-          chinese: '两眼做活',
-          pinyin: 'liǎng yǎn zuò huó',
+          chinese: '两眼活棋',
+          pinyin: 'liǎng yǎn huó qí',
           english: 'Two Eyes (Living Shape)',
-          concept: '拥有两只独立真眼的棋块永久生存无法被吃。'
+          concept: '拥有两个独立真眼的棋块不可被提吃，是围棋最根本的生存法则。'
         },
         rewards: { stars: 3, coins: 40, exp: 90 }
       },
       {
-        id: 'lesson_4_4',
-        chapterId: 4,
+        id: 'lesson_3_4',
+        chapterId: 3,
         type: 'puzzle',
-        title: '4-4 点杀与破眼（直三要害）',
-        titleEn: 'Vital Point Attack (Straight Three)',
-        subtitle: '击中敌人的心窝要害点',
-        description: '直三中间的点是双方必争要害！抢在敌人做眼之前点入破眼！',
+        title: '3-4 点杀与破眼（直三要害）',
+        titleEn: '3-4 Vital Point: Destroying Eyes',
+        subtitle: '直三中间点要害，破坏敌方做眼',
+        description: '敌方有直排3个空位想做两只眼？抢先占据正中间的心窝要害点，破坏它做眼！',
         boardSize: 5,
         initialStones: [
           { r: 1, c: 1, color: 'W' },
@@ -852,188 +705,62 @@ export const CHAPTERS_DATA: Chapter[] = [
           { r: 2, c: 4, color: 'W' }
         ],
         playerColor: 'B',
-        goalText: '在中心 C3 点入要害，破坏白棋做眼！',
-        goalTextEn: 'Play at center C3 vital point!',
+        goalText: '在白棋直三正中央（C3 / r:2, c:2）点杀，破坏它做两只眼！',
+        goalTextEn: 'Play on C3 to strike the vital center of the three-space eye!',
         targetHighlight: [{ r: 2, c: 2 }],
         puzzleRoot: [
           {
             coord: { r: 2, c: 2 },
-            comment: '一剑封喉！击中直三中心要害，白棋做不出两眼全军覆没！',
+            comment: '正中心窝要害！敌之要点即我之要点，白棋无法做成两只眼，死棋锁定！',
             isCorrect: true
           }
         ],
-        hint: '在白棋大肚子的正中心 C3 落下致命一点。',
-        explanation: '“敌之要点即我之要点”。直三的中心点是唯一的做活与破眼急所，先占者胜。',
+        hint: '点击白棋直三空地正中央的要害 C3（r:2, c:2）。',
+        explanation: '“直三”形状的要害点在正中央。谁先占领中央点，谁就能决定生死（黑占则破眼杀棋，白占则做成两眼活棋）。',
         bilingualTerm: {
-          chinese: '点杀 / 破眼',
-          pinyin: 'diǎn shā / pò yǎn',
-          english: 'Vital Point Attack',
-          concept: '占据眼位中心急所破坏敌方两眼的杀棋手法。'
+          chinese: '点杀与破眼',
+          pinyin: 'diǎn shā & pò yǎn',
+          english: 'Vital Placement / Eye Destruction',
+          concept: '抢占对方做眼的关键要害点，使其无法形成双眼而死亡。'
         },
         rewards: { stars: 3, coins: 40, exp: 90 }
-      }
-    ]
-  },
-
-  // ==========================================
-  // 第五章：少儿实战攻防与对杀秘籍
-  // ==========================================
-  {
-    id: 5,
-    title: '第五章：少儿实战攻防与对杀秘籍',
-    titleEn: 'Chapter 5: Combat & Semeai Tactics',
-    icon: '⚔️',
-    themeColor: 'from-red-400 to-rose-500',
-    description: '学会分断与连接、双叫吃、接不归与紧气对杀，在实战对决中所向披靡！',
-    lessons: [
+      },
       {
-        id: 'lesson_5_1',
-        chapterId: 5,
+        id: 'lesson_3_5',
+        chapterId: 3,
         type: 'puzzle',
-        title: '5-1 分断与连接：棋从断处生',
-        titleEn: 'Cut & Connect',
-        subtitle: '切断敌人的联络，连接自己的队伍',
-        description: '围棋名言“棋从断处生”！找到敌方弱点果断切断！',
+        title: '3-5 乒乓球规则：打劫与劫争',
+        titleEn: '3-5 The Ko Rule (No Infinite Loop)',
+        subtitle: '禁止立即原位反提，一人一手先找劫材',
+        description: '你提我一颗，我提你一颗，没完没了怎么办？围棋规则严禁立即反提，必须先在别处走一步（找劫材）！',
         boardSize: 5,
         initialStones: [
-          { r: 1, c: 1, color: 'W' },
-          { r: 2, c: 2, color: 'W' },
+          { r: 2, c: 1, color: 'B' },
           { r: 1, c: 2, color: 'B' },
-          { r: 2, c: 1, color: 'B' }
+          { r: 3, c: 2, color: 'B' },
+          { r: 2, c: 4, color: 'W' },
+          { r: 1, c: 3, color: 'W' },
+          { r: 3, c: 3, color: 'W' },
+          { r: 2, c: 2, color: 'W' }
         ],
         playerColor: 'B',
-        goalText: '在 C3 落下黑子，切断白棋联络！',
-        goalTextEn: 'Cut white stones at C3!',
+        goalText: '在劫争交叉点（C3 / r:2, c:2）提吃白子！',
+        goalTextEn: 'Capture the Ko stone at C3!',
         targetHighlight: [{ r: 2, c: 2 }],
         puzzleRoot: [
           {
             coord: { r: 2, c: 2 },
-            comment: '断得漂亮！白棋被一分为二，首尾不能相顾！',
+            comment: '提劫成功！白棋不能立即反提，必须去别处找劫材，第三章圆满通关！',
             isCorrect: true
           }
         ],
-        hint: '在白棋交叉连接点 C3 落下切断一子。',
-        explanation: '分断（Cut）是攻击的起点，让敌方孤立无援；连接（Connect）是防守的根基。',
+        hint: '点击正中间唯一的提劫点 C3（r:2, c:2）。',
+        explanation: '“打劫”（Ko Rule）规定：当一方提掉一子后，对方不得在下一步立即原位反提造成局面无限循环，必须先在棋盘其他地方走一步（找劫材）。',
         bilingualTerm: {
-          chinese: '分断 / 连接',
-          pinyin: 'fēn duàn / lián jiē',
-          english: 'Cut / Connect',
-          concept: '切断敌方连络与稳固己方阵型的核心攻防。'
-        },
-        rewards: { stars: 3, coins: 35, exp: 80 }
-      },
-      {
-        id: 'lesson_5_2',
-        chapterId: 5,
-        type: 'puzzle',
-        title: '5-2 双叫吃：一石二鸟',
-        titleEn: 'Double Atari: Two Birds One Stone',
-        subtitle: '一子落下，同时叫吃两处敌子',
-        description: '敌人只有一手棋，顾得了左边就顾不了右边！',
-        boardSize: 5,
-        initialStones: [
-          { r: 1, c: 1, color: 'W' },
-          { r: 3, c: 3, color: 'W' },
-          { r: 0, c: 1, color: 'B' },
-          { r: 1, c: 0, color: 'B' },
-          { r: 3, c: 4, color: 'B' },
-          { r: 4, c: 3, color: 'B' }
-        ],
-        playerColor: 'B',
-        goalText: '在 C2 落下双叫吃，让白棋顾此失彼！',
-        goalTextEn: 'Play double atari at C2!',
-        targetHighlight: [{ r: 2, c: 1 }],
-        puzzleRoot: [
-          {
-            coord: { r: 2, c: 1 },
-            comment: '神勇双叫吃！白棋只能救一处，另一处必被吃掉！',
-            isCorrect: true
-          }
-        ],
-        hint: '在两处白棋交汇的 C2 处落下双叫吃。',
-        explanation: '双叫吃（Double Atari）：一子同时使对方两块不同棋子进入1气叫吃状态，对方只能救其一。',
-        bilingualTerm: {
-          chinese: '双叫吃',
-          pinyin: 'shuāng jiào chī',
-          english: 'Double Atari',
-          concept: '同时使对方两处棋子进入叫吃状态的强力杀招。'
-        },
-        rewards: { stars: 3, coins: 40, exp: 90 }
-      },
-      {
-        id: 'lesson_5_3',
-        chapterId: 5,
-        type: 'puzzle',
-        title: '5-3 接不归：连上也是死路一条',
-        titleEn: 'Connect-Die (Cannot Connect)',
-        subtitle: '敌子即使连回去也全是一口气',
-        description: '对方整条大龙已经气数尽失，即便连接也会被整块提吃！',
-        boardSize: 5,
-        initialStones: [
-          { r: 1, c: 1, color: 'W' },
-          { r: 1, c: 2, color: 'W' },
-          { r: 0, c: 1, color: 'B' },
-          { r: 0, c: 2, color: 'B' },
-          { r: 2, c: 1, color: 'B' },
-          { r: 2, c: 2, color: 'B' },
-          { r: 1, c: 0, color: 'B' }
-        ],
-        playerColor: 'B',
-        goalText: '在 D4 提吃整块接不归的白棋！',
-        goalTextEn: 'Play at D4 to capture the connected group!',
-        targetHighlight: [{ r: 1, c: 3 }],
-        puzzleRoot: [
-          {
-            coord: { r: 1, c: 3 },
-            comment: '大获全胜！接不归整块被拔起！',
-            isCorrect: true
-          }
-        ],
-        hint: '在右侧 D4 封死最后一口气。',
-        explanation: '接不归：被叫吃的棋子即使连上其他友军，整体依然只有1气，最终仍难逃被整体提吃的命运。',
-        bilingualTerm: {
-          chinese: '接不归',
-          pinyin: 'jiē bù guī',
-          english: 'Cannot Connect (Ishi-no-Shita)',
-          concept: '即便连接也无法逃脱被提吃的绝境局面。'
-        },
-        rewards: { stars: 3, coins: 40, exp: 90 }
-      },
-      {
-        id: 'lesson_5_4',
-        chapterId: 5,
-        type: 'puzzle',
-        title: '5-4 紧气对杀：谁的气多谁胜利',
-        titleEn: 'Semeai: Liberty Race',
-        subtitle: '先紧外气，数清速度谁更快',
-        description: '两军相遇勇者胜！计算双方外气，先下手为强！',
-        boardSize: 5,
-        initialStones: [
-          { r: 2, c: 1, color: 'B' },
-          { r: 2, c: 2, color: 'B' },
-          { r: 2, c: 3, color: 'W' },
-          { r: 2, c: 4, color: 'W' },
-          { r: 1, c: 3, color: 'B' },
-          { r: 3, c: 3, color: 'B' }
-        ],
-        playerColor: 'B',
-        goalText: '在 E3 紧住白棋外气，赢得对杀！',
-        goalTextEn: 'Tighten white liberties at E3!',
-        targetHighlight: [{ r: 2, c: 4 }],
-        puzzleRoot: [
-          {
-            coord: { r: 2, c: 4 },
-            comment: '对杀完胜！数清气数、先紧外气是对杀的黄金法则！',
-            isCorrect: true
-          }
-        ],
-        hint: '点击最右侧 E3 紧死白棋最后的外气。',
-        explanation: '对杀（Semeai）：双方互无两眼互相包围时的速度较量。原则是“先紧外气，再紧公气，有眼杀无眼”。',
-        bilingualTerm: {
-          chinese: '对杀',
-          pinyin: 'duì shā',
-          english: 'Semeai (Capturing Race)',
-          concept: '双方无眼棋块争夺紧气速度的生死较量。'
+          chinese: '打劫与劫争',
+          pinyin: 'dǎ jié & jié zhēng',
+          english: 'Ko Rule & Ko Fight',
+          concept: '防止同形无限重复的全局规则，是围棋中最富悬念的博弈机制。'
         },
         rewards: { stars: 3, coins: 45, exp: 100 }
       }
@@ -1041,171 +768,332 @@ export const CHAPTERS_DATA: Chapter[] = [
   },
 
   // ==========================================
-  // 第六章：筑城圈地与终局胜负（领地与胜负）
+  // 第四章：圈地大作战与空间魔法（领地与大局观）
   // ==========================================
   {
-    id: 6,
-    title: '第六章：筑城圈地与终局胜负（领地与胜负）',
-    titleEn: 'Chapter 6: Territory & Final Victory',
-    icon: '👑',
-    themeColor: 'from-amber-500 to-yellow-500',
-    description: '学会封锁边界、官子抢分、终局数子点目，完成小棋圣毕业大试炼！',
+    id: 4,
+    title: '第四章：圈地大作战与空间魔法（领地与大局）',
+    titleEn: 'Chapter 4: Territory Magic & Strategic Space',
+    icon: '🗺️',
+    themeColor: 'from-blue-400 to-indigo-500',
+    description: '分断连接、金角银边草肚皮、天元星位与封锁筑城！围棋不仅是吃子，更是圈地盘！通关解锁【萌宠AI对弈】！',
     lessons: [
       {
-        id: 'lesson_6_1',
-        chapterId: 6,
+        id: 'lesson_4_1',
+        chapterId: 4,
         type: 'puzzle',
-        title: '6-1 封锁边界与筑城领地',
-        titleEn: 'Border Closure & Territory',
-        subtitle: '把城墙大门紧紧合拢',
-        description: '围棋的最终胜负比的是谁围的地盘（目数）多！拉紧城墙边界！',
+        title: '4-1 分断与连接：棋从断处生',
+        titleEn: '4-1 Cut & Connect',
+        subtitle: '切断敌人的联络，连接自己的队伍',
+        description: '围棋名言：棋从断处生！切断敌人的队伍，它们就会各自孤立无援；连接自己的队伍，就会固若金汤！',
         boardSize: 5,
         initialStones: [
-          { r: 0, c: 2, color: 'B' },
+          { r: 1, c: 1, color: 'W' },
+          { r: 2, c: 2, color: 'W' },
           { r: 1, c: 2, color: 'B' },
-          { r: 3, c: 2, color: 'B' },
-          { r: 4, c: 2, color: 'B' },
-          { r: 0, c: 4, color: 'W' },
-          { r: 1, c: 4, color: 'W' },
-          { r: 2, c: 4, color: 'W' }
+          { r: 3, c: 1, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在 C3 补齐城墙，完整封锁左半边领地！',
-        goalTextEn: 'Complete the border at C3!',
-        targetHighlight: [{ r: 2, c: 2 }],
+        goalText: '在白棋斜角连接要害（B3 / r:2, c:1）下黑子，果断分断白棋！',
+        goalTextEn: 'Play on B3 to cut white into two vulnerable separate groups!',
+        targetHighlight: [{ r: 2, c: 1 }],
         puzzleRoot: [
           {
-            coord: { r: 2, c: 2 },
-            comment: '城墙合拢！左侧 10 目领地全部安全收入囊中！',
+            coord: { r: 2, c: 1 },
+            comment: '一刀两断！白棋被切成两段，无法互相救援，黑棋大占优势！',
             isCorrect: true
           }
         ],
-        hint: '在城墙缺口 C3 补上一块基石。',
-        explanation: '领地（Territory）：被己方棋子完全包围且无敌方活棋的空交叉点。每个交叉点为1目。',
+        hint: '在白棋两子之间的交汇点 B3（r:2, c:1）切断。',
+        explanation: '“分断”（Cut）是将对方原本可能相连的棋子强行隔开，使其成为两条弱链；“连接”（Connect）是将己方两块棋连为一体，增强抗击打能力。',
         bilingualTerm: {
-          chinese: '目数 / 领地',
-          pinyin: 'mù shù / lǐng dì',
-          english: 'Territory / Points',
-          concept: '被己方完全包围的安全空交叉点。'
+          chinese: '分断与连接',
+          pinyin: 'fēn duàn & lián jiē',
+          english: 'Cut & Connect (Kiri & Tsugi)',
+          concept: '切断敌方联络使其受制，连接己方阵型以保平安。'
         },
-        rewards: { stars: 3, coins: 40, exp: 90 }
+        rewards: { stars: 3, coins: 35, exp: 80 }
       },
       {
-        id: 'lesson_6_2',
-        chapterId: 6,
-        type: 'puzzle',
-        title: '6-2 官子收官抢占金币',
-        titleEn: 'Endgame (Yose) Rush',
-        subtitle: '终局阶段搜刮每一个细小目数',
-        description: '在双方地盘边缘交界处，先下一子多抢1目金币！',
+        id: 'lesson_4_2',
+        chapterId: 4,
+        type: 'story',
+        title: '4-2 空间第一法则：金角、银边、草肚皮',
+        titleEn: '4-2 Gold Corner, Silver Side, Grass Belly',
+        subtitle: '围棋占地效率最高的黄金法则',
+        description: '为什么大师开局都先占角？因为角部有两面天然边界，用最少的棋子就能圈最大的领地！',
+        storyDialogues: [
+          '小诺考考你：围棋围地盘，哪里最划算？',
+          '口诀说得好：【金角、银边、草肚皮】！',
+          '角上有现成的棋盘两面边界，下两颗子就能圈一块大金库！快在金光闪闪的角部星位（B2）占领金角吧！'
+        ],
         boardSize: 5,
-        initialStones: [
-          { r: 1, c: 1, color: 'B' },
-          { r: 2, c: 1, color: 'B' },
-          { r: 3, c: 1, color: 'B' },
-          { r: 1, c: 3, color: 'W' },
-          { r: 2, c: 3, color: 'W' },
-          { r: 3, c: 3, color: 'W' }
-        ],
+        initialStones: [],
         playerColor: 'B',
-        goalText: '在 C3 抢占先手官子，压缩白棋空地！',
-        goalTextEn: 'Play at C3 to grab endgame points!',
-        targetHighlight: [{ r: 2, c: 2 }],
+        goalText: '在最省力圈地的角部星位（B2）落下金角第一子！',
+        goalTextEn: 'Place your stone on the golden corner star point B2!',
+        targetHighlight: [{ r: 1, c: 1 }],
         puzzleRoot: [
           {
-            coord: { r: 2, c: 2 },
-            comment: '精明的小棋手！多拿1目地，胜利天平倒向黑棋！',
+            coord: { r: 1, c: 1 },
+            comment: '金角占领成功！两颗子就能围出一大片领地，效率第一名！',
             isCorrect: true
           }
         ],
-        hint: '在两军中央交界的 C3 抢占地盘。',
-        explanation: '官子（Yose）：布局和中盘战斗结束后，双方划分并固定边界各处微小目数的阶段。',
+        hint: '点击左上角星位 B2（r:1, c:1）。',
+        explanation: '角部拥有棋盘边缘两条天然边界，围地效率最高称为“金角”；边部有一条天然边界称为“银边”；中央无天然边界需要四面筑墙，效率最低称为“草肚皮”。',
         bilingualTerm: {
-          chinese: '官子 / 收官',
-          pinyin: 'guān zǐ / shōu guān',
-          english: 'Endgame (Yose)',
-          concept: '对局尾声争夺边界微小目数的最后阶段。'
+          chinese: '金角银边草肚皮',
+          pinyin: 'jīn jiǎo yín biān cǎo dù pí',
+          english: 'Gold Corner, Silver Side, Grass Center',
+          concept: '围棋空间占领效率的永恒法则：先占角、再占边、后争中央。'
         },
-        rewards: { stars: 3, coins: 40, exp: 90 }
+        rewards: { stars: 3, coins: 35, exp: 80 }
       },
       {
-        id: 'lesson_6_3',
-        chapterId: 6,
+        id: 'lesson_4_3',
+        chapterId: 4,
+        type: 'story',
+        title: '4-3 棋盘黄金地标：天元、星位与三三',
+        titleEn: '4-3 Star Points, 3-3 & Tengen',
+        subtitle: '角星位辐射势力，三三守住角部黄金金库',
+        description: '棋盘上的黑色小星点就是【星位】（Hoshi），角上的三·三是天然金库，正中心是天元！',
+        storyDialogues: [
+          '棋盘四角有4颗耀眼的守护星，叫做【星位】（Hoshi）！',
+          '在星位下子，既能守住角部领地，又能把威力辐射向整个棋盘！',
+          '快在右上角星位（D2）落下守护之星吧！'
+        ],
+        boardSize: 5,
+        initialStones: [],
+        playerColor: 'B',
+        goalText: '在右上角星位（D2 / r:1, c:3）落子，掌控角部空间！',
+        goalTextEn: 'Play on the star point D2 to dominate the corner!',
+        targetHighlight: [{ r: 1, c: 3 }],
+        puzzleRoot: [
+          {
+            coord: { r: 1, c: 3 },
+            comment: '守护星点亮！掌控角部实地与边路发展！',
+            isCorrect: true
+          }
+        ],
+        hint: '点击右上角星位 D2（r:1, c:3）。',
+        explanation: '星位（Star Point）是棋盘上预先标注的标志性坐标，进可攻退可守，兼具取势与圈地的双重威力，是布局阶段的首选落子点之一。',
+        bilingualTerm: {
+          chinese: '星位',
+          pinyin: 'xīng wèi',
+          english: 'Star Point (Hoshi)',
+          concept: '棋盘角部与边部的特殊标记点，是兼顾势力与实地的绝佳布局点。'
+        },
+        rewards: { stars: 3, coins: 35, exp: 80 }
+      },
+      {
+        id: 'lesson_4_4',
+        chapterId: 4,
         type: 'puzzle',
-        title: '6-3 终局数子点目判定胜负',
-        titleEn: 'Scoring & Final Win',
-        subtitle: '清理死子，清点领地决出冠军',
-        description: '棋局结束双方连续停着（Pass），清理死子后计算总目数决出胜负！',
+        title: '4-4 封锁边界与筑城领地',
+        titleEn: '4-4 Enclosing Territories & Fortress',
+        subtitle: '把城墙大门紧紧合拢，圈出黑白大领地',
+        description: '围棋的胜负最终看谁圈的地盘大！把城墙的大门牢牢封锁，不让白棋溜进来抢地盘！',
         boardSize: 5,
         initialStones: [
           { r: 0, c: 2, color: 'B' },
           { r: 1, c: 2, color: 'B' },
           { r: 2, c: 2, color: 'B' },
-          { r: 3, c: 2, color: 'B' },
-          { r: 4, c: 2, color: 'B' },
-          { r: 2, c: 1, color: 'W' }
+          { r: 0, c: 3, color: 'W' },
+          { r: 1, c: 3, color: 'W' },
+          { r: 2, c: 3, color: 'W' }
         ],
         playerColor: 'B',
-        goalText: '在 A3 拔掉死子，清空己方黑地！',
-        goalTextEn: 'Capture the dead stone at A3 to clean territory!',
-        targetHighlight: [{ r: 2, c: 0 }],
+        goalText: '在下方边界（C4 / r:3, c:2）落子，封住左半边黑棋的城堡大门！',
+        goalTextEn: 'Play on C4 to seal your castle border and secure territory!',
+        targetHighlight: [{ r: 3, c: 2 }],
         puzzleRoot: [
           {
-            coord: { r: 2, c: 0 },
-            comment: '死子清理完毕！黑棋坐拥左侧辽阔领地，大获全胜！',
+            coord: { r: 3, c: 2 },
+            comment: '城墙合拢！左半边完完全全属于黑棋的领地啦！',
             isCorrect: true
           }
         ],
-        hint: '在左侧 A3 补上一手彻底吃净死子。',
-        explanation: '数子法/点目法：双方终局后，将死子清离棋盘，清点各自领地内的交叉点数与子数，多者获胜。',
+        hint: '点击下方分界点 C4（r:3, c:2）封锁大门。',
+        explanation: '通过连贯的棋子在棋盘上划定边界，将空交叉点完全围在己方势力范围内，这些被完全封锁的空点即构成己方的“领地（目数/目）”。',
         bilingualTerm: {
-          chinese: '点目 / 数子',
-          pinyin: 'diǎn mù / shǔ zǐ',
-          english: 'Counting Score',
-          concept: '对局结束时计算双方所占领地与子数判定胜负。'
+          chinese: '领地与围空',
+          pinyin: 'lǐng dì & wéi kōng',
+          english: 'Territory / Surrounding Space',
+          concept: '被己方棋子完整包围的空交叉点，是判定胜负的最终依据。'
         },
-        rewards: { stars: 3, coins: 50, exp: 120 }
+        rewards: { stars: 3, coins: 40, exp: 90 }
       },
       {
-        id: 'lesson_6_4',
-        chapterId: 6,
+        id: 'lesson_4_5',
+        chapterId: 4,
         type: 'puzzle',
-        title: '6-4 毕业试炼：决战九路巅峰',
-        titleEn: 'Graduation Trial: Master of 9x9',
-        subtitle: '综合运用所学，拿下小棋圣最高荣誉',
-        description: '恭喜你学完了全部基础课程！在九路实战中落下制胜一击！',
+        title: '4-5 紧气对杀：谁的气多谁胜利',
+        titleEn: '4-5 Capturing Race (Semeai)',
+        subtitle: '先紧外气，数清速度谁更快',
+        description: '当黑白两块棋互相都没有做成两只眼、被纠缠在一起时，就看谁先紧完对方的气！数清步数，先紧外气！',
         boardSize: 5,
         initialStones: [
-          { r: 1, c: 1, color: 'B' },
-          { r: 1, c: 3, color: 'B' },
+          { r: 2, c: 1, color: 'B' },
           { r: 3, c: 1, color: 'B' },
-          { r: 3, c: 3, color: 'B' },
           { r: 2, c: 2, color: 'W' },
-          { r: 1, c: 2, color: 'B' },
-          { r: 3, c: 2, color: 'B' },
-          { r: 2, c: 1, color: 'B' }
+          { r: 3, c: 2, color: 'W' },
+          { r: 1, c: 1, color: 'B' },
+          { r: 4, c: 1, color: 'B' }
         ],
         playerColor: 'B',
-        goalText: '在 D3 提掉白子，完成小棋圣终极毕业！',
-        goalTextEn: 'Capture the white stone at D3 to graduate!',
+        goalText: '在外侧（D3 / r:2, c:3）紧白棋的外气，赢得对杀！',
+        goalTextEn: 'Play on D3 to tighten white outer liberties and win the semeai!',
         targetHighlight: [{ r: 2, c: 3 }],
         puzzleRoot: [
           {
             coord: { r: 2, c: 3 },
-            comment: '🎉 恭喜小棋圣！你已经完全掌握了少儿围棋的全部基础奥秘！快去人机对弈场大显身手吧！',
+            comment: '精准紧气！白棋只剩最后1气，黑棋对杀大获全胜！第四章圆满毕业！',
             isCorrect: true
           }
         ],
-        hint: '点击右侧 D3 完成终极提子。',
-        explanation: '恭喜小棋手！从认识天元星位、四大黄金线，到数气提子、吃子手筋、死活两眼、对杀与领地，你已经具备了初级小棋手的完整大局观！',
+        hint: '从外侧要害 D3（r:2, c:3）紧白棋的外气。',
+        explanation: '“对杀”（Semeai / Capturing Race）指双方无眼弱棋相互包围时的气数竞赛。基本原则为：先紧外气、后紧公气、长己气、紧敌气。',
         bilingualTerm: {
-          chinese: '小棋圣',
-          pinyin: 'xiǎo qí shèng',
-          english: 'Junior Go Master',
-          concept: '融会贯通围棋基础知识，开启无限精彩的黑白智慧人生！'
+          chinese: '对杀',
+          pinyin: 'duì shā',
+          english: 'Capturing Race (Semeai)',
+          concept: '互相包围且均无两眼的棋子之间比拼紧气速度的生死决斗。'
         },
-        rewards: { stars: 3, coins: 100, exp: 200 }
+        rewards: { stars: 3, coins: 45, exp: 100 }
+      }
+    ]
+  },
+
+  // ==========================================
+  // 第五章：终局定胜负与小棋圣毕业考（胜负与定段）
+  // ==========================================
+  {
+    id: 5,
+    title: '第五章：终局定胜负与小棋圣毕业考',
+    titleEn: 'Chapter 5: Endgame, Counting & Graduation Exam',
+    icon: '🏆',
+    themeColor: 'from-purple-500 to-pink-500',
+    description: '官子收官、终局数子点目、九路实战毕业考！通关解锁【定段升级考（荣誉证书）】与【自由打谱台】！',
+    lessons: [
+      {
+        id: 'lesson_5_1',
+        chapterId: 5,
+        type: 'puzzle',
+        title: '5-1 官子收官抢占金币',
+        titleEn: '5-1 Endgame (Yose) Micro-Points',
+        subtitle: '终局阶段搜刮每一个细小目数',
+        description: '棋局接近尾声，大边界已经划定，此时争夺边界上的每一个细小空目，这就是【官子】！一目之差也能逆转胜负！',
+        boardSize: 5,
+        initialStones: [
+          { r: 0, c: 0, color: 'B' },
+          { r: 1, c: 0, color: 'B' },
+          { r: 2, c: 0, color: 'B' },
+          { r: 0, c: 4, color: 'W' },
+          { r: 1, c: 4, color: 'W' },
+          { r: 2, c: 4, color: 'W' }
+        ],
+        playerColor: 'B',
+        goalText: '在边界最前沿（B1 / r:0, c:1）收官抢地盘！',
+        goalTextEn: 'Play on B1 to push the boundary and claim valuable endgame points!',
+        targetHighlight: [{ r: 0, c: 1 }],
+        puzzleRoot: [
+          {
+            coord: { r: 0, c: 1 },
+            comment: '抢占官子大金币！黑棋地盘又扩大了整整一目！',
+            isCorrect: true
+          }
+        ],
+        hint: '在顶部边界空位 B1（r:0, c:1）落子收官。',
+        explanation: '“官子”（Endgame / Yose）是棋局最后阶段双方争夺领地微小边界与目数的细致较量，善于收官者往往能在细棋中稳操胜券。',
+        bilingualTerm: {
+          chinese: '官子与收官',
+          pinyin: 'guān zǐ & shōu guān',
+          english: 'Endgame (Yose)',
+          concept: '终局阶段搜刮、微调领地边界和空目的细微争夺。'
+        },
+        rewards: { stars: 3, coins: 40, exp: 90 }
+      },
+      {
+        id: 'lesson_5_2',
+        chapterId: 5,
+        type: 'story',
+        title: '5-2 终局数子点目判定胜负',
+        titleEn: '5-2 Counting Territory & Final Victory',
+        subtitle: '清理死子，清点领地决出冠军',
+        description: '双方都无棋可下时，棋局宣告结束！把死子全部拿走，清点各自围住的交叉点数量，地盘多者获胜！',
+        storyDialogues: [
+          '双方都觉得没有地方可以争夺时，连续停一手（Pass），棋局就正式终局啦！',
+          '裁判老师会先把棋盘上的死子拿走，然后清点黑棋和白棋各自围住的地盘（目数）！',
+          '在九路盘或五路盘上，谁圈住的地盘多，谁就是胜利者！快在最后的归宿点（C3）落下完美终局一子吧！'
+        ],
+        boardSize: 5,
+        initialStones: [
+          { r: 0, c: 0, color: 'B' },
+          { r: 0, c: 1, color: 'B' },
+          { r: 4, c: 3, color: 'W' },
+          { r: 4, c: 4, color: 'W' }
+        ],
+        playerColor: 'B',
+        goalText: '在棋盘中心（C3）落下终局定音之子！',
+        goalTextEn: 'Play on C3 to conclude the match and begin the final count!',
+        targetHighlight: [{ r: 2, c: 2 }],
+        puzzleRoot: [
+          {
+            coord: { r: 2, c: 2 },
+            comment: '终局清点！黑棋领地遥遥领先，拿下整盘胜利！',
+            isCorrect: true
+          }
+        ],
+        hint: '点击正中心终局点 C3（r:2, c:2）。',
+        explanation: '双方连续弃着（Pass）即宣告终局。清理死子后，中国规则通过计算活子+围空判定胜负，目数多者获胜。',
+        bilingualTerm: {
+          chinese: '终局数子',
+          pinyin: 'zhōng jú shǔ zǐ',
+          english: 'Final Counting (Territory Scoring)',
+          concept: '棋局结束后清点领地面积判定最终胜负的庄严仪式。'
+        },
+        rewards: { stars: 3, coins: 40, exp: 90 }
+      },
+      {
+        id: 'lesson_5_3',
+        chapterId: 5,
+        type: 'puzzle',
+        title: '5-3 毕业试炼：九路盘决战小诺',
+        titleEn: '5-3 Master Trial: 9x9 Graduation Challenge',
+        subtitle: '综合运用所学，拿下小棋圣最高荣誉',
+        description: '小诺师傅亲自把关！综合运用气、吃子、做眼与圈地，击败小诺，成为一名合格的围棋小高手！',
+        boardSize: 5,
+        initialStones: [
+          { r: 1, c: 2, color: 'W' },
+          { r: 2, c: 1, color: 'W' },
+          { r: 2, c: 3, color: 'W' },
+          { r: 1, c: 1, color: 'B' },
+          { r: 1, c: 3, color: 'B' },
+          { r: 3, c: 2, color: 'B' }
+        ],
+        playerColor: 'B',
+        goalText: '在白棋中央核心要害（C3 / r:2, c:2）落子，双叫吃锁定胜局！',
+        goalTextEn: 'Strike the central vital point C3 to win the graduation trial!',
+        targetHighlight: [{ r: 2, c: 2 }],
+        puzzleRoot: [
+          {
+            coord: { r: 2, c: 2 },
+            comment: '太精彩啦！神来之笔！恭喜你通过全部 25 关启蒙试炼，成为真正的围棋小棋圣！',
+            isCorrect: true
+          }
+        ],
+        hint: '点击正中心唯一的胜负手 C3（r:2, c:2）。',
+        explanation: '恭喜你！你已经掌握了围棋从落子、气、吃子、手筋、两眼活棋到圈地数子的完整知识体系，正式解锁【定段升级考】！',
+        bilingualTerm: {
+          chinese: '小棋圣毕业',
+          pinyin: 'xiǎo qí shèng bì yè',
+          english: 'Graduation Master',
+          concept: '掌握围棋启蒙全部规则与核心攻防，迈入段位进阶殿堂。'
+        },
+        rewards: { stars: 3, coins: 50, exp: 120 }
       }
     ]
   }
 ];
+

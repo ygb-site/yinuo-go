@@ -3,6 +3,7 @@ import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import ProfileSwitcherModal from './components/common/ProfileSwitcherModal.vue';
 import CartoonAlertModal from './components/common/CartoonAlertModal.vue';
+import UnlockCelebrationModal from './components/common/UnlockCelebrationModal.vue';
 import { useUserStore } from './stores/useUserStore';
 
 const userStore = useUserStore();
@@ -23,6 +24,9 @@ const userStore = useUserStore();
       :isOpen="userStore.isProfileModalOpen"
       @close="userStore.closeProfileModal"
     />
+
+    <!-- Global Milestone / Feature Unlock Celebration Modal -->
+    <UnlockCelebrationModal />
 
     <!-- Global Cute Cartoon Alert / Confirm Modal -->
     <CartoonAlertModal />
