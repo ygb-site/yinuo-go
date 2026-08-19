@@ -657,6 +657,68 @@ export const GO_DICTIONARY: DictEntry[] = [
   // 🏆 6. 终局胜负与裁判规则 (Endgame & Scoring Rules)
   // =========================================================================
   {
+    id: 'moku_points',
+    chinese: '目（目数）',
+    pinyin: 'mù / mù shù',
+    english: 'Moku / Territory Points',
+    category: 'endgame_rules',
+    categoryName: '终局规则',
+    badgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+    shortDesc: '围棋中衡量围空面积的最小基本单位，1个被包围的空交叉点 = 1目。',
+    fullDesc: '“目”是围棋计算领地大小的度量衡。棋子在棋盘上完全围住的空交叉点数量即为目数。终局时通过计算双方各自围得的总目数来决定胜负，目多者胜。',
+    kidAnalogy: '就像在小镇上圈地盖房子，你完整围住的每一个小空格，就是一个金币小金库（1目）！',
+    demoBoardSize: 5,
+    demoInitialStones: [
+      { r: 1, c: 1, color: 'B' },
+      { r: 1, c: 2, color: 'B' },
+      { r: 1, c: 3, color: 'B' },
+      { r: 3, c: 1, color: 'B' },
+      { r: 3, c: 2, color: 'B' },
+      { r: 3, c: 3, color: 'B' },
+      { r: 2, c: 1, color: 'B' },
+      { r: 2, c: 3, color: 'B' }
+    ],
+    demoInteractiveMoves: [{ r: 2, c: 2 }],
+    demoExplanation: '中心 C3 是黑棋完整围住的空交叉点，计为 1 目领地！'
+  },
+  {
+    id: 'half_point_win',
+    chinese: '胜半子（半目胜）',
+    pinyin: 'shèng bàn zǐ / bàn mù shèng',
+    english: 'Half-Point Victory (0.5 Margin)',
+    category: 'endgame_rules',
+    categoryName: '终局规则',
+    badgeColor: 'bg-rose-100 text-rose-900 border-rose-300',
+    shortDesc: '围棋比赛中最小、最刺激的极限差距胜负（仅领先 0.5 目或 3/4 子）。',
+    fullDesc: '由于黑棋先下需要贴目（如贴3.5目、5.5目或7.5目），终局结算时计算出的净胜目数常会出现 0.5 目的最小差距。以 0.5 目的微小优势险胜称为“半目胜”或“胜半子”。',
+    kidAnalogy: '就像跑步冲刺撞线，只比第二名快了半个脚尖！微弱却决定胜负的奇迹胜利！',
+    demoBoardSize: 5,
+    demoInitialStones: [
+      { r: 0, c: 0, color: 'B' },
+      { r: 4, c: 4, color: 'W' }
+    ],
+    demoInteractiveMoves: [{ r: 2, c: 2 }],
+    demoExplanation: '围棋通过半目贴目消除和棋，分出胜者！'
+  },
+  {
+    id: 'scoring_methods',
+    chinese: '数子法与比目法',
+    pinyin: 'shǔ zǐ fǎ & bǐ mù fǎ',
+    english: 'Area Scoring vs Territory Scoring',
+    category: 'endgame_rules',
+    categoryName: '终局规则',
+    badgeColor: 'bg-teal-100 text-teal-900 border-teal-300',
+    shortDesc: '中国规则（数活子+围空）与日韩国际规则（数围空目数）的换算体系。',
+    fullDesc: '中国围棋规则采用“数子法”（活子 + 围空交叉点，19路全盘共361子，超过184.25子者胜）；日韩规则采用“比目法”（只数围空的目数）。两者本质等价，数学上 1 子 = 2 目。',
+    kidAnalogy: '称重苹果的方法不同：一个连箱子一起称，一个只称果肉，最终算出的甜度完全一样！',
+    demoBoardSize: 5,
+    demoInitialStones: [],
+    demoInteractiveMoves: [],
+    demoExplanation: '中国规则数子法计算活子与围空之和！'
+  },
+
+  // =========================================================================
+  {
     id: 'yose',
     chinese: '官子（收官）',
     pinyin: 'guān zǐ / shōu guān',

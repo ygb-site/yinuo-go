@@ -565,6 +565,22 @@ const changeSize = (size: BoardSize) => {
             </div>
           </div>
 
+          
+          <!-- 💡 小科普：什么是“目”与“胜半子”？ -->
+          <div class="bg-amber-50/80 rounded-2xl p-2.5 sm:p-3 border border-amber-200 text-left space-y-1 text-xs">
+            <div class="font-black text-amber-950 flex items-center justify-between">
+              <span class="flex items-center gap-1">
+                <Sparkles class="w-3.5 h-3.5 text-amber-600" />
+                <span>小科普：什么是“目”与“胜半子”？</span>
+              </span>
+            </div>
+            <div class="text-[10px] sm:text-[11px] text-gray-700 font-medium leading-relaxed pt-1 space-y-0.5 border-t border-amber-200/60 mt-1">
+              <p>• <strong class="text-gray-900">“目”</strong>：指围住的空交叉点数量，围住 1 个空格就是 1 目地盘。</p>
+              <p>• <strong class="text-gray-900">“领先 X 目”</strong>：指胜方比败方多占领了 X 个空交叉点。</p>
+              <p>• <strong class="text-gray-900">“胜半子/半目胜”</strong>：围棋最小的胜负差距（0.5 目），代表仅以半个微小空位的微弱优势险胜！</p>
+            </div>
+          </div>
+
           <!-- Margin description banner -->
           <div v-if="!resignedPlayerColor && scoreResult.margin < 90" class="p-3 rounded-2xl bg-orange-50 border border-orange-200 text-xs font-bold text-orange-950">
             📊 根据中国围棋数子法计算，胜方净领先 <span class="text-sm font-black text-orange-600">{{ scoreResult.margin }}</span> 目/子！
