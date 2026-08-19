@@ -16,13 +16,29 @@ export interface UnlockFeature {
 }
 
 export const UNLOCK_FEATURES: UnlockFeature[] = [
-  // Learn / 主线
+  // 1. 随身宝典与启蒙主线（默认完全开放）
+  {
+    id: 'dictionary',
+    name: '围棋小词典',
+    nameEn: 'Go Dictionary & Terms',
+    icon: '📚',
+    badge: '随身宝典 · 始终开放',
+    badgeColor: 'bg-emerald-600',
+    gradient: 'from-emerald-400 via-teal-500 to-cyan-500',
+    route: '/dictionary',
+    category: 'profile',
+    lessonsRequired: 0,
+    chapterRequired: 0,
+    unlockTitle: '随身宝典',
+    unlockTip: '始终开放，随时查阅',
+    desc: '中英双语围棋术语大全，生动图文与棋盘演练解析每一个围棋专业概念！'
+  },
   {
     id: 'learn',
     name: '趣味闯关',
     nameEn: 'Adventure Map',
     icon: '🧭',
-    badge: '启蒙主线',
+    badge: '启蒙主线 · 循序渐进',
     badgeColor: 'bg-emerald-500',
     gradient: 'from-emerald-400 via-teal-500 to-cyan-500',
     route: '/learn',
@@ -31,10 +47,10 @@ export const UNLOCK_FEATURES: UnlockFeature[] = [
     chapterRequired: 0,
     unlockTitle: '启蒙主线',
     unlockTip: '始终开放',
-    desc: '从数气到吃子手筋，5大篇章25关趣味小故事，带你一步步成为围棋小高手！'
+    desc: '从数气到手筋，6大篇章阶梯式趣味小故事，带你一步步成为围棋小高手！'
   },
 
-  // Battle / 对战
+  // 2. 对战天地 (Battle)
   {
     id: 'capture-go',
     name: '吃子对弈场',
@@ -79,8 +95,8 @@ export const UNLOCK_FEATURES: UnlockFeature[] = [
     category: 'battle',
     lessonsRequired: 17,
     chapterRequired: 4,
-    unlockTitle: '通关第4章【圈地大局】',
-    unlockTip: '需通关第4章（掌握死活眼位与圈地）',
+    unlockTitle: '通关第4章【死活城堡】',
+    unlockTip: '需通关第4章（掌握死活眼位与做活）',
     desc: '小狗贝贝、小猫喵喵、狐狸阿福、小诺师傅等你来挑战，支持实时辅助！'
   },
   {
@@ -100,7 +116,7 @@ export const UNLOCK_FEATURES: UnlockFeature[] = [
     desc: '模拟正规少儿定级考，十道综合实战大测验，考取你的第一张围棋荣誉证书！'
   },
 
-  // Practice / 练习
+  // 3. 练习天地 (Practice)
   {
     id: 'arcade',
     name: '反应乐园',
@@ -161,12 +177,12 @@ export const UNLOCK_FEATURES: UnlockFeature[] = [
     category: 'practice',
     lessonsRequired: 17,
     chapterRequired: 4,
-    unlockTitle: '通关第4章【圈地大局】',
+    unlockTitle: '通关第4章【死活城堡】',
     unlockTip: '需通关第4章',
     desc: '一键生成并打印A4高清围棋习题纸，保护视力，随时随地线下做题！'
   },
 
-  // Profile & Others / 我的与成长
+  // 4. 成长与个性化 (Profile & Themes)
   {
     id: 'shop',
     name: '装扮商城',
@@ -214,22 +230,5 @@ export const UNLOCK_FEATURES: UnlockFeature[] = [
     unlockTitle: '完成全部启蒙闯关',
     unlockTip: '需通关全部启蒙关卡',
     desc: '自由摆设死活局、SGF棋谱导入导出与多分支复盘！'
-  },
-  {
-    id: 'dictionary',
-    name: '围棋小词典',
-    nameEn: 'Go Dictionary',
-    icon: '📚',
-    badge: '随身宝典',
-    badgeColor: 'bg-emerald-600',
-    gradient: 'from-emerald-400 via-teal-500 to-cyan-500',
-    route: '/dictionary',
-    category: 'profile',
-    lessonsRequired: 0,
-    chapterRequired: 0,
-    unlockTitle: '随身宝典',
-    unlockTip: '随时查阅',
-    desc: '中英双语围棋术语大全，生动图文解析每一个专业围棋概念！'
   }
 ];
-
