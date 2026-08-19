@@ -13,6 +13,7 @@ const props = withDefaults(
     playerColor?: StoneColor;
     lastMove?: Point | null;
     showLiberties?: boolean;
+    showBreathingTubes?: boolean;
     showAtari?: boolean;
     showCoordinates?: boolean;
     showTerritory?: boolean;
@@ -28,6 +29,7 @@ const props = withDefaults(
   {
     showCoordinates: true,
     showLiberties: true,
+    showBreathingTubes: true,
     showAtari: true,
     showTerritory: false,
     theme: 'wood',
@@ -73,6 +75,7 @@ const handleSelect = (p: Point | null, g: StoneGroup | null) => {
     :game="activeGame"
     :readonly="props.disabled || props.readonly || (props.interactive === false)"
     :showLiberties="props.showLiberties"
+    :showBreathingTubes="props.showBreathingTubes"
     :showCoordinates="props.showCoordinates"
     :showAtari="props.showAtari"
     :showTerritory="props.showTerritory"
