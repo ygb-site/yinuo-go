@@ -28,11 +28,12 @@ const handlePrint = () => {
     <!-- Top Action Bar (Hidden when printing) -->
     <div class="max-w-4xl mx-auto mb-6 flex items-center justify-between bg-white rounded-3xl p-4 sm:p-5 border-2 border-orange-100 shadow-sm print:hidden">
       <button
-        @click="router.back()"
-        class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition cursor-pointer"
+        @click="router.push('/practice')"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-black transition active:scale-95 cursor-pointer border border-orange-200 shadow-2xs"
+        title="返回技能训练"
       >
-        <ArrowLeft class="w-4 h-4" />
-        <span>返回</span>
+        <ArrowLeft class="w-3.5 h-3.5" />
+        <span>返回技能训练</span>
       </button>
 
       <div class="text-center">

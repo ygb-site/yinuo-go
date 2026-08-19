@@ -36,9 +36,18 @@ const getFeatureStats = (id: string) => {
     return count > 0 ? '待消灭 ' + count + ' 处 / 已解决 ' + resolved + ' 处' : '当前无错题，状态极佳！';
   }
   if (id === 'worksheet') {
-    return '支持 A4 高清打印';
+    return '支持 A4 高清打印题单';
+  }
+  if (id === 'free-board') {
+    return '自由摆盘 · SGF棋谱导入导出 · 多分支复盘';
   }
   return '随堂练习';
+};
+
+const getActionButtonText = (feat: any) => {
+  if (!unlockStore.isFeatureUnlocked(feat.id)) return '去解锁';
+  if (feat.id === 'free-board') return '进入打谱';
+  return '进入练习';
 };
 
 const handleCardClick = (feature: any) => {
@@ -99,7 +108,7 @@ const handleCardClick = (feature: any) => {
       </div>
 
       <!-- Practice Cards Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <div
           v-for="feat in practiceFeatures"
           :key="feat.id"
@@ -180,7 +189,7 @@ const handleCardClick = (feature: any) => {
                   : 'bg-amber-50 text-amber-900 border border-amber-200'
               "
             >
-              <span>{{ unlockStore.isFeatureUnlocked(feat.id) ? '进入练习' : '去解锁' }}</span>
+              <span>{{ getActionButtonText(feat) }}</span>
               <ArrowRight class="w-3 h-3" />
             </button>
           </div>
@@ -190,4 +199,3 @@ const handleCardClick = (feature: any) => {
     </div>
   </div>
 </template>
-

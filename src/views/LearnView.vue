@@ -1,263 +1,196 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { CHAPTERS_DATA, type Lesson } from '../data/chapters';
-import { useAdventureStore } from '../stores/adventureStore';
-import { useUserStore } from '../stores/useUserStore';
-import { playButtonSound, playErrorSound } from '../../src/lib/audio';
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+import { useUnlockStore } from "../stores/unlockStore";
+import { sound } from "../utils/sound";
+import { showConfirm } from "../utils/alert";
 import {
-  Star,
+  Compass,
   Lock,
-  Play,
-  Gamepad2,
-  Coins
-} from 'lucide-vue-next';
+  ArrowRight,
+  CheckCircle2,
+  Sparkles
+} from "lucide-vue-next";
 
 const router = useRouter();
-const adventureStore = useAdventureStore();
-const userStore = useUserStore();
+const unlockStore = useUnlockStore();
 
-const activeChapterId = ref<number>(1);
+const learnFeatures = computed(() => {
+  return unlockStore.allFeatures.filter(f => f.category === "learn");
+});
 
-const selectChapter = (id: number) => {
-  activeChapterId.value = id;
-  playButtonSound();
-};
+const completedCount = computed(() => unlockStore.completedLessonsCount);
 
-const isLessonUnlocked = (lessonId: string): boolean => {
-  if (lessonId === 'lesson_1_1' || lessonId === 'c1_l1') return true;
-  // Flatten all lessons
-  const allLessons: Lesson[] = [];
-  for (const c of CHAPTERS_DATA) {
-    allLessons.push(...c.lessons);
+const getFeatureStats = (id: string) => {
+  if (id === "adventure") {
+    return "已通关 " + completedCount.value + " / 22 关 (" + Math.min(100, Math.round((completedCount.value / 22) * 100)) + "%)";
   }
-  const idx = allLessons.findIndex(l => l.id === lessonId);
-  if (idx <= 0) return true;
-  const prevLesson = allLessons[idx - 1];
-  return !!adventureStore.completedLevels[prevLesson.id];
+  if (id === "dictionary") {
+    return "收录 52 个中英双语围棋术语与图解";
+  }
+  if (id === "rhymes") {
+    return "收录 8 首经典围棋儿歌与棋盘演练";
+  }
+  return "启蒙天地";
 };
 
-const getLessonStars = (lessonId: string): number => {
-  const rec = adventureStore.completedLevels[lessonId];
-  return rec ? rec.stars : 0;
+const getActionButtonText = (feat: any) => {
+  if (!unlockStore.isFeatureUnlocked(feat.id)) return "去解锁";
+  if (feat.id === "adventure") return "进入闯关";
+  if (feat.id === "dictionary") return "查阅词典";
+  if (feat.id === "rhymes") return "朗读口诀";
+  return "进入";
 };
 
-const startLesson = (lesson: Lesson) => {
-  if (!userStore.hasProfile) {
-    userStore.openProfileModal();
+const handleCardClick = (feature: any) => {
+  const isUnlocked = unlockStore.isFeatureUnlocked(feature.id);
+  if (!isUnlocked) {
+    sound.playErrorSound();
+    showConfirm({
+      title: "暂未解锁该学堂功能",
+      message: "小棋手别着急！【" + feature.name + "】需要" + feature.unlockTip + "才能开启哦！快去继续主线闯关吧！",
+      type: "warning",
+      confirmText: "前往主线闯关",
+      cancelText: "知道了"
+    }).then(confirmed => {
+      if (confirmed) {
+        router.push("/adventure");
+      }
+    });
     return;
   }
-  if (!isLessonUnlocked(lesson.id)) {
-    playErrorSound();
-    return;
-  }
-  playButtonSound();
-  router.push(`/lesson/${lesson.id}`);
+
+  sound.playButtonSound();
+  router.push(feature.route);
 };
 </script>
 
 <template>
   <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-4 sm:py-8 lg:py-10 px-3 sm:px-6 lg:px-8 select-none">
-    <div class="max-w-6xl mx-auto space-y-4 sm:space-y-8">
+    <div class="max-w-6xl mx-auto space-y-5 sm:space-y-8">
 
       <!-- Header Hero Card -->
-      <div class="bg-white rounded-3xl p-5 sm:p-8 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 relative overflow-hidden">
-        <div class="space-y-1.5 sm:space-y-2 text-center md:text-left z-10">
-          <div class="inline-flex items-center gap-2 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-black">
-            <Gamepad2 class="w-3.5 h-3.5" />
-            <span>少儿启蒙闯关大冒险 (Adventure Map)</span>
-          </div>
-          <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
-            围棋小精灵成长之路
-          </h1>
-          <p class="text-xs sm:text-sm text-gray-600 font-medium max-w-xl">
-            跟着萌宠小诺一起闯关，从认识交叉点与气到掌握绝妙吃子手筋，收集满天繁星！
-          </p>
-        </div>
+      <div class="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-3xl p-5 sm:p-8 text-white shadow-lg relative overflow-hidden">
+        <div class="absolute -right-8 -bottom-8 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
 
-        <!-- User Stats Pill Header -->
-        <div class="flex items-center gap-4 bg-amber-50 rounded-2xl p-3 sm:p-4 border border-amber-200 z-10 shadow-2xs">
-          <div class="text-center">
-            <div class="text-[10px] font-extrabold text-amber-700">收集星星</div>
-            <div class="text-xl sm:text-2xl font-black text-amber-900 flex items-center justify-center gap-1">
-              <Star class="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 fill-current" />
-              <span>{{ adventureStore.totalStarsEarned }}</span>
+        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
+          <div class="space-y-2 text-center md:text-left">
+            <div class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-black">
+              <Compass class="w-3.5 h-3.5" />
+              <span>少儿启蒙与趣味学堂 (Learning Hub)</span>
             </div>
-          </div>
-          <div class="w-px h-7 bg-amber-200"></div>
-          <div class="text-center">
-            <div class="text-[10px] font-extrabold text-amber-700">金币奖励</div>
-            <div class="text-xl sm:text-2xl font-black text-amber-900 flex items-center justify-center gap-1">
-              <Coins class="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
-              <span>{{ userStore.coins }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Mobile Horizontal Chapter Scrollable Tabs (lg:hidden) -->
-      <div class="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-        <button
-          v-for="chap in CHAPTERS_DATA"
-          :key="`mobile-chap-${chap.id}`"
-          @click="selectChapter(chap.id)"
-          class="px-3.5 py-2.5 rounded-2xl border text-xs font-black flex items-center gap-2 whitespace-nowrap flex-shrink-0 transition active:scale-95 cursor-pointer"
-          :class="
-            activeChapterId === chap.id
-              ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-md ring-2 ring-orange-300'
-              : 'bg-white text-gray-700 border-orange-200/80 shadow-2xs hover:bg-orange-50'
-          "
-        >
-          <span class="text-base">{{ chap.icon }}</span>
-          <span>第{{ chap.id }}章 ({{ chap.lessons.length }}关)</span>
-        </button>
-      </div>
-
-      <!-- Desktop Chapter Selection 6-Grid (hidden lg:grid) -->
-      <div class="hidden lg:grid lg:grid-cols-3 gap-4">
-        <button
-          v-for="chap in CHAPTERS_DATA"
-          :key="chap.id"
-          @click="selectChapter(chap.id)"
-          class="p-5 rounded-3xl border-2 transition-all transform hover:scale-102 active:scale-95 text-left flex items-center justify-between gap-3 group cursor-pointer"
-          :class="
-            activeChapterId === chap.id
-              ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-lg shadow-orange-500/25 ring-2 ring-orange-300/60'
-              : 'bg-white text-gray-800 border-gray-100 hover:border-orange-200 shadow-sm'
-          "
-        >
-          <div class="flex items-center gap-3.5 flex-1 min-w-0">
-            <div
-              class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl flex-shrink-0 shadow-xs transition transform group-hover:scale-110"
-              :class="activeChapterId === chap.id ? 'bg-white/20' : 'bg-orange-50 border border-orange-100'"
-            >
-              {{ chap.icon }}
-            </div>
-            <div class="flex-1 min-w-0">
-              <span
-                class="text-[10px] font-black px-2 py-0.5 rounded-full inline-block mb-1"
-                :class="activeChapterId === chap.id ? 'bg-white/30 text-white' : 'bg-orange-100 text-orange-800'"
-              >
-                第 {{ chap.id }} 章
-              </span>
-              <h3 class="text-sm sm:text-base font-cartoon font-bold tracking-wide truncate leading-tight">
-                {{ chap.title.split('：')[1] || chap.title }}
-              </h3>
-              <p
-                class="text-[11px] font-medium mt-1 line-clamp-1 opacity-90"
-                :class="activeChapterId === chap.id ? 'text-white/80' : 'text-gray-500'"
-              >
-                {{ chap.description }}
-              </p>
-            </div>
+            <h1 class="text-2xl sm:text-4xl font-cartoon font-bold tracking-wide drop-shadow-sm">
+              启蒙闯关学堂
+            </h1>
+            <p class="text-xs sm:text-sm text-white/90 font-medium max-w-xl">
+              从零基础趣味主线闯关、随身双语小词典到经典棋理口诀儿歌，轻松踏入围棋艺术殿堂！
+            </p>
           </div>
 
-          <div
-            class="text-xs font-black px-3 py-1.5 rounded-2xl border flex-shrink-0 whitespace-nowrap text-center flex items-center justify-center min-w-[56px] shadow-xs"
-            :class="activeChapterId === chap.id ? 'bg-white text-orange-600 border-white shadow-sm' : 'bg-gray-50 text-gray-600 border-gray-200'"
-          >
-            {{ chap.lessons.length }} 关
-          </div>
-        </button>
-      </div>
-
-      <!-- Current Chapter Adventure Path Grid -->
-      <div
-        v-for="chap in CHAPTERS_DATA"
-        :key="`map-${chap.id}`"
-        v-show="activeChapterId === chap.id"
-        class="space-y-4 sm:space-y-6 animate-fade-in"
-      >
-        <!-- Chapter Header Banner -->
-        <div class="bg-gradient-to-r rounded-3xl p-5 sm:p-6 text-white shadow-md" :class="chap.themeColor">
-          <div class="text-[11px] sm:text-xs font-black uppercase tracking-wider opacity-90">{{ chap.titleEn }}</div>
-          <h2 class="text-xl sm:text-2xl font-cartoon font-bold tracking-wide mt-1">{{ chap.title }}</h2>
-          <p class="text-xs sm:text-sm font-medium opacity-90 mt-1 max-w-xl">
-            {{ chap.description }}
-          </p>
-        </div>
-
-        <!-- Lessons Cards Path Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
-          <div
-            v-for="(lesson, idx) in chap.lessons"
-            :key="lesson.id"
-            @click="startLesson(lesson)"
-            class="rounded-3xl p-4 sm:p-6 border-2 transition-all transform hover:-translate-y-1 relative flex flex-col justify-between cursor-pointer"
-            :class="
-              isLessonUnlocked(lesson.id)
-                ? 'bg-white border-gray-100 hover:border-orange-300 shadow-sm hover:shadow-md active:scale-98'
-                : 'bg-gray-50/75 border-gray-200 opacity-60 cursor-not-allowed'
-            "
-          >
-            <!-- Top Row: Index Badge, Type Tag & Star Rating -->
-            <div class="flex items-center justify-between mb-2 sm:mb-3">
-              <div class="flex items-center gap-2">
-                <span
-                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center font-black text-xs text-white shadow-sm flex-shrink-0"
-                  :class="isLessonUnlocked(lesson.id) ? 'bg-gradient-to-tr from-orange-500 to-amber-500' : 'bg-gray-400'"
-                >
-                  {{ chap.id }}-{{ idx + 1 }}
-                </span>
-                <span
-                  class="text-[10px] font-black px-2 py-0.5 rounded-full"
-                  :class="
-                    lesson.type === 'story'
-                      ? 'bg-blue-100 text-blue-800'
-                      : lesson.type === 'multi_step'
-                      ? 'bg-amber-100 text-amber-900 border border-amber-200'
-                      : 'bg-rose-100 text-rose-800'
-                  "
-                >
-                  {{ lesson.type === 'story' ? '📖 趣味故事' : lesson.type === 'multi_step' ? '✨ 互动闯关 (3练)' : '🎯 围棋死活' }}
-                </span>
-              </div>
-
-              <!-- Stars Earned -->
-              <div class="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
-                <Star
-                  v-for="s in 3"
-                  :key="s"
-                  class="w-3.5 h-3.5 sm:w-4 sm:h-4"
-                  :class="s <= getLessonStars(lesson.id) ? 'text-amber-400 fill-current' : 'text-gray-200'"
-                />
+          <!-- Learn stats pill -->
+          <div class="flex items-center gap-3 bg-white/15 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white/25">
+            <div class="text-center">
+              <div class="text-[10px] font-black text-white/80">已开启功能</div>
+              <div class="text-xl sm:text-2xl font-black text-white">
+                {{ learnFeatures.filter(f => unlockStore.isFeatureUnlocked(f.id)).length }} / {{ learnFeatures.length }}
               </div>
             </div>
-
-            <!-- Title & Description -->
-            <div class="space-y-1 my-1 sm:my-2">
-              <h3 class="text-sm sm:text-lg font-black text-gray-900 flex items-center gap-2">
-                <span>{{ lesson.title }}</span>
-                <Lock v-if="!isLessonUnlocked(lesson.id)" class="w-3.5 h-3.5 text-gray-400 inline" />
-              </h3>
-              <p class="text-[11px] sm:text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
-                {{ lesson.description }}
-              </p>
+            <div class="w-px h-7 bg-white/30"></div>
+            <div class="text-center">
+              <div class="text-[10px] font-black text-white/80">主线通关</div>
+              <div class="text-xs sm:text-sm font-black text-amber-200">
+                {{ completedCount }} / 22 关
+              </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- Bottom Target & Reward / Action (Strictly 1 Line, No Text Wrap) -->
-            <div class="pt-2.5 sm:pt-3 border-t border-gray-100 flex items-center justify-between gap-2 sm:gap-3 mt-2">
-              <div class="min-w-0 flex-1">
+      <!-- Learn Features Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div
+          v-for="feat in learnFeatures"
+          :key="feat.id"
+          @click="handleCardClick(feat)"
+          class="relative rounded-3xl p-5 sm:p-6 border-2 transition-all duration-200 flex flex-col justify-between cursor-pointer"
+          :class="
+            unlockStore.isFeatureUnlocked(feat.id)
+              ? 'bg-white border-gray-100 hover:border-emerald-300 shadow-sm hover:shadow-xl transform hover:-translate-y-1 active:scale-98'
+              : 'bg-gray-50/80 border-gray-200/90 shadow-2xs opacity-80'
+          "
+        >
+          <!-- Top Row: Icon + Badge + Lock Status -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div
+                class="w-12 h-12 rounded-2xl bg-gradient-to-tr p-2 text-white shadow-sm flex items-center justify-center text-2xl flex-shrink-0"
+                :class="feat.gradient"
+              >
+                <span>{{ feat.icon }}</span>
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <span
+                  class="text-[10px] font-black text-white px-2.5 py-0.5 rounded-full shadow-2xs"
+                  :class="feat.badgeColor"
+                >
+                  {{ feat.badge }}
+                </span>
+
                 <div
-                  class="text-orange-600 font-black text-[11px] sm:text-xs truncate leading-tight"
-                  :title="lesson.goalText"
+                  v-if="!unlockStore.isFeatureUnlocked(feat.id)"
+                  class="flex items-center gap-1 bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full text-[10px] font-black border border-amber-300"
                 >
-                  目标：{{ lesson.goalText }}
+                  <Lock class="w-3 h-3 text-amber-700" />
+                  <span>未解锁</span>
+                </div>
+                <div
+                  v-else
+                  class="flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-black"
+                >
+                  <CheckCircle2 class="w-3 h-3 text-emerald-600" />
+                  <span>已开启</span>
                 </div>
               </div>
-
-              <button
-                class="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-black text-xs flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer shadow-xs whitespace-nowrap flex-shrink-0"
-                :class="
-                  isLessonUnlocked(lesson.id)
-                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                "
-              >
-                <Play class="w-3 h-3 fill-current flex-shrink-0" />
-                <span class="whitespace-nowrap">{{ getLessonStars(lesson.id) > 0 ? '再次挑战' : '开始闯关' }}</span>
-              </button>
             </div>
+
+            <div>
+              <h3 class="text-base sm:text-lg font-black text-gray-900 flex items-center justify-between">
+                <span>{{ feat.name }}</span>
+                <ArrowRight
+                  v-if="unlockStore.isFeatureUnlocked(feat.id)"
+                  class="w-4 h-4 text-emerald-600"
+                />
+              </h3>
+              <div class="text-[11px] font-bold text-gray-400">{{ feat.nameEn }}</div>
+            </div>
+
+            <p class="text-xs text-gray-600 font-medium leading-relaxed">
+              {{ feat.desc }}
+            </p>
+          </div>
+
+          <!-- Bottom Unlock Condition / Action Bar -->
+          <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold">
+            <div v-if="!unlockStore.isFeatureUnlocked(feat.id)" class="text-amber-800 font-black flex items-center gap-1 text-[11px]">
+              <Sparkles class="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+              <span>解锁条件：{{ feat.unlockTip }}</span>
+            </div>
+            <div v-else class="text-gray-500 font-bold truncate text-[11px]">
+              {{ getFeatureStats(feat.id) }}
+            </div>
+
+            <button
+              class="px-3.5 py-1.5 rounded-xl font-black text-xs transition active:scale-95 flex items-center gap-1 flex-shrink-0 cursor-pointer"
+              :class="
+                unlockStore.isFeatureUnlocked(feat.id)
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-xs hover:from-emerald-600'
+                  : 'bg-amber-50 text-amber-900 border border-amber-200'
+              "
+            >
+              <span>{{ getActionButtonText(feat) }}</span>
+              <ArrowRight class="w-3 h-3" />
+            </button>
           </div>
         </div>
       </div>
@@ -265,4 +198,3 @@ const startLesson = (lesson: Lesson) => {
     </div>
   </div>
 </template>
-

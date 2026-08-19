@@ -17,10 +17,18 @@ import {
   Eye,
   AlertTriangle,
   Flame,
+  ArrowLeft,
   Undo2,
 } from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
 
 const userStore = useUserStore();
+const router = useRouter();
+
+const goBack = () => {
+  sound.playButtonSound();
+  router.push('/battle');
+};
 
 const selectedBot = ref<AIDifficulty>('puppy');
 const boardSize = ref<number>(9);
@@ -266,9 +274,19 @@ const endGame = () => {
       <!-- Header Banner -->
       <div class="bg-white rounded-3xl p-5 sm:p-8 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 relative overflow-hidden">
         <div class="space-y-1.5 sm:space-y-2 text-center md:text-left z-10">
-          <div class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-black">
-            <Bot class="w-3.5 h-3.5" />
-            <span>智能人机对弈场 (AI Arena)</span>
+          <div class="flex items-center gap-2 flex-wrap justify-center md:justify-start">
+            <button
+              @click="goBack"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-black transition active:scale-95 cursor-pointer border border-orange-200 shadow-2xs"
+              title="返回对弈竞技"
+            >
+              <ArrowLeft class="w-3.5 h-3.5" />
+              <span>返回对弈竞技</span>
+            </button>
+            <div class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-black">
+              <Bot class="w-3.5 h-3.5" />
+              <span>智能人机对弈场 (AI Arena)</span>
+            </div>
           </div>
           <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
             挑战萌宠围棋大师

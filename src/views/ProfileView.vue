@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/useUserStore';
+import { useUnlockStore } from '../stores/unlockStore';
 import { useTsumegoStore } from '../stores/tsumegoStore';
 import { TSUMEGO_PUZZLES } from '../data/tsumegoLibrary';
 import { BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
@@ -9,6 +10,7 @@ import CertificateModal from '../components/common/CertificateModal.vue';
 import { showAlert, showConfirm } from '../utils/alert';
 import { SHOP_THEMES } from '../data/shopData';
 import { playButtonSound } from '../lib/audio';
+import { sound } from '../utils/sound';
 import {
   Trophy,
   Star,
@@ -27,6 +29,7 @@ import {
 const router = useRouter();
 const userStore = useUserStore();
 const tsumegoStore = useTsumegoStore();
+const unlockStore = useUnlockStore();
 
 const isEditingName = ref(false);
 const newNickname = ref(userStore.nickname);
@@ -58,12 +61,73 @@ const favoritePuzzlesList = computed(() => {
 });
 
 const goToTsumego = (puzzleId?: string) => {
+  const isUnlocked = unlockStore.isFeatureUnlocked('tsumego');
+  if (!isUnlocked) {
+    sound.playErrorSound();
+    const feat = unlockStore.getFeature('tsumego');
+    showConfirm({
+      title: '暂未解锁死活题库',
+      message: `小棋手别着急！【每日死活题】需要${feat?.unlockTip || '通关第3章【死活城堡】'}才能开启哦！快去继续主线闯关吧！`,
+      type: 'warning',
+      confirmText: '前往闯关',
+      cancelText: '知道了'
+    }).then(confirmed => {
+      if (confirmed) {
+        router.push('/learn');
+      }
+    });
+    return;
+  }
   playButtonSound();
   if (puzzleId) {
     router.push({ path: '/tsumego', query: { id: puzzleId, cat: 'favorite' } });
   } else {
     router.push('/tsumego');
   }
+};
+
+const goToRankExam = () => {
+  const isUnlocked = unlockStore.isFeatureUnlocked('rank-exam');
+  if (!isUnlocked) {
+    sound.playErrorSound();
+    const feat = unlockStore.getFeature('rank-exam');
+    showConfirm({
+      title: '暂未解锁定段考',
+      message: `小棋手别着急！【定段升级考】需要${feat?.unlockTip || '完成全部启蒙闯关'}才能开启哦！快去继续主线闯关吧！`,
+      type: 'warning',
+      confirmText: '前往闯关',
+      cancelText: '知道了'
+    }).then(confirmed => {
+      if (confirmed) {
+        router.push('/learn');
+      }
+    });
+    return;
+  }
+  sound.playButtonSound();
+  router.push('/rank-exam');
+};
+
+const goToShop = () => {
+  const isUnlocked = unlockStore.isFeatureUnlocked('shop');
+  if (!isUnlocked) {
+    sound.playErrorSound();
+    const feat = unlockStore.getFeature('shop');
+    showConfirm({
+      title: '装扮商城暂未解锁',
+      message: `小棋手别着急！【装扮商城】需要${feat?.unlockTip || '通关第1章【吃子魔法】'}才能开启哦！快去继续主线闯关吧！`,
+      type: 'warning',
+      confirmText: '前往闯关',
+      cancelText: '知道了'
+    }).then(confirmed => {
+      if (confirmed) {
+        router.push('/learn');
+      }
+    });
+    return;
+  }
+  sound.playButtonSound();
+  router.push('/shop');
 };
 
 const removeFavorite = (puzzleId: string, event: Event) => {
@@ -79,9 +143,21 @@ const saveNickname = () => {
     userStore.openProfileModal();
     return;
   }
-  if (newNickname.value.trim()) {
-    userStore.currentProfile.nickname = newNickname.value.trim();
+  const trimmed = newNickname.value.trim();
+  if (!trimmed) {
+    showAlert({ message: '宝贝昵称不能为空哦！', type: 'warning' });
+    return;
   }
+  if (userStore.isNicknameTaken(trimmed, userStore.currentProfileId)) {
+    showAlert({
+      title: '昵称重复啦',
+      message: `已经存在名为「${trimmed}」的宝贝档案啦，换一个更独特的可爱昵称吧！`,
+      type: 'warning'
+    });
+    return;
+  }
+  userStore.currentProfile.nickname = trimmed;
+  userStore.touchSave();
   isEditingName.value = false;
   playButtonSound();
 };
@@ -177,7 +253,7 @@ const confirmReset = async () => {
               <div class="flex items-center gap-2 justify-center sm:justify-start">
                 <div v-if="!isEditingName" class="flex items-center gap-2">
                   <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">{{ userStore.nickname }}</h1>
-                  <button @click="isEditingName = true" class="p-1 text-gray-400 hover:text-orange-500 cursor-pointer" title="修改昵称">
+                  <button @click="isEditingName = true; newNickname = userStore.nickname" class="p-1 text-gray-400 hover:text-orange-500 cursor-pointer" title="修改昵称">
                     <Edit2 class="w-4 h-4" />
                   </button>
                 </div>
@@ -187,9 +263,13 @@ const confirmReset = async () => {
                     type="text"
                     maxlength="10"
                     class="px-3 py-1 rounded-xl border border-orange-300 text-sm font-bold text-gray-800 focus:outline-none"
+                    @keyup.enter="saveNickname"
                   />
                   <button @click="saveNickname" class="px-3 py-1 bg-orange-500 text-white text-xs font-black rounded-xl cursor-pointer">
                     保存
+                  </button>
+                  <button @click="isEditingName = false" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold rounded-xl cursor-pointer">
+                    取消
                   </button>
                 </div>
               </div>
@@ -262,11 +342,16 @@ const confirmReset = async () => {
               </div>
               <div class="flex items-center gap-1.5 pt-1">
                 <button
-                  @click="router.push('/rank-exam')"
-                  class="flex-1 py-1.5 px-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-[11px] font-black shadow-xs flex items-center justify-center gap-1 cursor-pointer"
+                  @click="goToRankExam"
+                  class="flex-1 py-1.5 px-2 rounded-xl text-[11px] font-black shadow-xs flex items-center justify-center gap-1 cursor-pointer transition active:scale-95"
+                  :class="
+                    unlockStore.isFeatureUnlocked('rank-exam')
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white'
+                      : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200'
+                  "
                 >
                   <Trophy class="w-3.5 h-3.5" />
-                  <span>考级挑战</span>
+                  <span>{{ unlockStore.isFeatureUnlocked('rank-exam') ? '考级挑战' : '考级 (未解锁)' }}</span>
                 </button>
                 <button
                   @click="showCertModal = true"
@@ -390,9 +475,14 @@ const confirmReset = async () => {
           </div>
           <button
             @click="goToTsumego()"
-            class="text-xs font-black text-rose-700 bg-rose-50 hover:bg-rose-100 px-3.5 py-1.5 rounded-full border border-rose-200 flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+            class="text-xs font-black px-3.5 py-1.5 rounded-full border flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+            :class="
+              unlockStore.isFeatureUnlocked('tsumego')
+                ? 'text-rose-700 bg-rose-50 hover:bg-rose-100 border-rose-200'
+                : 'text-gray-500 bg-gray-50 hover:bg-gray-100 border-gray-200'
+            "
           >
-            <span>去死活题大本营</span>
+            <span>{{ unlockStore.isFeatureUnlocked('tsumego') ? '去死活题大本营' : '死活大本营 🔒' }}</span>
             <ArrowRight class="w-3.5 h-3.5" />
           </button>
         </div>
@@ -458,9 +548,14 @@ const confirmReset = async () => {
           </div>
           <button
             @click="goToTsumego()"
-            class="px-4 py-2 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-black text-xs shadow-sm transition active:scale-95 inline-flex items-center gap-1.5 cursor-pointer"
+            class="px-4 py-2 rounded-2xl text-white font-black text-xs shadow-sm transition active:scale-95 inline-flex items-center gap-1.5 cursor-pointer"
+            :class="
+              unlockStore.isFeatureUnlocked('tsumego')
+                ? 'bg-rose-500 hover:bg-rose-600'
+                : 'bg-gray-400 hover:bg-gray-500'
+            "
           >
-            <span>去死活题库挑一挑 🎯</span>
+            <span>{{ unlockStore.isFeatureUnlocked('tsumego') ? '去死活题库挑一挑 🎯' : '去死活题库挑一挑 (通关第3章解锁 🔒)' }}</span>
           </button>
         </div>
       </div>
@@ -532,8 +627,9 @@ const confirmReset = async () => {
               已解锁的棋盘皮肤
             </div>
             <button
-              @click="router.push('/shop')"
-              class="text-xs font-black text-orange-600 hover:text-orange-700 flex items-center gap-1 cursor-pointer"
+              @click="goToShop"
+              class="text-xs font-black flex items-center gap-1 cursor-pointer"
+              :class="unlockStore.isFeatureUnlocked('shop') ? 'text-orange-600 hover:text-orange-700' : 'text-gray-400 hover:text-orange-600'"
             >
               <span>前往商城解锁更多皮肤</span>
               <ArrowRight class="w-3.5 h-3.5" />
@@ -544,7 +640,7 @@ const confirmReset = async () => {
             <div
               v-for="t in SHOP_THEMES"
               :key="t.id"
-              @click="userStore.unlockedThemes.includes(t.id) || t.id === 'wood' ? userStore.setTheme(t.id) : router.push('/shop')"
+              @click="userStore.unlockedThemes.includes(t.id) || t.id === 'wood' ? userStore.setTheme(t.id) : goToShop()"
               class="p-3.5 rounded-2xl border-2 text-center transition cursor-pointer relative flex flex-col justify-between"
               :class="
                 userStore.theme === t.id

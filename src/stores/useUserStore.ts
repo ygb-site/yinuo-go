@@ -240,12 +240,24 @@ export const useUserStore = defineStore('userStore', {
       this.lastSavedAt = Date.now();
     },
 
-    createProfile(nickname: string, avatar: string): ChildProfile {
+    isNicknameTaken(nickname: string, excludeId?: string): boolean {
+      const trimmed = nickname.trim().toLowerCase();
+      if (!trimmed) return false;
+      return this.profiles.some(
+        p => (!excludeId || p.id !== excludeId) && p.nickname.trim().toLowerCase() === trimmed
+      );
+    },
+
+    createProfile(nickname: string, avatar: string): ChildProfile | null {
+      const trimmed = nickname.trim() || '小棋手';
+      if (this.isNicknameTaken(trimmed)) {
+        return null;
+      }
       const newId = 'kid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
       const pickedAvatar = avatar || '🦁';
       const newProfile: ChildProfile = {
         id: newId,
-        nickname: nickname.trim() || '小棋手',
+        nickname: trimmed,
         avatar: pickedAvatar,
         createdAt: Date.now(),
         progress: {},
@@ -588,4 +600,3 @@ export const useUserStore = defineStore('userStore', {
 
   persist: true
 });
-

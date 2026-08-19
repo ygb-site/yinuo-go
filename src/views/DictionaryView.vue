@@ -147,11 +147,11 @@ const resetDemoBoard = () => {
           <div class="flex items-center gap-2 flex-wrap justify-center md:justify-start">
             <button
               @click="goBack"
-              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-black transition active:scale-95 cursor-pointer shadow-2xs"
-              title="返回上一页"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-black transition active:scale-95 cursor-pointer border border-orange-200 shadow-2xs"
+              title="返回启蒙学堂"
             >
               <ArrowLeft class="w-3.5 h-3.5" />
-              <span>返回</span>
+              <span>返回启蒙学堂</span>
             </button>
             <div class="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-black">
               <BookMarked class="w-3.5 h-3.5" />
@@ -403,4 +403,3 @@ const resetDemoBoard = () => {
     </div>
   </div>
 </template>
-

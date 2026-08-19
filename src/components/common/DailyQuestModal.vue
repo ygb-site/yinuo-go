@@ -4,8 +4,10 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '../../stores/useUserStore';
 import { useUnlockStore } from '../../stores/unlockStore';
 import { useTsumegoStore } from '../../stores/tsumegoStore';
+import { UNLOCK_FEATURES } from '../../data/unlockRules';
 import { playButtonSound, playCoinSound, triggerConfetti } from '../../lib/audio';
-import { showAlert } from '../../utils/alert';
+import { sound } from '../../utils/sound';
+import { showAlert, showConfirm } from '../../utils/alert';
 import {
   CheckCircle2,
   Gift,
@@ -16,9 +18,9 @@ import {
   Flame,
   Gamepad2,
   BookOpen,
-  Music,
   Bot,
   ScrollText,
+  ShoppingBag,
   Sparkles
 } from 'lucide-vue-next';
 
@@ -76,7 +78,7 @@ const dynamicQuests = computed<DynamicQuest[]>(() => {
         rewardCoins: 20,
         rewardExp: 40,
         completed: count >= 1,
-        actionPath: '/learn',
+        actionPath: '/adventure',
         stageName: '启蒙阶段'
       },
       {
@@ -87,7 +89,7 @@ const dynamicQuests = computed<DynamicQuest[]>(() => {
         rewardCoins: 15,
         rewardExp: 30,
         completed: count >= 2,
-        actionPath: '/learn',
+        actionPath: '/adventure',
         stageName: '启蒙阶段'
       },
       {
@@ -117,7 +119,7 @@ const dynamicQuests = computed<DynamicQuest[]>(() => {
         rewardCoins: 25,
         rewardExp: 50,
         completed: count >= 5,
-        actionPath: '/learn',
+        actionPath: '/adventure',
         stageName: '捕鱼手筋'
       },
       {
@@ -132,15 +134,15 @@ const dynamicQuests = computed<DynamicQuest[]>(() => {
         stageName: '吃子实战'
       },
       {
-        id: 'rhyme_stage2',
-        title: '🎵 朗朗上口棋理口诀',
-        desc: '在口诀卡中学习 1 首经典围棋儿歌',
-        icon: Music,
+        id: 'shop_stage2',
+        title: '🛍️ 装扮商城挑皮肤',
+        desc: '用闯关金币在装扮商城探索棋盘与萌宠头像',
+        icon: ShoppingBag,
         rewardCoins: 15,
         rewardExp: 30,
-        completed: count >= 6 || userStore.coins >= 50,
-        actionPath: '/rhymes',
-        stageName: '棋理口诀'
+        completed: userStore.unlockedThemes.length > 1 || userStore.coins >= 50,
+        actionPath: '/shop',
+        stageName: '装扮商城'
       }
     ];
   }
@@ -158,7 +160,7 @@ const dynamicQuests = computed<DynamicQuest[]>(() => {
         rewardCoins: 30,
         rewardExp: 60,
         completed: count >= 9,
-        actionPath: '/learn',
+        actionPath: '/adventure',
         stageName: '死活活棋'
       },
       {
@@ -228,11 +230,52 @@ const dynamicQuests = computed<DynamicQuest[]>(() => {
   }
 
   // -------------------------------------------------------------
-  // 阶段 5：小棋圣进阶期 (关卡 20 关以上，解锁【AI对弈】与【定段升级考】)
+  // 阶段 5：大师挑战期 (关卡 17 ~ 21 关，已解锁【AI对弈】与【打印题卡】)
+  // -------------------------------------------------------------
+  if (count < 22) {
+    return [
+      {
+        id: 'tsumego_stage5',
+        title: '🧩 每日死活大师修罗场',
+        desc: '在每日死活题库中攻克 2 道死活题',
+        icon: Puzzle,
+        rewardCoins: 35,
+        rewardExp: 70,
+        completed: (tsumegoStore.totalSolvedCount || 0) >= 2,
+        actionPath: '/tsumego',
+        stageName: '死活进阶'
+      },
+      {
+        id: 'ai_arena_stage5',
+        title: '🤖 萌宠大师九路切磋',
+        desc: '与小狗贝贝或小猫喵喵大师完成 1 局对弈',
+        icon: Bot,
+        rewardCoins: 35,
+        rewardExp: 70,
+        completed: (userStore.stats?.gamesPlayed || 0) > 0,
+        actionPath: '/ai-match',
+        stageName: 'AI对局'
+      },
+      {
+        id: 'worksheet_stage5',
+        title: '🖨️ 打印题单线下练',
+        desc: '生成 A4 高清死活题单进行护眼离线练习',
+        icon: ScrollText,
+        rewardCoins: 30,
+        rewardExp: 60,
+        completed: count >= 18,
+        actionPath: '/worksheet',
+        stageName: '打印题卡'
+      }
+    ];
+  }
+
+  // -------------------------------------------------------------
+  // 阶段 6：小棋圣进阶期 (关卡 22 关全部通关，解锁【定段升级考】)
   // -------------------------------------------------------------
   return [
     {
-      id: 'tsumego_stage5',
+      id: 'tsumego_stage6',
       title: '🧩 每日死活大师修罗场',
       desc: '在每日死活题库中连续攻克 2 道死活题',
       icon: Puzzle,
@@ -243,7 +286,7 @@ const dynamicQuests = computed<DynamicQuest[]>(() => {
       stageName: '死活进阶'
     },
     {
-      id: 'ai_arena_stage5',
+      id: 'ai_arena_stage6',
       title: '🤖 萌宠大师九路切磋',
       desc: '与小狗贝贝或小猫喵喵大师完成 1 局对弈',
       icon: Bot,
@@ -254,7 +297,7 @@ const dynamicQuests = computed<DynamicQuest[]>(() => {
       stageName: 'AI对局'
     },
     {
-      id: 'rank_exam_stage5',
+      id: 'rank_exam_stage6',
       title: '📜 定段升级考大检阅',
       desc: '参与少儿定段测试，冲击围棋小棋圣证书',
       icon: ScrollText,
@@ -274,6 +317,23 @@ const completedQuestsCount = computed(() => {
 const isAllQuestsCompleted = computed(() => completedQuestsCount.value === 3);
 
 const handleGoQuest = (path: string) => {
+  const matchedFeature = UNLOCK_FEATURES.find(f => f.route === path);
+  if (matchedFeature && !unlockStore.isFeatureUnlocked(matchedFeature.id)) {
+    sound.playErrorSound();
+    showConfirm({
+      title: '暂未解锁该玩法',
+      message: `小棋手别着急！【${matchedFeature.name}】需要${matchedFeature.unlockTip}才能开启哦！快去继续主线闯关吧！`,
+      type: 'warning',
+      confirmText: '前往闯关',
+      cancelText: '知道了'
+    }).then(confirmed => {
+      if (confirmed) {
+        emit('close');
+        router.push('/learn');
+      }
+    });
+    return;
+  }
   playButtonSound();
   emit('close');
   router.push(path);
@@ -409,4 +469,3 @@ const handleClaimAll = () => {
     </div>
   </Teleport>
 </template>
-

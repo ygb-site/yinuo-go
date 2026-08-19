@@ -22,6 +22,36 @@ const router = useRouter();
 const showQuestModal = ref(false);
 const userStore = useUserStore();
 const unlockStore = useUnlockStore();
+const selectedCategory = ref<'all' | 'learn' | 'practice' | 'battle' | 'profile'>('all');
+
+const categoryTabs = computed(() => [
+  { id: 'all', name: '全部', count: unlockStore.allFeatures.length },
+  { id: 'learn', name: '🧭 启蒙', count: unlockStore.featuresByCategory.learn.length },
+  { id: 'practice', name: '🔥 训练', count: unlockStore.featuresByCategory.practice.length },
+  { id: 'battle', name: '⚔️ 对弈', count: unlockStore.featuresByCategory.battle.length },
+  { id: 'profile', name: '👑 成长', count: unlockStore.featuresByCategory.profile.length }
+]);
+
+const displayedFeatures = computed(() => {
+  if (selectedCategory.value === 'all') {
+    return unlockStore.allFeatures;
+  }
+  return unlockStore.allFeatures.filter(f => f.category === selectedCategory.value);
+});
+
+const getCategoryMeta = (cat: string) => {
+  switch (cat) {
+    case 'learn':
+      return { label: '启蒙', tagClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+    case 'practice':
+      return { label: '训练', tagClass: 'bg-purple-50 text-purple-700 border-purple-200' };
+    case 'battle':
+      return { label: '对弈', tagClass: 'bg-orange-50 text-orange-700 border-orange-200' };
+    case 'profile':
+    default:
+      return { label: '成长', tagClass: 'bg-pink-50 text-pink-700 border-pink-200' };
+  }
+};
 
 // Flatten all lessons
 const allLessons = computed<Lesson[]>(() => {
@@ -70,14 +100,14 @@ const handleStartNextLesson = () => {
 const corePortals = computed(() => [
   {
     path: '/learn',
-    title: '启蒙主线闯关',
-    titleEn: 'Adventure Map',
-    icon: '🗺️',
-    badge: '推荐 · 循序渐进',
+    title: '启蒙闯关学堂',
+    titleEn: 'Learning Hub',
+    icon: '🧭',
+    badge: '已解锁 ' + unlockStore.featuresByCategory.learn.filter(f => unlockStore.isFeatureUnlocked(f.id)).length + ' 项',
     badgeColor: 'bg-emerald-500',
-    desc: '从数气到手筋，6大篇章趣味闯关与随身词典，带你一步步成为围棋小高手！',
+    desc: '趣味主线闯关、双语围棋小词典与经典棋理口诀儿歌！',
     gradient: 'from-emerald-400 via-teal-500 to-cyan-500',
-    stats: '已通关 ' + completedCount.value + ' / ' + totalLessonsCount.value + ' 关'
+    stats: '主线 · 词典 · 口诀'
   },
   {
     path: '/practice',
@@ -86,9 +116,9 @@ const corePortals = computed(() => [
     icon: '⚡',
     badge: '已解锁 ' + unlockStore.featuresByCategory.practice.filter(f => unlockStore.isFeatureUnlocked(f.id)).length + ' 项',
     badgeColor: 'bg-purple-500',
-    desc: '极速反应乐园、46道经典死活题、错题弱点突破与打印题卡！',
+    desc: '极速反应乐园、46道死活题、错题突破、打印题卡与自由打谱台！',
     gradient: 'from-purple-400 via-indigo-500 to-rose-500',
-    stats: '死活 · 反应 · 错题'
+    stats: '死活 · 反应 · 错题 · 打谱'
   },
   {
     path: '/battle',
@@ -195,7 +225,7 @@ const handleFeatureClick = (feat: any) => {
                 <span>📅 每日打卡任务</span>
               </button>
               <button
-                @click="navigate('/learn')"
+                @click="navigate('/adventure')"
                 class="px-3.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-black text-xs backdrop-blur-sm border border-white/40 transform transition hover:scale-105 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Gamepad2 class="w-3.5 h-3.5" />
@@ -207,8 +237,8 @@ const handleFeatureClick = (feat: any) => {
           <!-- Mascot Card -->
           <div class="hidden md:flex flex-shrink-0 justify-center">
             <div class="bg-white/90 backdrop-blur-md rounded-3xl p-5 border-2 border-white shadow-xl max-w-xs text-center">
-              <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-gradient-to-tr from-amber-300 to-orange-400 p-1 mb-2 shadow flex items-center justify-center">
-                <span class="text-4xl sm:text-5xl">🐼</span>
+              <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-gradient-to-tr from-amber-300 to-orange-400 p-1 mb-2 shadow-md flex items-center justify-center overflow-hidden border-2 border-white">
+                <img src="/logo/logo-avatar-circle-256.png" alt="导师 · 小诺" class="w-full h-full object-contain" />
               </div>
               <div class="font-black text-sm sm:text-base text-gray-800">导师 · 小诺</div>
               <p class="text-xs text-orange-600 font-bold mb-3">“今天准备好学一个新吃子妙招了吗？”</p>
@@ -327,24 +357,47 @@ const handleFeatureClick = (feat: any) => {
         </div>
       </div>
 
-      <!-- Progressive Feature Showcase Matrix (带上锁与解锁提示) -->
+      <!-- Progressive Feature Showcase Matrix (带上锁与解锁提示，同Tab功能聚拢并标记归属) -->
       <div class="space-y-3 sm:space-y-4">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div class="flex items-center gap-2">
             <span class="text-xl sm:text-2xl">🚀</span>
-            <h2 class="text-lg sm:text-2xl font-cartoon font-bold text-gray-800 tracking-wide">全功能渐进阶梯</h2>
+            <div>
+              <h2 class="text-lg sm:text-2xl font-cartoon font-bold text-gray-800 tracking-wide">全功能渐进阶梯</h2>
+              <p class="text-[11px] text-gray-400 font-bold hidden sm:block">与顶部四大核心栏目联动，同栏目功能已归类聚合</p>
+            </div>
           </div>
-          <span class="text-xs text-gray-500 font-bold">
-            解锁进度：{{ unlockStore.unlockedCount }} / {{ unlockStore.allFeatures.length }}
-          </span>
+
+          <!-- Category Filter Pills -->
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            <button
+              v-for="tab in categoryTabs"
+              :key="tab.id"
+              @click="selectedCategory = tab.id as any"
+              class="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer flex items-center gap-1"
+              :class="
+                selectedCategory === tab.id
+                  ? 'bg-orange-500 text-white shadow-xs'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-orange-50 hover:text-orange-600'
+              "
+            >
+              <span>{{ tab.name }}</span>
+              <span
+                class="text-[10px] px-1 py-0.2 rounded-full"
+                :class="selectedCategory === tab.id ? 'bg-white/25 text-white' : 'bg-gray-100 text-gray-500'"
+              >
+                {{ tab.count }}
+              </span>
+            </button>
+          </div>
         </div>
 
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           <div
-            v-for="feat in unlockStore.allFeatures"
+            v-for="feat in displayedFeatures"
             :key="feat.id"
             @click="handleFeatureClick(feat)"
-            class="relative rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border-2 transition-all duration-200 flex flex-col justify-between cursor-pointer"
+            class="relative rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border-2 transition-all duration-200 flex flex-col justify-between cursor-pointer group"
             :class="
               unlockStore.isFeatureUnlocked(feat.id)
                 ? 'bg-white border-gray-100 hover:border-orange-300 shadow-xs hover:shadow-md transform hover:-translate-y-0.5 active:scale-95'
@@ -353,23 +406,33 @@ const handleFeatureClick = (feat: any) => {
           >
             <div class="space-y-2">
               <div class="flex items-center justify-between">
-                <div
-                  class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr p-1 text-white shadow-2xs flex items-center justify-center text-lg flex-shrink-0"
-                  :class="feat.gradient"
-                >
-                  <span>{{ feat.icon }}</span>
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr p-1 text-white shadow-2xs flex items-center justify-center text-lg flex-shrink-0"
+                    :class="feat.gradient"
+                  >
+                    <span>{{ feat.icon }}</span>
+                  </div>
+
+                  <!-- Category Tag Badge -->
+                  <span
+                    class="text-[9px] font-black px-1.5 py-0.5 rounded-md border flex items-center gap-0.5 whitespace-nowrap shadow-2xs"
+                    :class="getCategoryMeta(feat.category).tagClass"
+                  >
+                    {{ getCategoryMeta(feat.category).label }}
+                  </span>
                 </div>
 
                 <div
                   v-if="!unlockStore.isFeatureUnlocked(feat.id)"
-                  class="flex items-center gap-0.5 text-amber-800 text-[10px] font-black bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-300"
+                  class="flex items-center gap-0.5 text-amber-800 text-[10px] font-black bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-300 flex-shrink-0"
                 >
                   <Lock class="w-2.5 h-2.5" />
                   <span>未解锁</span>
                 </div>
                 <div
                   v-else
-                  class="flex items-center gap-0.5 text-emerald-800 text-[10px] font-black bg-emerald-100 px-1.5 py-0.5 rounded-full"
+                  class="flex items-center gap-0.5 text-emerald-800 text-[10px] font-black bg-emerald-100 px-1.5 py-0.5 rounded-full flex-shrink-0"
                 >
                   <CheckCircle2 class="w-2.5 h-2.5" />
                   <span>开启</span>
@@ -377,7 +440,7 @@ const handleFeatureClick = (feat: any) => {
               </div>
 
               <div>
-                <h4 class="text-xs sm:text-sm font-black text-gray-900 truncate">
+                <h4 class="text-xs sm:text-sm font-black text-gray-900 truncate group-hover:text-orange-600 transition-colors">
                   {{ feat.name }}
                 </h4>
                 <p class="text-[10px] text-gray-500 font-medium line-clamp-2 mt-0.5">
@@ -390,8 +453,9 @@ const handleFeatureClick = (feat: any) => {
               <span v-if="!unlockStore.isFeatureUnlocked(feat.id)" class="text-amber-800 font-black truncate">
                 🔒 {{ feat.unlockTip }}
               </span>
-              <span v-else class="text-orange-500 font-black truncate">
-                立即前往 →
+              <span v-else class="text-orange-500 font-black truncate flex items-center gap-0.5">
+                <span>立即前往</span>
+                <span class="group-hover:translate-x-0.5 transition-transform">→</span>
               </span>
             </div>
           </div>
@@ -407,4 +471,3 @@ const handleFeatureClick = (feat: any) => {
     />
   </div>
 </template>
-

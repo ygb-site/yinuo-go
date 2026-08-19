@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { GoGame } from '../engine/GoGame';
 import type { Point } from '../engine/types';
 import { useUserStore } from '../stores/useUserStore';
@@ -24,10 +25,17 @@ import {
   Gamepad2,
   Square,
   RotateCcw,
+  ArrowLeft,
   X
 } from 'lucide-vue-next';
 
+const router = useRouter();
 const userStore = useUserStore();
+
+const goBack = () => {
+  playButtonSound();
+  router.push('/practice');
+};
 
 type GameMode = 'speedCapture' | 'countLiberties' | 'connectCut';
 const currentMode = ref<GameMode>('speedCapture');
@@ -443,9 +451,19 @@ onUnmounted(() => {
       <!-- Header Banner -->
       <div class="bg-white rounded-3xl p-5 sm:p-7 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <div class="space-y-1.5 text-center md:text-left">
-          <div class="inline-flex items-center gap-2 bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-xs font-black">
-            <Zap class="w-3.5 h-3.5 fill-current" />
-            <span>趣味反应乐园 · 60秒极限特训</span>
+          <div class="flex items-center gap-2 flex-wrap justify-center md:justify-start">
+            <button
+              @click="goBack"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-black transition active:scale-95 cursor-pointer border border-orange-200 shadow-2xs"
+              title="返回技能训练"
+            >
+              <ArrowLeft class="w-3.5 h-3.5" />
+              <span>返回技能训练</span>
+            </button>
+            <div class="inline-flex items-center gap-2 bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-xs font-black">
+              <Zap class="w-3.5 h-3.5 fill-current" />
+              <span>趣味反应乐园 · 60秒极限特训</span>
+            </div>
           </div>
           <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
             极速手筋与反应挑战
@@ -703,4 +721,3 @@ onUnmounted(() => {
 
   </div>
 </template>
-

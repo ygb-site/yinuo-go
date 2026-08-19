@@ -345,7 +345,7 @@ const handleNextLesson = () => {
 
 const handleBackToMap = () => {
   playButtonSound();
-  router.push('/learn');
+  router.push('/adventure');
 };
 </script>
 
@@ -359,11 +359,11 @@ const handleBackToMap = () => {
         <div class="flex items-center justify-between gap-2">
           <button
             @click="handleBackToMap"
-            class="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-2xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-black text-xs sm:text-sm transition active:scale-95 cursor-pointer flex-shrink-0"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-black text-xs transition active:scale-95 cursor-pointer flex-shrink-0 border border-orange-200 shadow-2xs"
+            title="返回关卡地图"
           >
-            <ArrowLeft class="w-4 h-4" />
-            <span class="hidden sm:inline">关卡地图</span>
-            <span class="sm:hidden">返回</span>
+            <ArrowLeft class="w-3.5 h-3.5" />
+            <span>返回关卡地图</span>
           </button>
 
           <!-- Center Title with full visibility -->
@@ -701,4 +701,3 @@ const handleBackToMap = () => {
     />
   </div>
 </template>
-

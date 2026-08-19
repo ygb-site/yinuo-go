@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { GoGame } from '../engine/GoGame';
 import type { Point, BoardSize, StoneColor, ScoreBreakdown } from '../engine/types';
 import { useUserStore } from '../stores/useUserStore';
@@ -24,10 +25,17 @@ import {
   Wind,
   Layers,
   Scale,
-  Sparkles
+  Sparkles,
+  ArrowLeft
 } from 'lucide-vue-next';
 
+const router = useRouter();
 const userStore = useUserStore();
+
+const goBack = () => {
+  playButtonSound();
+  router.push('/battle');
+};
 
 const boardSize = ref<BoardSize>(9);
 const komi = ref<number>(3.5); // 9路默认贴3.5目或5.5目
@@ -216,9 +224,19 @@ const changeSize = (size: BoardSize) => {
       <!-- Header Banner -->
       <div class="bg-white rounded-3xl p-4 sm:p-7 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
         <div class="space-y-1 text-center md:text-left">
-          <div class="inline-flex items-center gap-2 bg-purple-100 text-purple-900 px-3 py-1 rounded-full text-xs font-black">
-            <Users class="w-3.5 h-3.5 text-purple-700" />
-            <span>亲子面对面对弈 (Pass & Play · 自动判输赢)</span>
+          <div class="flex items-center gap-2 flex-wrap justify-center md:justify-start">
+            <button
+              @click="goBack"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-black transition active:scale-95 cursor-pointer border border-orange-200 shadow-2xs"
+              title="返回对弈竞技"
+            >
+              <ArrowLeft class="w-3.5 h-3.5" />
+              <span>返回对弈竞技</span>
+            </button>
+            <div class="inline-flex items-center gap-2 bg-purple-100 text-purple-900 px-3 py-1 rounded-full text-xs font-black">
+              <Users class="w-3.5 h-3.5 text-purple-700" />
+              <span>亲子面对面对弈 (Pass & Play · 自动判输赢)</span>
+            </div>
           </div>
           <h1 class="text-xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
             双人同屏对战棋盘
@@ -609,4 +627,3 @@ const changeSize = (size: BoardSize) => {
 
   </div>
 </template>
-

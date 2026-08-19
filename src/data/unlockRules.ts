@@ -16,15 +16,31 @@ export interface UnlockFeature {
 }
 
 export const UNLOCK_FEATURES: UnlockFeature[] = [
-  // 1. 随身宝典与启蒙主线（默认完全开放）
+  // 1. 启蒙闯关 (Learn · 3项)
+  {
+    id: 'adventure',
+    name: '趣味主线闯关',
+    nameEn: 'Adventure Map (22 Lessons)',
+    icon: '🧭',
+    badge: '启蒙主线 · 循序渐进',
+    badgeColor: 'bg-emerald-500',
+    gradient: 'from-emerald-400 via-teal-500 to-cyan-500',
+    route: '/adventure',
+    category: 'learn',
+    lessonsRequired: 0,
+    chapterRequired: 0,
+    unlockTitle: '启蒙主线',
+    unlockTip: '始终开放',
+    desc: '从数气到手筋，6大篇章阶梯式趣味小故事与互动练习，带你一步步成为围棋小高手！'
+  },
   {
     id: 'dictionary',
     name: '围棋小词典',
     nameEn: 'Go Dictionary & Terms',
     icon: '📚',
     badge: '随身宝典 · 始终开放',
-    badgeColor: 'bg-emerald-600',
-    gradient: 'from-emerald-400 via-teal-500 to-cyan-500',
+    badgeColor: 'bg-teal-600',
+    gradient: 'from-teal-400 via-cyan-500 to-blue-500',
     route: '/dictionary',
     category: 'learn',
     lessonsRequired: 0,
@@ -34,23 +50,105 @@ export const UNLOCK_FEATURES: UnlockFeature[] = [
     desc: '中英双语围棋术语大全，生动图文与棋盘演练解析每一个围棋专业概念！'
   },
   {
-    id: 'learn',
-    name: '趣味闯关',
-    nameEn: 'Adventure Map',
-    icon: '🧭',
-    badge: '启蒙主线 · 循序渐进',
-    badgeColor: 'bg-emerald-500',
-    gradient: 'from-emerald-400 via-teal-500 to-cyan-500',
-    route: '/learn',
+    id: 'rhymes',
+    name: '棋理口诀卡',
+    nameEn: 'Go Rhyme Cards',
+    icon: '🎵',
+    badge: '随身宝典 · 始终开放',
+    badgeColor: 'bg-amber-600',
+    gradient: 'from-yellow-400 via-amber-500 to-orange-500',
+    route: '/rhymes',
     category: 'learn',
     lessonsRequired: 0,
     chapterRequired: 0,
-    unlockTitle: '启蒙主线',
-    unlockTip: '始终开放',
-    desc: '从数气到手筋，6大篇章阶梯式趣味小故事，带你一步步成为围棋小高手！'
+    unlockTitle: '随身宝典',
+    unlockTip: '始终开放，随时学唱',
+    desc: '金角银边草肚皮、棋逢断处生、有打有吃莫慌张，点击卡片即时动态演示！'
   },
 
-  // 2. 对战天地 (Battle)
+  // 2. 技能训练 (Practice · 5项)
+  {
+    id: 'arcade',
+    name: '反应乐园',
+    nameEn: 'Speed Arcade 60s',
+    icon: '🔥',
+    badge: '极速连击',
+    badgeColor: 'bg-rose-500',
+    gradient: 'from-amber-400 via-orange-500 to-rose-500',
+    route: '/arcade',
+    category: 'practice',
+    lessonsRequired: 8,
+    chapterRequired: 2,
+    unlockTitle: '通关第2章【捕鱼手筋】',
+    unlockTip: '需通关第2章（掌握双打与征吃）',
+    desc: '60秒闪电提子、数气大作战、连断速判！在极速连击中秒变肌肉记忆！'
+  },
+  {
+    id: 'tsumego',
+    name: '每日死活题',
+    nameEn: 'Daily Tsumego Camp',
+    icon: '🧩',
+    badge: '46道必修死活',
+    badgeColor: 'bg-indigo-500',
+    gradient: 'from-indigo-400 via-purple-500 to-pink-500',
+    route: '/tsumego',
+    category: 'practice',
+    lessonsRequired: 12,
+    chapterRequired: 3,
+    unlockTitle: '通关第3章【死活城堡】',
+    unlockTip: '需通关第3章（掌握真眼假眼与做活）',
+    desc: '精选吃子、做眼、杀棋、对杀、劫争46道经典实战题，AI智能分步拆解！'
+  },
+  {
+    id: 'mistakes',
+    name: '错题弱点突破',
+    nameEn: 'Mistake Notebook',
+    icon: '📖',
+    badge: '双倍金币',
+    badgeColor: 'bg-violet-500',
+    gradient: 'from-violet-400 via-purple-500 to-fuchsia-500',
+    route: '/mistakes',
+    category: 'practice',
+    lessonsRequired: 12,
+    chapterRequired: 3,
+    unlockTitle: '通关第3章【死活城堡】',
+    unlockTip: '需通关第3章（开启死活训练后生效）',
+    desc: '自动收录做错的死活与手筋，针对性专项复习，重新解对可领双倍金币！'
+  },
+  {
+    id: 'worksheet',
+    name: '打印题卡',
+    nameEn: 'Printable Worksheets',
+    icon: '🖨️',
+    badge: '线下纸质练',
+    badgeColor: 'bg-teal-600',
+    gradient: 'from-teal-400 via-emerald-500 to-green-500',
+    route: '/worksheet',
+    category: 'practice',
+    lessonsRequired: 17,
+    chapterRequired: 4,
+    unlockTitle: '通关第4章【死活城堡】',
+    unlockTip: '需通关第4章',
+    desc: '一键生成并打印A4高清围棋习题纸，保护视力，随时随地线下做题！'
+  },
+  {
+    id: 'free-board',
+    name: '自由打谱台',
+    nameEn: 'Sandbox & SGF',
+    icon: '📐',
+    badge: '高阶工具',
+    badgeColor: 'bg-slate-600',
+    gradient: 'from-slate-500 via-gray-600 to-zinc-700',
+    route: '/free-board',
+    category: 'practice',
+    lessonsRequired: 22,
+    chapterRequired: 5,
+    unlockTitle: '完成全部启蒙闯关',
+    unlockTip: '需通关全部启蒙关卡',
+    desc: '自由摆设死活局、SGF棋谱导入导出与多分支复盘！'
+  },
+
+  // 3. 对弈竞技 (Battle · 4项)
   {
     id: 'capture-go',
     name: '吃子对弈场',
@@ -116,73 +214,7 @@ export const UNLOCK_FEATURES: UnlockFeature[] = [
     desc: '模拟正规少儿定级考，十道综合实战大测验，考取你的第一张围棋荣誉证书！'
   },
 
-  // 3. 练习天地 (Practice)
-  {
-    id: 'arcade',
-    name: '反应乐园',
-    nameEn: 'Speed Arcade 60s',
-    icon: '🔥',
-    badge: '极速连击',
-    badgeColor: 'bg-rose-500',
-    gradient: 'from-amber-400 via-orange-500 to-rose-500',
-    route: '/arcade',
-    category: 'practice',
-    lessonsRequired: 8,
-    chapterRequired: 2,
-    unlockTitle: '通关第2章【捕鱼手筋】',
-    unlockTip: '需通关第2章（掌握双打与征吃）',
-    desc: '60秒闪电提子、数气大作战、连断速判！在极速连击中秒变肌肉记忆！'
-  },
-  {
-    id: 'tsumego',
-    name: '每日死活题',
-    nameEn: 'Daily Tsumego Camp',
-    icon: '🧩',
-    badge: '46道必修死活',
-    badgeColor: 'bg-indigo-500',
-    gradient: 'from-indigo-400 via-purple-500 to-pink-500',
-    route: '/tsumego',
-    category: 'practice',
-    lessonsRequired: 12,
-    chapterRequired: 3,
-    unlockTitle: '通关第3章【死活城堡】',
-    unlockTip: '需通关第3章（掌握真眼假眼与做活）',
-    desc: '精选吃子、做眼、杀棋、对杀、劫争46道经典实战题，AI智能分步拆解！'
-  },
-  {
-    id: 'mistakes',
-    name: '错题弱点突破',
-    nameEn: 'Mistake Notebook',
-    icon: '📖',
-    badge: '双倍金币',
-    badgeColor: 'bg-violet-500',
-    gradient: 'from-violet-400 via-purple-500 to-fuchsia-500',
-    route: '/mistakes',
-    category: 'practice',
-    lessonsRequired: 12,
-    chapterRequired: 3,
-    unlockTitle: '通关第3章【死活城堡】',
-    unlockTip: '需通关第3章（开启死活训练后生效）',
-    desc: '自动收录做错的死活与手筋，针对性专项复习，重新解对可领双倍金币！'
-  },
-  {
-    id: 'worksheet',
-    name: '打印题卡',
-    nameEn: 'Printable Worksheets',
-    icon: '🖨️',
-    badge: '线下纸质练',
-    badgeColor: 'bg-teal-600',
-    gradient: 'from-teal-400 via-emerald-500 to-green-500',
-    route: '/worksheet',
-    category: 'practice',
-    lessonsRequired: 17,
-    chapterRequired: 4,
-    unlockTitle: '通关第4章【死活城堡】',
-    unlockTip: '需通关第4章',
-    desc: '一键生成并打印A4高清围棋习题纸，保护视力，随时随地线下做题！'
-  },
-
-  // 4. 成长与个性化 (Profile & Themes)
+  // 4. 成长中心 (Profile · 1项)
   {
     id: 'shop',
     name: '装扮商城',
@@ -198,37 +230,5 @@ export const UNLOCK_FEATURES: UnlockFeature[] = [
     unlockTitle: '通关第1章【吃子魔法】',
     unlockTip: '需通关第1章（赚取第一桶金）',
     desc: '用闯关赢取的金币兑换原木、糖果、星空、翡翠等专属棋盘与可爱头像！'
-  },
-  {
-    id: 'rhymes',
-    name: '棋理口诀卡',
-    nameEn: 'Go Rhyme Cards',
-    icon: '🎵',
-    badge: '朗朗上口',
-    badgeColor: 'bg-amber-600',
-    gradient: 'from-yellow-400 via-amber-500 to-orange-500',
-    route: '/rhymes',
-    category: 'learn',
-    lessonsRequired: 8,
-    chapterRequired: 2,
-    unlockTitle: '通关第2章【捕鱼手筋】',
-    unlockTip: '需通关第2章',
-    desc: '金角银边草肚皮、棋逢断处生、有打有吃莫慌张，点击卡片即时动态演示！'
-  },
-  {
-    id: 'free-board',
-    name: '自由打谱台',
-    nameEn: 'Sandbox & SGF',
-    icon: '📐',
-    badge: '高阶工具',
-    badgeColor: 'bg-slate-600',
-    gradient: 'from-slate-500 via-gray-600 to-zinc-700',
-    route: '/free-board',
-    category: 'profile',
-    lessonsRequired: 22,
-    chapterRequired: 5,
-    unlockTitle: '完成全部启蒙闯关',
-    unlockTip: '需通关全部启蒙关卡',
-    desc: '自由摆设死活局、SGF棋谱导入导出与多分支复盘！'
   }
 ];

@@ -2,8 +2,10 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '../stores/useUserStore';
+import { useUnlockStore } from '../stores/unlockStore';
 import { SHOP_THEMES, type ShopThemeItem } from '../data/shopData';
 import { playButtonSound, playErrorSound } from '../lib/audio';
+import { showConfirm } from '../utils/alert';
 import type { ThemeType } from '../engine/types';
 import {
   Volume2,
@@ -25,6 +27,7 @@ import {
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
+const unlockStore = useUnlockStore();
 
 const showThemeDropdown = ref(false);
 const themeDropdownRef = ref<HTMLElement | null>(null);
@@ -70,13 +73,29 @@ const selectOrBuyTheme = (theme: ShopThemeItem) => {
     playButtonSound();
   } else {
     showThemeDropdown.value = false;
-    playErrorSound();
-    router.push('/shop');
+    goToShop();
   }
 };
 
 const goToShop = () => {
   showThemeDropdown.value = false;
+  const isUnlocked = unlockStore.isFeatureUnlocked('shop');
+  if (!isUnlocked) {
+    playErrorSound();
+    const feat = unlockStore.getFeature('shop');
+    showConfirm({
+      title: '装扮商城暂未解锁',
+      message: `小棋手别着急！【装扮商城】需要${feat?.unlockTip || '通关第1章【吃子魔法】'}才能开启哦！快去继续主线闯关吧！`,
+      type: 'warning',
+      confirmText: '前往闯关',
+      cancelText: '知道了'
+    }).then(confirmed => {
+      if (confirmed) {
+        router.push('/learn');
+      }
+    });
+    return;
+  }
   playButtonSound();
   router.push('/shop');
 };
@@ -93,7 +112,9 @@ const isNavActive = (itemPath: string) => {
     return (
       route.path === '/learn' ||
       route.path.startsWith('/lesson') ||
-      route.path.startsWith('/adventure')
+      route.path.startsWith('/adventure') ||
+      route.path === '/dictionary' ||
+      route.path === '/rhymes'
     );
   }
   if (itemPath === '/practice') {
@@ -102,7 +123,8 @@ const isNavActive = (itemPath: string) => {
       route.path.startsWith('/arcade') ||
       route.path.startsWith('/tsumego') ||
       route.path.startsWith('/mistakes') ||
-      route.path.startsWith('/worksheet')
+      route.path.startsWith('/worksheet') ||
+      route.path.startsWith('/free-board')
     );
   }
   if (itemPath === '/battle') {
@@ -316,4 +338,3 @@ const isNavActive = (itemPath: string) => {
     </button>
   </nav>
 </template>
-

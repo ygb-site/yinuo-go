@@ -6,7 +6,9 @@ import { GoBoard } from '../engine/GoBoard';
 import type { Point } from '../engine/types';
 import { useTsumegoStore } from '../stores/tsumegoStore';
 import { useUserStore } from '../stores/userStore';
+import { useUnlockStore } from '../stores/unlockStore';
 import { sound } from '../utils/sound';
+import { showConfirm } from '../utils/alert';
 import GoBoardComponent from '../components/GoBoard.vue';
 import MascotNuoNuo, { type MascotMood } from '../components/MascotNuoNuo.vue';
 import {
@@ -27,6 +29,7 @@ import {
 
 const tsumegoStore = useTsumegoStore();
 const userStore = useUserStore();
+const unlockStore = useUnlockStore();
 const route = useRoute();
 const router = useRouter();
 
@@ -34,6 +37,33 @@ const selectedCategory = ref<string>('all');
 const selectedDifficulty = ref<string>('all');
 const activePuzzleId = ref<string>(TSUMEGO_PUZZLES[0].id);
 const mobileTab = ref<'list' | 'board'>('list');
+
+const goBack = () => {
+  sound.playButtonSound();
+  router.push('/practice');
+};
+
+const goToWorksheet = () => {
+  const isUnlocked = unlockStore.isFeatureUnlocked('worksheet');
+  if (!isUnlocked) {
+    sound.playErrorSound();
+    const feat = unlockStore.getFeature('worksheet');
+    showConfirm({
+      title: '打印题卡暂未解锁',
+      message: `小棋手别着急！【打印题卡】需要${feat?.unlockTip || '通关第4章【死活城堡】'}才能开启哦！快去继续主线闯关吧！`,
+      type: 'warning',
+      confirmText: '前往闯关',
+      cancelText: '知道了'
+    }).then(confirmed => {
+      if (confirmed) {
+        router.push('/learn');
+      }
+    });
+    return;
+  }
+  sound.playButtonSound();
+  router.push('/worksheet');
+};
 
 const filteredPuzzles = computed(() => {
   return TSUMEGO_PUZZLES.filter(p => {
@@ -260,9 +290,19 @@ const toggleFavorite = () => {
       <!-- Header Banner -->
       <div class="bg-white rounded-3xl p-5 sm:p-8 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 relative overflow-hidden">
         <div class="space-y-1.5 sm:space-y-2 text-center md:text-left z-10">
-          <div class="inline-flex items-center gap-2 bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-xs font-black">
-            <Puzzle class="w-3.5 h-3.5" />
-            <span>每日死活实战题库 (Daily Tsumego)</span>
+          <div class="flex items-center gap-2 flex-wrap justify-center md:justify-start">
+            <button
+              @click="goBack"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-black transition active:scale-95 cursor-pointer border border-orange-200 shadow-2xs"
+              title="返回技能训练"
+            >
+              <ArrowLeft class="w-3.5 h-3.5" />
+              <span>返回技能训练</span>
+            </button>
+            <div class="inline-flex items-center gap-2 bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-xs font-black">
+              <Puzzle class="w-3.5 h-3.5" />
+              <span>每日死活实战题库 (Daily Tsumego)</span>
+            </div>
           </div>
           <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
             死活妙手与手筋大本营
@@ -274,7 +314,7 @@ const toggleFavorite = () => {
 
         <div class="flex items-center gap-3 z-10">
           <button
-            @click="router.push('/worksheet')"
+            @click="goToWorksheet"
             class="px-3.5 py-2.5 bg-white hover:bg-orange-50 text-orange-700 border-2 border-orange-200 rounded-2xl font-black text-xs shadow-xs transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
             title="生成 A4 纸质死活打印题单"
           >

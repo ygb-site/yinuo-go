@@ -33,6 +33,12 @@ const availableAvatars = ['🦁', '🐰', '🐼', '🐱', '🦊', '🐶', '🦄'
 // If no profiles exist, show create form by default when modal opens
 const hasNoProfiles = computed(() => userStore.profiles.length === 0);
 
+const isNameDuplicate = computed(() => {
+  const trimmed = newName.value.trim();
+  if (!trimmed) return false;
+  return userStore.isNicknameTaken(trimmed);
+});
+
 watch(
   () => props.isOpen,
   (open) => {
@@ -64,7 +70,19 @@ const handleCreate = () => {
     showAlert({ message: '请先输入宝贝的名字或可爱昵称哦！', type: 'warning' });
     return;
   }
-  userStore.createProfile(trimmed, selectedAvatar.value);
+  if (userStore.isNicknameTaken(trimmed)) {
+    showAlert({
+      title: '昵称重复啦',
+      message: `已经存在名为「${trimmed}」的宝贝档案啦，换一个更独特的可爱昵称吧！`,
+      type: 'warning'
+    });
+    return;
+  }
+  const created = userStore.createProfile(trimmed, selectedAvatar.value);
+  if (!created) {
+    showAlert({ message: '创建宝贝档案失败，该昵称已被使用！', type: 'warning' });
+    return;
+  }
   newName.value = '';
   isCreating.value = false;
   playWinSound();
@@ -232,9 +250,13 @@ const handleClearAll = async () => {
                 placeholder="例如：乐乐、小葡萄、轩轩..."
                 maxlength="10"
                 autofocus
-                class="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-200 text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-gray-400"
+                class="w-full px-4 py-3 rounded-2xl bg-gray-50 border text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 placeholder:text-gray-400 transition"
+                :class="isNameDuplicate ? 'border-rose-400 focus:ring-rose-400 bg-rose-50/30 text-rose-900' : 'border-gray-200 focus:ring-orange-400'"
                 @keyup.enter="handleCreate"
               />
+              <p v-if="isNameDuplicate" class="text-[11px] font-bold text-rose-500 mt-1.5 pl-1 flex items-center gap-1">
+                <span>⚠️ 该昵称已被使用，请换一个更独特的昵称哦</span>
+              </p>
             </div>
 
             <div>
@@ -298,4 +320,3 @@ const handleClearAll = async () => {
     </div>
   </Teleport>
 </template>
-

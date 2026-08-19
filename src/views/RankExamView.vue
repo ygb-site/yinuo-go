@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { TSUMEGO_PUZZLES, type TsumegoPuzzle } from '../data/tsumegoLibrary';
 import { GoGame } from '../engine/GoGame';
 import type { Point } from '../engine/types';
@@ -20,10 +21,17 @@ import {
   Trophy,
   CheckCircle2,
   RotateCcw,
+  ArrowLeft,
   ArrowRight
 } from 'lucide-vue-next';
 
+const router = useRouter();
 const userStore = useUserStore();
+
+const goBack = () => {
+  playButtonSound();
+  router.push('/battle');
+};
 
 // Exam Stages: 3 tsumego questions
 const currentExamIndex = ref(0);
@@ -127,9 +135,19 @@ const restartExam = () => {
       <!-- Header Banner -->
       <div class="bg-white rounded-3xl p-5 sm:p-7 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <div class="space-y-1.5 text-center md:text-left">
-          <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-900 px-3 py-1 rounded-full text-xs font-black">
-            <Award class="w-3.5 h-3.5 text-amber-700" />
-            <span>少儿段级位考级挑战赛 (Rank Exam)</span>
+          <div class="flex items-center gap-2 flex-wrap justify-center md:justify-start">
+            <button
+              @click="goBack"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-black transition active:scale-95 cursor-pointer border border-orange-200 shadow-2xs"
+              title="返回对弈竞技"
+            >
+              <ArrowLeft class="w-3.5 h-3.5" />
+              <span>返回对弈竞技</span>
+            </button>
+            <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-900 px-3 py-1 rounded-full text-xs font-black">
+              <Award class="w-3.5 h-3.5 text-amber-700" />
+              <span>少儿段级位考级挑战赛 (Rank Exam)</span>
+            </div>
           </div>
           <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
             棋力考级认证与荣誉证书
@@ -267,4 +285,3 @@ const restartExam = () => {
     />
   </div>
 </template>
-
