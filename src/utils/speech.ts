@@ -7,8 +7,8 @@ export const speechPlaybackEnabled = ref(true);
 const MAX_CHUNK_LEN = 80;
 
 /**
- * 伴读：点击后播同源 /api/tts 的 MP3。
- * 开发服务器会去掉 Referer 再去拉语音；浏览器直连百度会拿到空页，按钮状态一闪就回去。
+ * 伴读：开发走 Vite 同源代理；线上 GitHub Pages 没有 /api/tts，改为直连百度 TTS。
+ * 百度见到页面 Referer 会返回空页，所以页面和 audio 都声明 no-referrer。
  */
 export class SpeechCompanion {
   private static player: HTMLAudioElement | null = null;
@@ -48,6 +48,18 @@ export class SpeechCompanion {
     this.playAt(this.splitIntoChunks(spokenText), 0, token, onEnd);
   }
 
+  /** 本地有代理走代理；线上静态站直连百度 */
+  private static buildTtsUrl(text: string): string {
+    const encoded = encodeURIComponent(text);
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname;
+      if (host === 'localhost' || host === '127.0.0.1') {
+        return '/api/tts?text=' + encoded;
+      }
+    }
+    return 'https://fanyi.baidu.com/gettts?lan=zh&spd=4&source=web&text=' + encoded;
+  }
+
   private static playAt(chunks: string[], index: number, token: number, onEnd?: () => void) {
     if (token !== this.speakToken) return;
     if (index >= chunks.length) {
@@ -55,7 +67,10 @@ export class SpeechCompanion {
       return;
     }
 
-    const audio = new Audio('/api/tts?text=' + encodeURIComponent(chunks[index]));
+    const audio = document.createElement('audio');
+    audio.setAttribute('referrerpolicy', 'no-referrer');
+    audio.preload = 'auto';
+    audio.src = this.buildTtsUrl(chunks[index]);
     this.player = audio;
 
     audio.onended = () => this.playAt(chunks, index + 1, token, onEnd);
