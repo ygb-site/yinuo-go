@@ -20,7 +20,6 @@ import {
   BookOpen,
   Volume2,
   VolumeX,
-  CheckCircle2,
   Wind,
   X,
   ChevronDown,
@@ -370,95 +369,89 @@ const handleBackToMap = () => {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-2.5 sm:py-6 px-2.5 sm:px-6 lg:px-8 select-none">
-    <div class="max-w-7xl mx-auto space-y-3 sm:space-y-5">
+  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-2 sm:py-5 px-2.5 sm:px-6 lg:px-8 select-none">
+    <div class="max-w-7xl mx-auto space-y-3 sm:space-y-4">
 
-      <!-- Top Header Navigation & Multi-step Pills -->
-      <div class="bg-white rounded-3xl p-3 sm:p-5 border-2 border-orange-100 shadow-sm space-y-2 sm:space-y-3">
+      <!-- Top Header Navigation & Sleek Segmented Progress Bar (多邻国风格极简清爽顶栏) -->
+      <div class="bg-white rounded-3xl p-3 sm:p-4 border-2 border-orange-100 shadow-sm space-y-2.5">
+        <!-- 1st Row: Back + Title + Sound + Stars -->
         <div class="flex items-center justify-between gap-2">
           <button
             @click="handleBackToMap"
-            class="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-2xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-black text-xs sm:text-sm transition active:scale-95 cursor-pointer flex-shrink-0"
+            class="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-2xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-black text-xs sm:text-sm transition active:scale-95 cursor-pointer flex-shrink-0"
           >
             <ArrowLeft class="w-4 h-4" />
             <span class="hidden sm:inline">关卡地图</span>
             <span class="sm:hidden">返回</span>
           </button>
 
+          <!-- Center Title with full visibility -->
           <div class="text-center min-w-0 flex-1 px-1">
-            <div class="text-[10px] sm:text-xs font-black text-orange-600 uppercase tracking-wide truncate">
-              {{ currentLesson.chapterId ? '第 ' + currentLesson.chapterId + ' 章 · 阶梯式递进教学' : '启蒙实战教学' }}
-            </div>
-            <h1 class="text-sm sm:text-xl lg:text-2xl font-cartoon font-bold text-gray-900 tracking-wide truncate">
+            <h1 class="text-xs sm:text-lg lg:text-xl font-cartoon font-bold text-gray-900 tracking-wide truncate">
               {{ currentLesson.title }}
             </h1>
           </div>
 
           <!-- Right Action: Voice Speech Toggle & Star Rating -->
-          <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <!-- Mobile Quick Concept Badge Button (📱 移动端顶部一键唤起名师点睛) -->
-            <button
-              @click="showConceptDrawer = true; playButtonSound()"
-              class="lg:hidden flex items-center gap-1 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 px-2 py-1.5 rounded-xl text-[11px] font-black transition active:scale-90 shadow-2xs cursor-pointer"
-              title="查看本关名师点睛与双语术语"
-            >
-              <BookOpen class="w-3.5 h-3.5 text-amber-700 flex-shrink-0" />
-              <span class="max-w-[70px] truncate">点睛卡</span>
-            </button>
-
+          <div class="flex items-center gap-1.5 flex-shrink-0">
             <!-- Voice Speech Button -->
             <button
               @click="toggleVoice"
-              class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border text-xs font-black transition active:scale-90 cursor-pointer shadow-2xs"
+              class="p-1.5 rounded-xl border text-xs font-black transition active:scale-90 cursor-pointer shadow-2xs"
               :class="speechEnabled ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-gray-100 border-gray-200 text-gray-400'"
               :title="speechEnabled ? '点击关闭语音朗读' : '点击开启语音伴读'"
             >
               <Volume2 v-if="speechEnabled" class="w-3.5 h-3.5 text-amber-600 animate-pulse" />
               <VolumeX v-else class="w-3.5 h-3.5 text-gray-400" />
-              <span class="hidden md:inline ml-1">{{ speechEnabled ? '伴读中' : '静音' }}</span>
             </button>
 
             <!-- Stars Rating -->
-            <div class="flex items-center gap-0.5 sm:gap-1 bg-amber-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl border border-amber-200 shadow-2xs">
+            <div class="flex items-center gap-0.5 bg-amber-50 px-2 py-1 rounded-xl border border-amber-200 shadow-2xs">
               <Star
                 v-for="s in 3"
                 :key="s"
-                class="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                class="w-3.5 h-3.5"
                 :class="s <= earnedStars ? 'text-amber-400 fill-current' : 'text-gray-200'"
               />
             </div>
           </div>
         </div>
 
-        <!-- 1讲 2~3 练 Sub-puzzle Step Indicator Bar -->
-        <div v-if="totalSteps > 1" class="flex items-center justify-center gap-1.5 sm:gap-2 pt-2 border-t border-gray-100 overflow-x-auto no-scrollbar">
-          <div
-            v-for="(sub, sIdx) in subPuzzlesList"
-            :key="sub.stepIndex"
-            @click="loadCurrentStep(sIdx)"
-            class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-black transition cursor-pointer flex-shrink-0 whitespace-nowrap"
-            :class="
-              currentStepIndex === sIdx
-                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-xs'
-                : sIdx < currentStepIndex
-                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                : 'bg-gray-100 text-gray-400'
-            "
-          >
-            <CheckCircle2 v-if="sIdx < currentStepIndex" class="w-3.5 h-3.5 text-emerald-600" />
-            <span v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-white/30 flex items-center justify-center text-[9px] sm:text-[10px]">
-              {{ sIdx + 1 }}
-            </span>
-            <span>{{ sub.title.split('：')[1] || sub.title }}</span>
+        <!-- 2nd Row: Sleek Segmented Progress Bar (多题阶梯分段式进度条，极简无横向溢出) -->
+        <div v-if="totalSteps > 1" class="flex items-center gap-2 pt-1 border-t border-gray-100">
+          <div class="flex-1 flex items-center gap-1.5">
+            <div
+              v-for="(sub, sIdx) in subPuzzlesList"
+              :key="sub.stepIndex"
+              @click="loadCurrentStep(sIdx)"
+              class="flex-1 h-2 sm:h-2.5 rounded-full overflow-hidden bg-gray-100 transition-all duration-300 cursor-pointer relative group"
+              :title="'点击切换至第 ' + (sIdx + 1) + ' 题：' + (sub.title.split('：')[1] || sub.title)"
+            >
+              <div
+                class="h-full rounded-full transition-all duration-500"
+                :class="
+                  sIdx < currentStepIndex
+                    ? 'bg-emerald-500'
+                    : sIdx === currentStepIndex
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 shadow-xs ring-1 ring-orange-300'
+                    : 'bg-transparent'
+                "
+              ></div>
+            </div>
+          </div>
+
+          <div class="text-[11px] font-black text-orange-600 whitespace-nowrap flex-shrink-0 flex items-center gap-1">
+            <span>第 {{ currentStepIndex + 1 }} / {{ totalSteps }} 题</span>
+            <span class="hidden sm:inline text-gray-400 font-bold">· {{ currentSubPuzzle.title.split('：')[1] || currentSubPuzzle.title }}</span>
           </div>
         </div>
       </div>
 
       <!-- Main Two-Column Clean Workspace Layout -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-6 items-start">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 items-start">
         
         <!-- Center/Left Column: Large Responsive Board (7 cols) -->
-        <div class="lg:col-span-7 bg-white rounded-3xl p-3 sm:p-6 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-2.5 sm:space-y-4">
+        <div class="lg:col-span-7 bg-white rounded-3xl p-3 sm:p-5 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-2.5 sm:space-y-4">
           <GoBoard
             :game="game"
             :readonly="isLessonComplete || isBotThinking"
@@ -469,50 +462,60 @@ const handleBackToMap = () => {
             :manualMove="true"
             :highlightPoints="highlightPoints"
             :lastMove="lastMove"
-            :sizePx="480"
+            :sizePx="460"
             @move="handleMove"
           />
 
-          <!-- Assistant Toggles & Step counter -->
+          <!-- Assistant Toggles & Point Guide -->
           <div class="w-full flex flex-wrap items-center justify-between gap-1.5 pt-2 border-t border-gray-100 text-xs font-bold text-gray-600">
-            <div class="flex flex-wrap items-center gap-1 sm:gap-2">
+            <div class="flex flex-wrap items-center gap-1 sm:gap-1.5">
               <button
                 @click="showBreathingTubes = !showBreathingTubes"
-                class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border text-[11px] sm:text-xs transition flex items-center gap-1 active:scale-95 cursor-pointer"
-                :class="showBreathingTubes ? 'bg-emerald-100 border-emerald-300 text-emerald-900 font-black' : 'bg-gray-50 border-gray-200'"
+                class="px-2 sm:px-2.5 py-1 rounded-xl border text-[11px] font-black transition flex items-center gap-1 active:scale-95 cursor-pointer"
+                :class="showBreathingTubes ? 'bg-emerald-100 border-emerald-300 text-emerald-900 font-black' : 'bg-gray-50 border-gray-200 text-gray-600'"
                 title="开启/关闭具象化呼吸管道特效"
               >
-                <Wind class="w-3.5 h-3.5 text-emerald-600" />
+                <Wind class="w-3 h-3 text-emerald-600" />
                 <span>呼吸管</span>
               </button>
 
               <button
                 @click="showLiberties = !showLiberties"
-                class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border text-[11px] sm:text-xs transition flex items-center gap-1 active:scale-95 cursor-pointer"
-                :class="showLiberties ? 'bg-amber-100 border-amber-300 text-amber-900 font-black' : 'bg-gray-50 border-gray-200'"
+                class="px-2 sm:px-2.5 py-1 rounded-xl border text-[11px] font-black transition flex items-center gap-1 active:scale-95 cursor-pointer"
+                :class="showLiberties ? 'bg-amber-100 border-amber-300 text-amber-900 font-black' : 'bg-gray-50 border-gray-200 text-gray-600'"
               >
-                <Eye class="w-3.5 h-3.5 text-amber-600" />
+                <Eye class="w-3 h-3 text-amber-600" />
                 <span>数气</span>
               </button>
 
               <button
                 @click="showAtari = !showAtari"
-                class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border text-[11px] sm:text-xs transition flex items-center gap-1 active:scale-95 cursor-pointer"
-                :class="showAtari ? 'bg-rose-100 border-rose-300 text-rose-900 font-black' : 'bg-gray-50 border-gray-200'"
+                class="px-2 sm:px-2.5 py-1 rounded-xl border text-[11px] font-black transition flex items-center gap-1 active:scale-95 cursor-pointer"
+                :class="showAtari ? 'bg-rose-100 border-rose-300 text-rose-900 font-black' : 'bg-gray-50 border-gray-200 text-gray-600'"
               >
-                <AlertTriangle class="w-3.5 h-3.5 text-rose-600" />
+                <AlertTriangle class="w-3 h-3 text-rose-600" />
                 <span>叫吃警报</span>
+              </button>
+
+              <!-- Mobile Concept Drawer Quick Pill -->
+              <button
+                @click="showConceptDrawer = true; playButtonSound()"
+                class="lg:hidden px-2 sm:px-2.5 py-1 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950 text-[11px] font-black transition active:scale-95 cursor-pointer flex items-center gap-1 shadow-2xs"
+                title="查看名师点睛与双语术语"
+              >
+                <BookOpen class="w-3 h-3 text-amber-700" />
+                <span>名师点睛</span>
               </button>
             </div>
 
             <span class="text-[10px] sm:text-[11px] text-gray-400 font-bold">
-              第 {{ currentStepIndex + 1 }} / {{ totalSteps }} 题 · {{ currentSubPuzzle.boardSize }}x{{ currentSubPuzzle.boardSize }} 盘
+              {{ currentSubPuzzle.boardSize }}x{{ currentSubPuzzle.boardSize }} 盘
             </span>
           </div>
         </div>
 
         <!-- Right Column: Story Dialogue, Action Controls & Bilingual Concept (5 cols) -->
-        <div class="lg:col-span-5 space-y-3 sm:space-y-4">
+        <div class="lg:col-span-5 space-y-3 sm:space-y-3.5">
           
           <!-- Mascot NuoNuo Speech Bubble Guidance (Clickable to Replay Voice) -->
           <div @click="narrateText(mascotDialogue)" class="cursor-pointer group" title="点击小诺重新朗读语音">
@@ -524,7 +527,7 @@ const handleBackToMap = () => {
           </div>
 
           <!-- Action Control Buttons Card -->
-          <div class="bg-white rounded-3xl p-3.5 sm:p-5 border-2 border-orange-100 shadow-sm space-y-2.5 sm:space-y-3">
+          <div class="bg-white rounded-3xl p-3.5 sm:p-4 border-2 border-orange-100 shadow-sm space-y-2 sm:space-y-2.5">
             <div class="text-xs font-black text-gray-500 uppercase tracking-wide flex items-center justify-between">
               <span>行动指南 (Actions)</span>
               <span class="text-orange-600 font-bold truncate max-w-[200px]">目标：{{ currentSubPuzzle.goalText }}</span>
@@ -549,8 +552,8 @@ const handleBackToMap = () => {
             </div>
           </div>
 
-          <!-- 📱 移动端与桌面端通用的“名师点睛”卡片 (带折叠与抽屉展开) -->
-          <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl p-3.5 sm:p-5 border-2 border-orange-200 space-y-2.5 shadow-2xs">
+          <!-- 📱 名师点睛与双语术语卡片 -->
+          <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl p-3.5 sm:p-4 border-2 border-orange-200 space-y-2 shadow-2xs">
             <!-- Header Bar -->
             <div
               @click="isConceptExpanded = !isConceptExpanded"
@@ -577,7 +580,7 @@ const handleBackToMap = () => {
             </div>
 
             <!-- Content Area: Always visible on desktop (lg:block), Collapsible on mobile -->
-            <div :class="['space-y-2.5 transition-all', isConceptExpanded ? 'block' : 'hidden lg:block']">
+            <div :class="['space-y-2 transition-all', isConceptExpanded ? 'block' : 'hidden lg:block']">
               <div class="bg-white/95 rounded-2xl p-3 border border-orange-100 flex items-center justify-between">
                 <div>
                   <div class="font-black text-xs sm:text-sm text-gray-900 flex items-center gap-1">
@@ -627,7 +630,7 @@ const handleBackToMap = () => {
     <Teleport to="body">
       <div
         v-if="showConceptDrawer"
-        class="fixed inset-0 z-[10000] overflow-hidden bg-black no-scrollbar modal-overlay/60 backdrop-blur-sm select-none animate-fade-in flex items-end sm:items-center justify-center p-0 sm:p-4"
+        class="fixed inset-0 z-[10000] overflow-hidden bg-black/60 backdrop-blur-sm select-none animate-fade-in flex items-end sm:items-center justify-center p-0 sm:p-4 no-scrollbar modal-overlay"
         @click.self="showConceptDrawer = false"
       >
         <div
