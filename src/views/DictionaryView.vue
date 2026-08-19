@@ -72,9 +72,9 @@ const setupDemoBoard = (entry: DictEntry) => {
   }
 };
 
-const speakCurrentEntry = () => {
+const speakCurrentEntry = (targetEntry?: DictEntry) => {
   if (!speechEnabled.value || !userStore.soundEnabled) return;
-  const e = currentEntry.value;
+  const e = targetEntry || currentEntry.value;
   const text = e.chinese + '。' + e.pinyin + '。' + e.kidAnalogy + '。' + e.fullDesc;
   speakText(text);
 };
@@ -94,7 +94,7 @@ const selectEntry = (entry: DictEntry) => {
   playButtonSound();
   setupDemoBoard(entry);
   mobileTab.value = 'detail';
-  speakCurrentEntry();
+  speakCurrentEntry(entry);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -172,7 +172,7 @@ const resetDemoBoard = () => {
           >
             <Volume2 v-if="speechEnabled" class="w-4 h-4 text-amber-600 animate-pulse" />
             <VolumeX v-else class="w-4 h-4" />
-            <span class="hidden sm:inline">{{ speechEnabled ? '伴读中' : '静音' }}</span>
+            <span class="hidden sm:inline">{{ speechEnabled ? '伴读开启' : '静音' }}</span>
           </button>
         </div>
       </div>
@@ -305,7 +305,7 @@ const resetDemoBoard = () => {
                     {{ currentEntry.pinyin }}
                   </span>
                   <button
-                    @click="speakCurrentEntry"
+                    @click="speakCurrentEntry(currentEntry)"
                     class="p-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-600 transition active:scale-90 cursor-pointer"
                     title="点击朗读本术语"
                   >

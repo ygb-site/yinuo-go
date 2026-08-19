@@ -3,8 +3,8 @@ import { ref } from 'vue';
 export const isSpeaking = ref(false);
 
 /**
- * 🐼 少儿高拟真伴学语音引擎 (Kid-Friendly Speech Companion Engine)
- * 采用智能声学语调与多重自然中文声线，点击即播，告别延迟与无声。
+ * 🐼 少儿拟真温暖伴学语音引擎 (Kid-Friendly Speech Companion Engine)
+ * 采用稳定健壮的 Web Speech API 驱动，深度修复 Chrome/Safari/Edge 声音中断与假死问题。
  */
 export class SpeechCompanion {
   private static synth: SpeechSynthesis | null = typeof window !== 'undefined' ? window.speechSynthesis : null;
@@ -15,7 +15,7 @@ export class SpeechCompanion {
     if (this.isInitialized || !this.synth) return;
     this.isInitialized = true;
 
-    // 监听语音列表就绪
+    // 1. 监听语音列表就绪事件
     if (this.synth.onvoiceschanged !== undefined) {
       this.synth.onvoiceschanged = () => {
         this.selectBestVoice();
@@ -23,7 +23,7 @@ export class SpeechCompanion {
     }
     this.selectBestVoice();
 
-    // 页面隐藏或切后台时立即静音
+    // 2. 页面可见性监听（切后台静音）
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
@@ -42,7 +42,7 @@ export class SpeechCompanion {
     if (!voices || voices.length === 0) return null;
 
     const preferredNames = [
-      'Xiaoxiao', // 微软晓晓（最甜美的少儿/播报音）
+      'Xiaoxiao', // 微软晓晓
       'Yunxi',    // 微软云希
       'Xiaoyi',   // 微软晓伊
       'Tingting', // 苹果婷婷
@@ -68,18 +68,18 @@ export class SpeechCompanion {
     }
 
     const fallback = voices.find(v => v.lang.startsWith('zh') || v.lang.startsWith('cmn'));
-    this.cachedVoice = fallback || null;
+    this.cachedVoice = fallback || voices[0] || null;
     return this.cachedVoice;
   }
 
   /**
    * 语意自然清洗与分词断句处理
    */
-  private static formatSpokenText(text: string): string {
+  public static formatSpokenText(text: string): string {
     return text
       // 移除 Emoji 和特殊图标符号
       .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
-      // 移除特殊标签括号
+      // 移除特殊标签括号与符号
       .replace(/【|】|📖|🎯|⭐|🐼|🦁|🚀|⚔️|🏰|⚡|🔄|❤️|🛡️|🪙|🏆|🌸|🎉|✨|🐶|🐱|🦊/g, '')
       // 将英文括号术语移除，保留中文发音
       .replace(/\([a-zA-Z\s\-']+\)/g, '')
@@ -94,7 +94,7 @@ export class SpeechCompanion {
   }
 
   /**
-   * 播放小诺伴学语音朗读（同步触发，避免浏览器手势丢失）
+   * 播放小诺伴学语音朗读（确保点击 100% 发声）
    */
   public static speak(text: string, onEnd?: () => void) {
     if (!this.synth) return;
@@ -105,8 +105,12 @@ export class SpeechCompanion {
     if (!spokenText) return;
 
     try {
-      // 必须先取消之前的语音并恢复音频上下文
-      this.synth.cancel();
+      // 1. 如果当前正在说话，先安全取消
+      if (this.synth.speaking || this.synth.pending) {
+        this.synth.cancel();
+      }
+
+      // 2. 唤醒浏览器音频通道
       if (this.synth.paused) {
         this.synth.resume();
       }
@@ -122,13 +126,12 @@ export class SpeechCompanion {
         utter.voice = voice;
       }
 
-      // 全局强引用挂载防 GC
+      // 🔴 关键防丢帧：全局强引用防止 Chrome 垃圾回收机制回收 utterance
       if (typeof window !== 'undefined') {
         (window as any)._activeSpeechUtterance = utter;
       }
 
-      isSpeaking.value = true;
-
+      // 🔴 只有在真正开始说话时才置为 true，绝不提前假死
       utter.onstart = () => {
         isSpeaking.value = true;
       };
@@ -148,11 +151,13 @@ export class SpeechCompanion {
         }
       };
 
-      // 同步触发 speak
-      this.synth.speak(utter);
-      if (this.synth.paused) {
-        this.synth.resume();
-      }
+      // 🔴 关键修复：Chrome 在 cancel 后需要微小间隔（10ms）再 speak，否则 Chrome 内核会吞掉刚投递的 utterance
+      setTimeout(() => {
+        if (this.synth) {
+          this.synth.resume();
+          this.synth.speak(utter);
+        }
+      }, 10);
     } catch (e) {
       isSpeaking.value = false;
     }
