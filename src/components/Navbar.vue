@@ -93,7 +93,9 @@ const isNavActive = (itemPath: string) => {
     return (
       route.path === '/learn' ||
       route.path.startsWith('/lesson') ||
-      route.path.startsWith('/adventure')
+      route.path.startsWith('/adventure') ||
+      route.path.startsWith('/dictionary') ||
+      route.path.startsWith('/rhymes')
     );
   }
   if (itemPath === '/practice') {
@@ -117,10 +119,7 @@ const isNavActive = (itemPath: string) => {
   if (itemPath === '/profile') {
     return (
       route.path === '/profile' ||
-      route.path.startsWith('/shop') ||
-      route.path.startsWith('/rhymes') ||
-      route.path.startsWith('/dictionary') ||
-      route.path.startsWith('/free-board')
+      route.path.startsWith('/shop')
     );
   }
   return route.path.startsWith(itemPath);

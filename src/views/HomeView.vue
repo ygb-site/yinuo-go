@@ -75,7 +75,7 @@ const corePortals = computed(() => [
     icon: '🗺️',
     badge: '推荐 · 循序渐进',
     badgeColor: 'bg-emerald-500',
-    desc: '从数气到手筋，5大篇章25关趣味小故事，带你一步步成为围棋小高手！',
+    desc: '从数气到手筋，6大篇章趣味闯关与随身词典，带你一步步成为围棋小高手！',
     gradient: 'from-emerald-400 via-teal-500 to-cyan-500',
     stats: '已通关 ' + completedCount.value + ' / ' + totalLessonsCount.value + ' 关'
   },
@@ -108,7 +108,7 @@ const corePortals = computed(() => [
     icon: '👑',
     badge: '装扮与成就',
     badgeColor: 'bg-pink-500',
-    desc: '用金币兑换专属棋盘皮肤与头像，查看段位荣誉证书与棋理口诀！',
+    desc: '用金币兑换专属棋盘皮肤与头像，查看段位荣誉证书与棋力雷达！',
     gradient: 'from-pink-400 via-rose-500 to-purple-500',
     stats: '金币 ' + userStore.coins + ' · 星星 ' + userStore.totalStars
   }
