@@ -292,7 +292,7 @@ const isNavActive = (itemPath: string) => {
   </header>
 
   <!-- Mobile Bottom Navigation Bar (📱 手机端固定底部快捷导航栏 5 大核心) -->
-  <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-orange-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-1 pt-1.5 pb-[max(0.4rem,env(safe-area-inset-bottom))] flex items-center justify-around select-none">
+  <nav v-if="!route.path.startsWith('/lesson/')" class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-orange-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-1 pt-1.5 pb-[max(0.4rem,env(safe-area-inset-bottom))] flex items-center justify-around select-none">
     <button
       v-for="item in navItems"
       :key="item.path"

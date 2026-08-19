@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import ProfileSwitcherModal from './components/common/ProfileSwitcherModal.vue';
@@ -7,13 +9,16 @@ import UnlockCelebrationModal from './components/common/UnlockCelebrationModal.v
 import { useUserStore } from './stores/useUserStore';
 
 const userStore = useUserStore();
+const route = useRoute();
+
+const isImmersiveView = computed(() => route.path.startsWith('/lesson/'));
 </script>
 
 <template>
   <div class="min-h-screen flex flex-col bg-[#FDFBF7] font-sans antialiased text-gray-800">
     <Navbar />
-    <!-- Added pb-20 on mobile so bottom bar never overlaps content -->
-    <main class="flex-1 pb-20 lg:pb-0">
+    <!-- Hide bottom pb on immersive lesson view so content fits within 1 screen -->
+    <main class="flex-1" :class="isImmersiveView ? 'pb-2 lg:pb-0' : 'pb-20 lg:pb-0'">
       <router-view />
     </main>
     <!-- Hidden footer on mobile to keep view compact and neat -->

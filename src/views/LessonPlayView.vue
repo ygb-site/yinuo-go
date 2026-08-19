@@ -462,7 +462,7 @@ const handleBackToMap = () => {
             :manualMove="true"
             :highlightPoints="highlightPoints"
             :lastMove="lastMove"
-            :sizePx="460"
+            :sizePx="440"
             @move="handleMove"
           />
 
@@ -552,8 +552,8 @@ const handleBackToMap = () => {
             </div>
           </div>
 
-          <!-- 📱 名师点睛与双语术语卡片 -->
-          <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl p-3.5 sm:p-4 border-2 border-orange-200 space-y-2 shadow-2xs">
+          <!-- 🖥️ 桌面端右侧固定名师点睛卡片 (移动端由工具栏 [名师点睛] 抽屉统一呈现) -->
+          <div class="hidden lg:block bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl p-3.5 sm:p-4 border-2 border-orange-200 space-y-2 shadow-2xs">
             <!-- Header Bar -->
             <div
               @click="isConceptExpanded = !isConceptExpanded"
