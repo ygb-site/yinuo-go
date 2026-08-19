@@ -103,7 +103,7 @@ const handleClearAll = async () => {
   <Teleport to="body">
     <div
       v-if="isOpen"
-      class="fixed inset-0 z-[9999] overflow-hidden bg-black no-scrollbar modal-overlay/65 backdrop-blur-md select-none animate-fade-in"
+      class="fixed inset-0 z-[9999] overflow-hidden bg-black/65 no-scrollbar modal-overlay backdrop-blur-md select-none animate-fade-in"
       @click.self="handleClose"
     >
       <div class="flex min-h-screen items-center justify-center p-4 sm:p-6 text-center">

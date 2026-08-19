@@ -38,7 +38,7 @@ const handlePrint = () => {
   <Teleport to="body">
     <div
       v-if="isOpen"
-      class="fixed inset-0 z-[9999] overflow-hidden bg-black no-scrollbar modal-overlay/70 backdrop-blur-md select-none animate-fade-in flex items-center justify-center p-4"
+      class="fixed inset-0 z-[9999] overflow-hidden bg-black/70 no-scrollbar modal-overlay backdrop-blur-md select-none animate-fade-in flex items-center justify-center p-4"
       @click.self="emit('close')"
     >
       <div class="relative w-full max-w-2xl bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-amber-400 space-y-6 animate-pop-in print:border-none print:shadow-none print:m-0">

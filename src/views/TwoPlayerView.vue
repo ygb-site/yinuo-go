@@ -470,7 +470,7 @@ const changeSize = (size: BoardSize) => {
     <Teleport to="body">
       <div
         v-if="showScoreModal && scoreResult"
-        class="fixed inset-0 z-[10000] overflow-hidden bg-black no-scrollbar modal-overlay/65 backdrop-blur-md select-none animate-fade-in flex items-center justify-center p-3 sm:p-4"
+        class="fixed inset-0 z-[10000] overflow-hidden bg-black/65 no-scrollbar modal-overlay backdrop-blur-md select-none animate-fade-in flex items-center justify-center p-3 sm:p-4"
         @click.self="showScoreModal = false"
       >
         <div
