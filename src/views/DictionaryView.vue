@@ -5,7 +5,7 @@ import { GoGame } from '../engine/GoGame';
 import type { Point } from '../engine/types';
 import { useUserStore } from '../stores/useUserStore';
 import { playButtonSound, playStoneSound } from '../lib/audio';
-import { speakText, stopSpeech } from '../utils/speech';
+import { speakText, stopSpeech, speechPlaybackEnabled, SpeechCompanion } from '../utils/speech';
 import GoBoard from '../components/board/GoBoard.vue';
 import {
   BookMarked,
@@ -27,7 +27,6 @@ const searchQuery = ref('');
 const activeCategory = ref<string>('all');
 const activeEntryId = ref<string>(GO_DICTIONARY[0].id);
 const mobileTab = ref<'list' | 'detail'>('list');
-const speechEnabled = ref(true);
 
 const categories = [
   { id: 'all', name: '全部术语', icon: '🌟' },
@@ -73,19 +72,13 @@ const setupDemoBoard = (entry: DictEntry) => {
 };
 
 const speakCurrentEntry = (targetEntry?: DictEntry) => {
-  if (!speechEnabled.value || !userStore.soundEnabled) return;
   const e = targetEntry || currentEntry.value;
   const text = e.chinese + '。' + e.pinyin + '。' + e.kidAnalogy + '。' + e.fullDesc;
   speakText(text);
 };
 
 const toggleVoice = () => {
-  speechEnabled.value = !speechEnabled.value;
-  if (!speechEnabled.value) {
-    stopSpeech();
-  } else {
-    speakCurrentEntry();
-  }
+  SpeechCompanion.setPlaybackEnabled(!speechPlaybackEnabled.value);
   playButtonSound();
 };
 
@@ -94,7 +87,7 @@ const selectEntry = (entry: DictEntry) => {
   playButtonSound();
   setupDemoBoard(entry);
   mobileTab.value = 'detail';
-  speakCurrentEntry(entry);
+  stopSpeech();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -167,12 +160,12 @@ const resetDemoBoard = () => {
           <button
             @click="toggleVoice"
             class="p-2.5 rounded-2xl border text-xs font-black flex items-center gap-1.5 transition active:scale-95 cursor-pointer flex-shrink-0 shadow-2xs"
-            :class="speechEnabled ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-gray-100 border-gray-200 text-gray-400'"
-            :title="speechEnabled ? '点击静音' : '开启伴读语音'"
+            :class="speechPlaybackEnabled ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-gray-100 border-gray-200 text-gray-400'"
+            :title="speechPlaybackEnabled ? '语音已开启，点「朗读」按钮才会发声' : '已静音，点击恢复语音'"
           >
-            <Volume2 v-if="speechEnabled" class="w-4 h-4 text-amber-600 animate-pulse" />
+            <Volume2 v-if="speechPlaybackEnabled" class="w-4 h-4 text-amber-600" />
             <VolumeX v-else class="w-4 h-4" />
-            <span class="hidden sm:inline">{{ speechEnabled ? '伴读开启' : '静音' }}</span>
+            <span class="hidden sm:inline">{{ speechPlaybackEnabled ? '语音开启' : '静音' }}</span>
           </button>
         </div>
       </div>

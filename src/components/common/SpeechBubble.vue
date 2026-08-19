@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Volume2 } from 'lucide-vue-next';
-import { isSpeaking, toggleSpeech } from '../../utils/speech';
+import { isSpeaking, speakText } from '../../utils/speech';
 
 const props = withDefaults(
   defineProps<{
@@ -30,7 +30,7 @@ const moodEmoji = computed(() => {
 });
 
 const handleVoice = () => {
-  toggleSpeech(props.text);
+  speakText(props.text);
 };
 </script>
 
@@ -64,7 +64,7 @@ const handleVoice = () => {
           <!-- Voice Speaker Read Button -->
           <button
             type="button"
-            @click="handleVoice"
+            @click.stop="handleVoice"
             class="p-1 rounded-xl transition flex items-center gap-1 text-[11px] font-black cursor-pointer active:scale-90"
             :class="
               isSpeaking

@@ -6,7 +6,7 @@ import { GoGame } from '../engine/GoGame';
 import type { Point } from '../engine/types';
 import { useUserStore } from '../stores/useUserStore';
 import { playHintSound, playButtonSound, playErrorSound, playStoneSound, playCaptureSound } from '../lib/audio';
-import { speakText, stopSpeech } from '../utils/speech';
+import { speakText, stopSpeech, speechPlaybackEnabled, SpeechCompanion } from '../utils/speech';
 import GoBoard from '../components/board/GoBoard.vue';
 import SpeechBubble from '../components/common/SpeechBubble.vue';
 import StarModal from '../components/common/StarModal.vue';
@@ -113,31 +113,23 @@ const storyDialogueIndex = ref(0);
 const showLiberties = ref(true);
 const showAtari = ref(true);
 const showBreathingTubes = ref(true);
-const speechEnabled = ref(true);
 
 // Mobile Concept Modal / Drawer State
 const showConceptDrawer = ref(false);
 const isConceptExpanded = ref(false);
 
 const narrateText = (text: string) => {
-  if (!speechEnabled.value || !userStore.soundEnabled) return;
   speakText(text);
 };
 
 const speakConcept = () => {
-  if (!speechEnabled.value || !userStore.soundEnabled) return;
   const term = currentLesson.value.bilingualTerm;
   const text = `${term.chinese}，${term.pinyin}。${term.concept}。${currentLesson.value.explanation}`;
   speakText(text);
 };
 
 const toggleVoice = () => {
-  speechEnabled.value = !speechEnabled.value;
-  if (!speechEnabled.value) {
-    stopSpeech();
-  } else {
-    narrateText(mascotDialogue.value);
-  }
+  SpeechCompanion.setPlaybackEnabled(!speechPlaybackEnabled.value);
   playButtonSound();
 };
 
@@ -165,8 +157,6 @@ const loadCurrentStep = (stepIdx: number) => {
     mascotMood.value = 'happy';
     mascotDialogue.value = '【' + sub.title + '】' + sub.goalText;
   }
-
-  narrateText(mascotDialogue.value);
 };
 
 const initLesson = () => {
@@ -221,7 +211,6 @@ const handleMove = (point: Point) => {
       playErrorSound();
       mascotMood.value = 'comforting';
       mascotDialogue.value = '请点击闪烁的高亮目标点进行学习演练哦！';
-      narrateText(mascotDialogue.value);
       return;
     }
 
@@ -230,7 +219,6 @@ const handleMove = (point: Point) => {
       playErrorSound();
       mascotMood.value = 'comforting';
       mascotDialogue.value = '这个位置已经有棋子啦，换个地方试试吧！';
-      narrateText(mascotDialogue.value);
       return;
     }
     playStoneSound();
@@ -244,7 +232,6 @@ const handleMove = (point: Point) => {
       storyDialogueIndex.value++;
       mascotMood.value = 'excited';
       mascotDialogue.value = sub.storyDialogues[storyDialogueIndex.value];
-      narrateText(mascotDialogue.value);
     } else {
       advanceStepOrWin();
     }
@@ -263,7 +250,6 @@ const handleMove = (point: Point) => {
     mascotMood.value = 'excited';
     mascotDialogue.value = matchedNode.comment;
     highlightPoints.value = [];
-    narrateText(mascotDialogue.value);
 
     if (matchedNode.opponentResponse) {
       isBotThinking.value = true;
@@ -277,7 +263,6 @@ const handleMove = (point: Point) => {
           lastMove.value = oppPoint;
           mascotMood.value = 'surprised';
           mascotDialogue.value = matchedNode.opponentResponse.comment;
-          narrateText(mascotDialogue.value);
         }
         isBotThinking.value = false;
 
@@ -303,7 +288,6 @@ const handleMove = (point: Point) => {
     }
     mascotMood.value = 'comforting';
     mascotDialogue.value = '这步棋没有击中要害！提示：' + sub.hint;
-    narrateText(mascotDialogue.value);
   }
 };
 
@@ -312,7 +296,6 @@ const advanceStepOrWin = () => {
     playCaptureSound();
     mascotMood.value = 'cheering';
     mascotDialogue.value = '太棒啦！第 ' + (currentStepIndex.value + 1) + ' 题攻克成功！进入下一道变式实战！';
-    narrateText(mascotDialogue.value);
 
     setTimeout(() => {
       loadCurrentStep(currentStepIndex.value + 1);
@@ -326,7 +309,6 @@ const triggerWin = () => {
   isLessonComplete.value = true;
   mascotMood.value = 'cheering';
   mascotDialogue.value = '太棒啦！你完美通关了【' + currentLesson.value.title + '】全部 ' + totalSteps.value + ' 道试炼！';
-  narrateText(mascotDialogue.value);
 
   setTimeout(() => {
     showStarModal.value = true;
@@ -338,7 +320,6 @@ const handleHint = () => {
   const sub = currentSubPuzzle.value;
   mascotMood.value = 'excited';
   mascotDialogue.value = '【小诺锦囊】' + sub.hint;
-  narrateText(mascotDialogue.value);
 
   if (sub.targetHighlight && sub.targetHighlight.length > 0) {
     highlightPoints.value = [...sub.targetHighlight];
@@ -398,10 +379,10 @@ const handleBackToMap = () => {
             <button
               @click="toggleVoice"
               class="p-1.5 rounded-xl border text-xs font-black transition active:scale-90 cursor-pointer shadow-2xs"
-              :class="speechEnabled ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-gray-100 border-gray-200 text-gray-400'"
-              :title="speechEnabled ? '点击关闭语音朗读' : '点击开启语音伴读'"
+              :class="speechPlaybackEnabled ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-gray-100 border-gray-200 text-gray-400'"
+              :title="speechPlaybackEnabled ? '语音已开启，点小诺才会朗读' : '已静音，点击恢复语音'"
             >
-              <Volume2 v-if="speechEnabled" class="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+              <Volume2 v-if="speechPlaybackEnabled" class="w-3.5 h-3.5 text-amber-600" />
               <VolumeX v-else class="w-3.5 h-3.5 text-gray-400" />
             </button>
 
@@ -518,7 +499,7 @@ const handleBackToMap = () => {
         <div class="lg:col-span-5 space-y-3 sm:space-y-3.5">
           
           <!-- Mascot NuoNuo Speech Bubble Guidance (Clickable to Replay Voice) -->
-          <div @click="narrateText(mascotDialogue)" class="cursor-pointer group" title="点击小诺重新朗读语音">
+          <div @click="narrateText(mascotDialogue)" class="cursor-pointer group" title="点这里让小诺朗读这段话">
             <SpeechBubble
               :text="mascotDialogue"
               :mood="mascotMood"

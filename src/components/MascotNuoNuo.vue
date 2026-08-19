@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Volume2 } from 'lucide-vue-next';
-import { isSpeaking, toggleSpeech } from '../utils/speech';
+import { isSpeaking, speakText } from '../utils/speech';
 
 export type MascotMood = 'happy' | 'excited' | 'thinking' | 'cheering' | 'comforting' | 'surprised';
 
@@ -56,7 +56,7 @@ const moodBorderColor = computed(() => {
 });
 
 const handleVoice = () => {
-  toggleSpeech(props.message);
+  speakText(props.message);
 };
 </script>
 
