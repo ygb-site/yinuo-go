@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { CHAPTERS_DATA, type Lesson } from '../data/chapters';
 import { useAdventureStore } from '../stores/adventureStore';
-import { useUserStore } from '../stores/userStore';
+import { useUserStore } from '../stores/useUserStore';
 import { playButtonSound, playErrorSound } from '../../src/lib/audio';
 import {
   Star,
@@ -71,7 +71,7 @@ const startLesson = (lesson: Lesson) => {
             围棋小精灵成长之路
           </h1>
           <p class="text-xs sm:text-sm text-gray-600 font-medium max-w-xl">
-            跟着萌宠小诺一起闯关，从认识星位到掌握绝妙吃子手筋，收集满天繁星！
+            跟着萌宠小诺一起闯关，从认识交叉点与气到掌握绝妙吃子手筋，收集满天繁星！
           </p>
         </div>
 
@@ -161,7 +161,7 @@ const startLesson = (lesson: Lesson) => {
         </button>
       </div>
 
-      <!-- Current Chapter Adventure Path Grid (Immediately Visible on Mobile & Desktop) -->
+      <!-- Current Chapter Adventure Path Grid -->
       <div
         v-for="chap in CHAPTERS_DATA"
         :key="`map-${chap.id}`"
@@ -183,7 +183,7 @@ const startLesson = (lesson: Lesson) => {
             v-for="(lesson, idx) in chap.lessons"
             :key="lesson.id"
             @click="startLesson(lesson)"
-            class="rounded-3xl p-5 sm:p-6 border-2 transition-all transform hover:-translate-y-1 relative flex flex-col justify-between cursor-pointer"
+            class="rounded-3xl p-4 sm:p-6 border-2 transition-all transform hover:-translate-y-1 relative flex flex-col justify-between cursor-pointer"
             :class="
               isLessonUnlocked(lesson.id)
                 ? 'bg-white border-gray-100 hover:border-orange-300 shadow-sm hover:shadow-md active:scale-98'
@@ -191,60 +191,71 @@ const startLesson = (lesson: Lesson) => {
             "
           >
             <!-- Top Row: Index Badge, Type Tag & Star Rating -->
-            <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center justify-between mb-2 sm:mb-3">
               <div class="flex items-center gap-2">
                 <span
-                  class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs text-white shadow-sm"
+                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center font-black text-xs text-white shadow-sm flex-shrink-0"
                   :class="isLessonUnlocked(lesson.id) ? 'bg-gradient-to-tr from-orange-500 to-amber-500' : 'bg-gray-400'"
                 >
                   {{ chap.id }}-{{ idx + 1 }}
                 </span>
                 <span
                   class="text-[10px] font-black px-2 py-0.5 rounded-full"
-                  :class="lesson.type === 'story' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'"
+                  :class="
+                    lesson.type === 'story'
+                      ? 'bg-blue-100 text-blue-800'
+                      : lesson.type === 'multi_step'
+                      ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                      : 'bg-rose-100 text-rose-800'
+                  "
                 >
-                  {{ lesson.type === 'story' ? '📖 趣味故事' : '🎯 围棋死活' }}
+                  {{ lesson.type === 'story' ? '📖 趣味故事' : lesson.type === 'multi_step' ? '✨ 互动闯关 (3练)' : '🎯 围棋死活' }}
                 </span>
               </div>
 
               <!-- Stars Earned -->
-              <div class="flex items-center gap-1">
+              <div class="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
                 <Star
                   v-for="s in 3"
                   :key="s"
-                  class="w-4 h-4"
+                  class="w-3.5 h-3.5 sm:w-4 sm:h-4"
                   :class="s <= getLessonStars(lesson.id) ? 'text-amber-400 fill-current' : 'text-gray-200'"
                 />
               </div>
             </div>
 
             <!-- Title & Description -->
-            <div class="space-y-1 my-2">
-              <h3 class="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
+            <div class="space-y-1 my-1 sm:my-2">
+              <h3 class="text-sm sm:text-lg font-black text-gray-900 flex items-center gap-2">
                 <span>{{ lesson.title }}</span>
-                <Lock v-if="!isLessonUnlocked(lesson.id)" class="w-4 h-4 text-gray-400 inline" />
+                <Lock v-if="!isLessonUnlocked(lesson.id)" class="w-3.5 h-3.5 text-gray-400 inline" />
               </h3>
-              <p class="text-xs text-gray-500 font-medium line-clamp-2">
+              <p class="text-[11px] sm:text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
                 {{ lesson.description }}
               </p>
             </div>
 
-            <!-- Bottom Target & Reward / Action -->
-            <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold mt-2">
-              <span class="text-orange-600 font-black">
-                目标：{{ lesson.goalText }}
-              </span>
+            <!-- Bottom Target & Reward / Action (Strictly 1 Line, No Text Wrap) -->
+            <div class="pt-2.5 sm:pt-3 border-t border-gray-100 flex items-center justify-between gap-2 sm:gap-3 mt-2">
+              <div class="min-w-0 flex-1">
+                <div
+                  class="text-orange-600 font-black text-[11px] sm:text-xs truncate leading-tight"
+                  :title="lesson.goalText"
+                >
+                  目标：{{ lesson.goalText }}
+                </div>
+              </div>
 
               <button
-                class="px-4 py-1.5 rounded-xl font-black text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-xs"
+                class="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-black text-xs flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer shadow-xs whitespace-nowrap flex-shrink-0"
                 :class="
                   isLessonUnlocked(lesson.id)
-                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white'
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 "
               >
-                <Play class="w-3 h-3 fill-current" />
-                <span>{{ getLessonStars(lesson.id) > 0 ? '再次挑战' : '开始闯关' }}</span>
+                <Play class="w-3 h-3 fill-current flex-shrink-0" />
+                <span class="whitespace-nowrap">{{ getLessonStars(lesson.id) > 0 ? '再次挑战' : '开始闯关' }}</span>
               </button>
             </div>
           </div>
@@ -254,3 +265,4 @@ const startLesson = (lesson: Lesson) => {
     </div>
   </div>
 </template>
+
