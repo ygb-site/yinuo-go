@@ -283,6 +283,17 @@ const isNavActive = (itemPath: string) => {
                 </div>
               </button>
 
+              <!-- Mobile Quick Theme Switch -->
+              <button
+                @click="showUserMenu = false; showThemeDropdown = true"
+                class="sm:hidden w-full text-left px-3 py-2 rounded-xl text-xs font-black text-amber-800 bg-amber-50/80 hover:bg-amber-100 flex items-center justify-between transition cursor-pointer"
+              >
+                <div class="flex items-center gap-2">
+                  <Palette class="w-3.5 h-3.5 text-amber-600" />
+                  <span>切换棋盘皮肤</span>
+                </div>
+              </button>
+
               <button
                 v-if="userStore.isAdmin"
                 @click="navigateTo('/admin')"
@@ -309,7 +320,7 @@ const isNavActive = (itemPath: string) => {
           <!-- Unified Golden Reward Capsule (Stars & Coins) -->
           <div
             v-if="userStore.hasProfile"
-            class="flex items-center bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border border-amber-300/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl shadow-xs gap-1.5 sm:gap-2.5 text-xs font-black text-amber-950 flex-shrink-0"
+            class="flex items-center bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border border-amber-300/80 px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-xl sm:rounded-2xl shadow-xs gap-1 sm:gap-2.5 text-[11px] sm:text-xs font-black text-amber-950 flex-shrink-0"
           >
             <div class="flex items-center gap-1" title="已收集星星">
               <Star class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 fill-amber-400 drop-shadow-2xs flex-shrink-0" />
@@ -332,8 +343,8 @@ const isNavActive = (itemPath: string) => {
             <VolumeX v-else class="w-4 h-4 sm:w-4.5 sm:h-4.5 text-gray-400" />
           </button>
 
-          <!-- Theme Dropdown Button (Respects Shop Ownership) -->
-          <div ref="themeDropdownRef" class="relative flex-shrink-0">
+          <!-- Theme Dropdown Button (Desktop / Tablet only, hidden on mobile to prevent overflow) -->
+          <div ref="themeDropdownRef" class="relative hidden sm:block flex-shrink-0">
             <button
               @click.stop="showThemeDropdown = !showThemeDropdown"
               class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl border border-orange-200/80 bg-white/90 hover:bg-orange-50 text-amber-600 transition active:scale-90 flex items-center justify-center cursor-pointer relative z-50 flex-shrink-0 shadow-xs"
@@ -342,7 +353,7 @@ const isNavActive = (itemPath: string) => {
               <Palette class="w-4 h-4 sm:w-4.5 sm:h-4.5" />
             </button>
 
-            <!-- Theme Dropdown Menu -->
+            <!-- Theme Dropdown Menu (Desktop) -->
             <div
               v-if="showThemeDropdown"
               class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border-2 border-orange-100 p-2 z-50 animate-pop-in space-y-1 max-w-[calc(100vw-1rem)]"
