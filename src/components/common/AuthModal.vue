@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useUserStore } from '../../stores/useUserStore';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import {
@@ -23,8 +23,6 @@ import {
   UserPlus,
   LogOut,
   RefreshCw,
-  Eye,
-  EyeOff,
   CheckCircle2,
   AlertCircle,
   ShieldCheck,
@@ -47,12 +45,19 @@ const activeTab = ref<TabType>('login');
 const email = ref('');
 const password = ref('');
 const confirmPassword = ref('');
-const showPassword = ref(false);
 const isLoading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
 
 const isConfigured = computed(() => isSupabaseConfigured());
+
+const resetFormFields = () => {
+  email.value = '';
+  password.value = '';
+  confirmPassword.value = '';
+  errorMessage.value = '';
+  successMessage.value = '';
+};
 
 onMounted(() => {
   if (userStore.isLoggedIn) {
@@ -62,14 +67,29 @@ onMounted(() => {
   }
 });
 
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (open) {
+      resetFormFields();
+      if (userStore.isLoggedIn) {
+        activeTab.value = 'account';
+      } else {
+        activeTab.value = 'login';
+      }
+    }
+  }
+);
+
+// 切换标签时彻底清空已输入的表单信息与报错
 const switchTab = (tab: TabType) => {
   activeTab.value = tab;
-  errorMessage.value = '';
-  successMessage.value = '';
+  resetFormFields();
   playButtonSound();
 };
 
 const handleClose = () => {
+  resetFormFields();
   emit('close');
 };
 
@@ -165,7 +185,7 @@ const handleRegister = async () => {
   triggerConfetti();
   successMessage.value = '🎉 注册成功！欢迎加入一诺弈学！';
 
-  // Load user data into store and stay in account view (do not close modal, do not popup create profile)
+  // Load user data into store and stay in account view
   await userStore.setCloudUser(res.user?.id || '', res.user?.email || email.value.trim());
   activeTab.value = 'account';
 };
@@ -177,6 +197,7 @@ const handleLogout = async () => {
   isLoading.value = false;
   playButtonSound();
   activeTab.value = 'login';
+  resetFormFields();
   showAlert({
     title: '已退出登录',
     message: '账号已安全退出，随时可再次登录继续学棋！',
@@ -397,20 +418,12 @@ const formatTime = (ts: number | null) => {
               <div class="relative">
                 <input
                   v-model="password"
-                  :type="showPassword ? 'text' : 'password'"
+                  type="password"
                   required
                   placeholder="请输入密码"
-                  class="w-full pl-9 pr-10 py-3 rounded-2xl border border-gray-200 text-xs font-bold text-gray-800 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none transition"
+                  class="w-full pl-9 pr-3 py-3 rounded-2xl border border-gray-200 text-xs font-bold text-gray-800 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none transition"
                 />
                 <Lock class="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
-                <button
-                  type="button"
-                  @click="showPassword = !showPassword"
-                  class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 cursor-pointer"
-                >
-                  <EyeOff v-if="showPassword" class="w-4 h-4" />
-                  <Eye v-else class="w-4 h-4" />
-                </button>
               </div>
             </div>
           </div>
@@ -447,20 +460,12 @@ const formatTime = (ts: number | null) => {
               <div class="relative">
                 <input
                   v-model="password"
-                  :type="showPassword ? 'text' : 'password'"
+                  type="password"
                   required
                   placeholder="至少 6 位安全密码"
-                  class="w-full pl-9 pr-10 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold text-gray-800 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none transition"
+                  class="w-full pl-9 pr-3 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold text-gray-800 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none transition"
                 />
                 <Lock class="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-                <button
-                  type="button"
-                  @click="showPassword = !showPassword"
-                  class="absolute right-3 top-3 text-gray-400 hover:text-gray-600 cursor-pointer"
-                >
-                  <EyeOff v-if="showPassword" class="w-4 h-4" />
-                  <Eye v-else class="w-4 h-4" />
-                </button>
               </div>
             </div>
 
@@ -469,7 +474,7 @@ const formatTime = (ts: number | null) => {
               <div class="relative">
                 <input
                   v-model="confirmPassword"
-                  :type="showPassword ? 'text' : 'password'"
+                  type="password"
                   required
                   placeholder="再次输入相同密码"
                   class="w-full pl-9 pr-3 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold text-gray-800 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none transition"
