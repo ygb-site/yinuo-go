@@ -9,7 +9,7 @@ const MAX_CHUNK_LEN = 80;
 /**
  * 伴读语音合成引擎
  * 采用原生 Web Speech API 结合高自然度发音人智能选择，
- * 语速适中（0.96）、音调温和（1.05），杜绝机械人机电音，呈现自然亲切的伴读讲解体验。
+ * 阳光少儿男童声（云希/康康/云健，Pitch 1.15 / Rate 1.0），杜绝机械人机电音，呈现自然亲切的伴读讲解体验。
  */
 export class SpeechCompanion {
   private static player: HTMLAudioElement | null = null;
@@ -70,15 +70,15 @@ export class SpeechCompanion {
     if (!voices || voices.length === 0) return null;
 
     // 优先匹配各大系统/浏览器的高清自然真人语音（非机械音）
+    // 优先锁定超好听的阳光少年/男童音（如微软云希、康康、云健等）
     const naturalKeywords = [
-      'natural',     // 微软与各平台自然语音
-      'xiaoxiao',    // 微软晓晓 (最自然女声)
-      'yunxi',       // 微软云希 (自然男童音)
-      'xiaoyi',      // 微软晓伊
-      'tingting',    // 苹果婷婷 (Siri自然音)
-      'sin-ji',      // 苹果普通话/粤语
-      'meijia',      // 苹果美嘉
-      'google',      // Google 中文
+      'yunxi',       // 微软云希 (超好听的阳光少儿男声/正太音，自然生动)
+      'kangkang',    // 微软康康 (阳光男童)
+      'yunjian',     // 微软云健 (朝气少年)
+      'xiaoxiao',    // 微软晓晓 (自然拟真音)
+      'sin-ji',      // 苹果 Siri 自然音
+      'tingting',    // 苹果婷婷
+      'natural',     // 各种自然人声
       'cmn-hans-cn'
     ];
 
@@ -153,8 +153,8 @@ export class SpeechCompanion {
     const utterance = new SpeechSynthesisUtterance(chunk);
 
     // 自然人声参数：音调 1.05（亲切温和微亮），语速 0.96（字正腔圆，不急促不机械）
-    utterance.pitch = 1.05;
-    utterance.rate = 0.96;
+    utterance.pitch = 1.15;
+    utterance.rate = 1.0;
     utterance.volume = 1.0;
 
     const voice = this.pickNaturalVoice();
