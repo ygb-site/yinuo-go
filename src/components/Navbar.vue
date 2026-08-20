@@ -211,16 +211,7 @@ const isNavActive = (itemPath: string) => {
         <!-- Right: Admin Badge, User Profile / Login, Stars, Coins & Actions -->
         <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           
-          <!-- 👑 Admin Portal Badge Button (Visible only to Admin) -->
-          <button
-            v-if="userStore.isLoggedIn && userStore.isAdmin"
-            @click="navigateTo('/admin')"
-            class="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl text-[11px] sm:text-xs font-black shadow-sm transition active:scale-95 cursor-pointer border border-purple-400"
-            title="点击进入全站后台管理系统"
-          >
-            <ShieldAlert class="w-3.5 h-3.5 text-yellow-300 flex-shrink-0" />
-            <span class="whitespace-nowrap">管理后台</span>
-          </button>
+
 
           <!-- CASE 1: Not Logged In -> Show Primary Login / Register Button -->
           <button
