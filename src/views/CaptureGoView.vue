@@ -5,6 +5,7 @@ import { GoGame } from '../engine/GoGame';
 import { GoAI } from '../engine/GoAI';
 import type { Point, StoneColor, BoardSize } from '../engine/types';
 import { useUserStore } from '../stores/useUserStore';
+import { showConfirm, showAlert } from '../utils/alert';
 import {
   playStoneSound,
   playCaptureSound,
@@ -20,7 +21,17 @@ import { Swords, RotateCcw, ArrowLeft, X } from 'lucide-vue-next';
 const router = useRouter();
 const userStore = useUserStore();
 
-const goBack = () => {
+const goBack = async () => {
+  if (!gameOver.value && game.value.history.length > 0) {
+    const ok = await showConfirm({
+      title: '离开对局提示',
+      message: '当前吃子棋对局还在进行中，确定要返回吗？棋局已为你自动保存，随时可以回来继续！',
+      type: 'warning',
+      confirmText: '确定离开',
+      cancelText: '继续对局'
+    });
+    if (!ok) return;
+  }
   playButtonSound();
   router.push('/battle');
 };
@@ -89,14 +100,7 @@ const restoreCaptureGoalState = (): boolean => {
   }
 };
 
-const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-  if (!gameOver.value && game.value.history.length > 0) {
-    saveCaptureGoalState();
-    e.preventDefault();
-    e.returnValue = '对局正在进行中，刷新将可能中断当前棋局！';
-    return e.returnValue;
-  }
-};
+
 
 const initMatch = (isFresh = false) => {
   if (!isFresh && restoreCaptureGoalState()) {
@@ -105,6 +109,12 @@ const initMatch = (isFresh = false) => {
     showWinModal.value = false;
     mascotMood.value = 'happy';
     mascotText.value = '✨ 已为你自动恢复刚才未下完的吃子棋对局！';
+    showAlert({
+      title: '✨ 棋局已自动恢复',
+      message: '小诺已为你找回刚才的吃子棋进度，继续进攻吧！',
+      type: 'success',
+      confirmText: '继续对局 🚀'
+    });
     return;
   }
 
@@ -123,11 +133,9 @@ const initMatch = (isFresh = false) => {
 
 onMounted(() => {
   initMatch(false);
-  window.addEventListener('beforeunload', handleBeforeUnload);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('beforeunload', handleBeforeUnload);
 });
 
 const handlePlayerMove = (point: Point) => {

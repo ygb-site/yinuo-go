@@ -5,6 +5,7 @@ import { GoAI, AI_BOTS, type AIDifficulty, type AIPersonality } from '../engine/
 import type { Point, StoneColor, ScoreBreakdown } from '../engine/types';
 import { useUserStore } from '../stores/useUserStore';
 import { sound } from '../utils/sound';
+import { showConfirm, showAlert } from '../utils/alert';
 import GoBoardComponent from '../components/GoBoard.vue';
 import MascotNuoNuo, { type MascotMood } from '../components/MascotNuoNuo.vue';
 import ScoreModal from '../components/ScoreModal.vue';
@@ -25,7 +26,17 @@ import { useRouter } from 'vue-router';
 const userStore = useUserStore();
 const router = useRouter();
 
-const goBack = () => {
+const goBack = async () => {
+  if (!isGameOver.value && board.value.history.length > 0) {
+    const ok = await showConfirm({
+      title: '离开对局提示',
+      message: '当前人机对弈还在进行中，确定要返回吗？棋局已为你自动保存，随时可以回来继续！',
+      type: 'warning',
+      confirmText: '确定离开',
+      cancelText: '继续对局'
+    });
+    if (!ok) return;
+  }
   sound.playButtonSound();
   router.push('/battle');
 };
@@ -103,14 +114,7 @@ const restoreAiMatchState = (): boolean => {
   }
 };
 
-const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-  if (!isGameOver.value && board.value.history.length > 0) {
-    saveAiMatchState();
-    e.preventDefault();
-    e.returnValue = '对局正在进行中，刷新将可能中断当前棋局！';
-    return e.returnValue;
-  }
-};
+
 
 const initGame = (isFresh = false) => {
   if (!isFresh && restoreAiMatchState()) {
@@ -119,6 +123,12 @@ const initGame = (isFresh = false) => {
     showScoreModal.value = false;
     mascotMood.value = 'happy';
     mascotMessage.value = `✨ 已为你自动恢复刚才与【${activeBotInfo.value.name}】未下完的对局！`;
+    showAlert({
+      title: '✨ 棋局已自动恢复',
+      message: '小诺已为你完整找回刚才与萌宠大师未下完的对局，请继续对弈吧！',
+      type: 'success',
+      confirmText: '继续对弈 🚀'
+    });
     return;
   }
 
@@ -142,11 +152,9 @@ const initGame = (isFresh = false) => {
 
 onMounted(() => {
   initGame(false);
-  window.addEventListener('beforeunload', handleBeforeUnload);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('beforeunload', handleBeforeUnload);
 });
 
 const handlePlay = (point: Point) => {

@@ -12,7 +12,7 @@ import {
   playVictorySound,
   triggerConfetti
 } from '../lib/audio';
-import { showConfirm } from '../utils/alert';
+import { showConfirm, showAlert } from '../utils/alert';
 import GoBoard from '../components/board/GoBoard.vue';
 import {
   Users,
@@ -32,7 +32,17 @@ import {
 const router = useRouter();
 const userStore = useUserStore();
 
-const goBack = () => {
+const goBack = async () => {
+  if (!isGameOver.value && game.value.history.length > 0) {
+    const ok = await showConfirm({
+      title: '离开对局提示',
+      message: '当前面对面对弈还在进行中，确定要返回吗？棋局已为你自动保存，随时可以回来继续！',
+      type: 'warning',
+      confirmText: '确定离开',
+      cancelText: '继续对局'
+    });
+    if (!ok) return;
+  }
   playButtonSound();
   router.push('/battle');
 };
@@ -123,20 +133,19 @@ const restoreMatchState = (): boolean => {
   }
 };
 
-const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-  if (!isGameOver.value && game.value.history.length > 0) {
-    saveMatchState();
-    e.preventDefault();
-    e.returnValue = '对局正在进行中，刷新将可能中断当前棋局！';
-    return e.returnValue;
-  }
-};
+
 
 const initGame = (isFresh = false) => {
   if (!isFresh && restoreMatchState()) {
     isGameOver.value = false;
     showScoreModal.value = false;
     scoreResult.value = null;
+    showAlert({
+      title: '✨ 棋局已自动恢复',
+      message: '小诺已为你完整找回刚才未下完的棋局与计时，请继续对弈吧！',
+      type: 'success',
+      confirmText: '继续对局 🚀'
+    });
     return;
   }
 
@@ -159,7 +168,6 @@ const initGame = (isFresh = false) => {
 
 onMounted(() => {
   initGame(false);
-  window.addEventListener('beforeunload', handleBeforeUnload);
 
   if (timer) clearInterval(timer);
   timer = setInterval(() => {
@@ -176,7 +184,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (timer) clearInterval(timer);
-  window.removeEventListener('beforeunload', handleBeforeUnload);
 });
 
 const formatTime = (secs: number) => {
