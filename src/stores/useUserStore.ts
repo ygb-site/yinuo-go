@@ -162,6 +162,16 @@ export const useUserStore = defineStore('userStore', {
           totalMoves: 0
         };
       }
+      // Ensure totalStars is synced from progress
+      let computedStars = 0;
+      if (found.progress) {
+        for (const item of Object.values(found.progress)) {
+          if (item && item.completed) {
+            computedStars += item.stars || 0;
+          }
+        }
+      }
+      found.totalStars = Math.max(computedStars, found.totalStars || 0);
       return found;
     },
 
@@ -187,6 +197,20 @@ export const useUserStore = defineStore('userStore', {
 
     totalStars(): number {
       return this.currentProfile.totalStars || 0;
+    },
+
+    familyTotalStars(state): number {
+      return (state.profiles || []).reduce((acc, p) => {
+        let s = 0;
+        if (p.progress) {
+          for (const item of Object.values(p.progress)) {
+            if (item && item.completed) {
+              s += item.stars || 0;
+            }
+          }
+        }
+        return acc + Math.max(s, p.totalStars || 0);
+      }, 0);
     },
 
     unlockedBadges(): string[] {

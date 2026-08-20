@@ -331,23 +331,29 @@ const formatTime = (ts: number | null) => {
 
             <div class="pt-2 border-t border-orange-200/60 flex items-center justify-between text-xs font-bold text-gray-600">
               <span>已绑定宝贝档案：{{ userStore.profiles.length }} 位</span>
-              <span>累积总星星：{{ userStore.totalStars }} 颗 ⭐</span>
+              <span>家庭总星星：{{ userStore.familyTotalStars }} 颗 ⭐</span>
             </div>
           </div>
 
           <!-- Associated Children Preview or Prompt -->
           <div v-if="userStore.profiles.length > 0" class="p-3 bg-gray-50 rounded-2xl border border-gray-200 space-y-1.5">
-            <div class="text-[11px] font-bold text-gray-500">我的宝贝档案：</div>
+            <div class="flex items-center justify-between text-[11px] font-bold text-gray-500">
+              <span>我的宝贝档案 (点击可切换)：</span>
+              <span class="text-orange-600 font-black">当前：{{ userStore.nickname }} ({{ userStore.totalStars }}星)</span>
+            </div>
             <div class="flex flex-wrap gap-1.5">
               <span
                 v-for="c in userStore.profiles"
                 :key="c.id"
-                class="inline-flex items-center gap-1 bg-white border border-orange-200 px-2.5 py-1 rounded-xl text-xs font-bold text-gray-800 shadow-2xs"
-                :class="c.id === userStore.currentProfileId ? 'ring-2 ring-orange-400 bg-orange-50/50' : ''"
+                @click="userStore.switchProfile(c.id)"
+                class="inline-flex items-center gap-1.5 bg-white border border-orange-200 px-2.5 py-1 rounded-xl text-xs font-bold text-gray-800 shadow-2xs cursor-pointer transition active:scale-95"
+                :class="c.id === userStore.currentProfileId ? 'ring-2 ring-orange-400 bg-orange-50 font-black border-orange-400' : 'hover:bg-orange-50/50'"
+                :title="'点击切换至宝贝「' + c.nickname + '」'"
               >
                 <span>{{ c.avatar }}</span>
                 <span>{{ c.nickname }}</span>
                 <span class="text-orange-600 font-black">⭐{{ c.totalStars || 0 }}</span>
+                <span v-if="c.id === userStore.currentProfileId" class="text-[9px] bg-orange-500 text-white px-1 py-0.2 rounded font-black">使用中</span>
               </span>
             </div>
           </div>
