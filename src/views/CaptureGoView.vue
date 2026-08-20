@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { GoGame } from '../engine/GoGame';
 import { GoAI } from '../engine/GoAI';
@@ -25,6 +25,8 @@ const goBack = () => {
   router.push('/battle');
 };
 
+const STORAGE_KEY = 'yinuo_active_capturego';
+
 // Game settings
 const boardSize = ref<BoardSize>(5);
 const captureTarget = ref<number>(1); // 1, 3, 5
@@ -45,7 +47,68 @@ const mascotText = ref<string>('你好呀！我是你的吃子棋对手小诺，
 const blackCaptures = computed(() => game.value.capturedByBlack);
 const whiteCaptures = computed(() => game.value.capturedByWhite);
 
-const initMatch = () => {
+const saveCaptureGoalState = () => {
+  if (typeof window === 'undefined') return;
+  if (gameOver.value || game.value.history.length === 0) {
+    localStorage.removeItem(STORAGE_KEY);
+    return;
+  }
+  const payload = {
+    boardSize: boardSize.value,
+    captureTarget: captureTarget.value,
+    history: game.value.history,
+    lastMove: lastMove.value
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+};
+
+const restoreCaptureGoalState = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!data.history || data.history.length === 0) return false;
+
+    boardSize.value = data.boardSize || 5;
+    captureTarget.value = data.captureTarget || 1;
+
+    const g = new GoGame(boardSize.value);
+    for (const rec of data.history) {
+      if (rec.point === null) {
+        g.pass(rec.color);
+      } else {
+        g.playMove(rec.point.r, rec.point.c, rec.color);
+      }
+    }
+    game.value = g;
+    lastMove.value = data.lastMove || null;
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+  if (!gameOver.value && game.value.history.length > 0) {
+    saveCaptureGoalState();
+    e.preventDefault();
+    e.returnValue = '对局正在进行中，刷新将可能中断当前棋局！';
+    return e.returnValue;
+  }
+};
+
+const initMatch = (isFresh = false) => {
+  if (!isFresh && restoreCaptureGoalState()) {
+    gameOver.value = false;
+    winner.value = null;
+    showWinModal.value = false;
+    mascotMood.value = 'happy';
+    mascotText.value = '✨ 已为你自动恢复刚才未下完的吃子棋对局！';
+    return;
+  }
+
+  localStorage.removeItem(STORAGE_KEY);
   game.value = new GoGame(boardSize.value);
   lastMove.value = null;
   highlightPoints.value = [];
@@ -59,7 +122,12 @@ const initMatch = () => {
 };
 
 onMounted(() => {
-  initMatch();
+  initMatch(false);
+  window.addEventListener('beforeunload', handleBeforeUnload);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload);
 });
 
 const handlePlayerMove = (point: Point) => {
@@ -83,6 +151,7 @@ const handlePlayerMove = (point: Point) => {
 
   playStoneSound();
   lastMove.value = point;
+  saveCaptureGoalState();
 
   if (res.capturedStones.length > 0) {
     playCaptureSound();
@@ -123,6 +192,7 @@ const runAIMove = () => {
     const res = game.value.playMove(movePoint.r, movePoint.c, 'W');
     playStoneSound();
     lastMove.value = movePoint;
+    saveCaptureGoalState();
 
     if (res.capturedStones.length > 0) {
       playCaptureSound();
@@ -147,6 +217,7 @@ const runAIMove = () => {
   } else {
     // AI passes
     game.value.pass('W');
+    saveCaptureGoalState();
     mascotMood.value = 'comforting';
     mascotText.value = '小诺这回合选择停一手 (Pass)！该你落子啦！';
   }
@@ -155,6 +226,7 @@ const runAIMove = () => {
 const handleWin = (winColor: StoneColor) => {
   gameOver.value = true;
   winner.value = winColor;
+  localStorage.removeItem(STORAGE_KEY);
 
   if (winColor === 'B') {
     mascotMood.value = 'cheering';
@@ -178,12 +250,12 @@ const handleWin = (winColor: StoneColor) => {
 
 const changeBoardSize = (size: BoardSize) => {
   boardSize.value = size;
-  initMatch();
+  initMatch(true);
 };
 
 const changeTarget = (target: number) => {
   captureTarget.value = target;
-  initMatch();
+  initMatch(true);
 };
 </script>
 
@@ -205,14 +277,14 @@ const changeTarget = (target: number) => {
             </button>
             <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-900 px-3 py-1 rounded-full text-xs font-black">
               <Swords class="w-3.5 h-3.5 text-amber-700" />
-              <span>极速吃子棋对战 (First-to-Capture)</span>
+              <span>极速吃子棋对战 (防误触 · 刷新自动恢复)</span>
             </div>
           </div>
           <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
             萌宠吃子棋对局
           </h1>
           <p class="text-xs sm:text-sm text-gray-600 font-medium max-w-xl">
-            规则超简单的吃子对弈！无需繁琐计算地盘，先吃够目标子数即可获胜！
+            规则超简单的吃子对弈！无需繁琐计算地盘，先吃够目标子数即可获胜，全程自动保存！
           </p>
         </div>
 
@@ -302,7 +374,7 @@ const changeTarget = (target: number) => {
 
               <!-- Restart Button -->
               <button
-                @click="initMatch"
+                @click="() => initMatch(true)"
                 class="w-full py-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-black text-xs transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <RotateCcw class="w-4 h-4" />
@@ -382,7 +454,7 @@ const changeTarget = (target: number) => {
           </button>
           <button
             type="button"
-            @click="initMatch"
+            @click="() => initMatch(true)"
             class="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white font-black text-sm shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center gap-1"
           >
             <span>再战一局 🚀</span>
@@ -393,3 +465,4 @@ const changeTarget = (target: number) => {
 
   </div>
 </template>
+

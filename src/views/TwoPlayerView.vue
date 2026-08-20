@@ -37,6 +37,8 @@ const goBack = () => {
   router.push('/battle');
 };
 
+const STORAGE_KEY = 'yinuo_active_twoplayer_match';
+
 const boardSize = ref<BoardSize>(9);
 const komi = ref<number>(3.5); // 9路默认贴3.5目或5.5目
 const game = ref<GoGame>(new GoGame(9, 3.5));
@@ -63,12 +65,82 @@ const showScoreModal = ref(false);
 const scoreResult = ref<ScoreBreakdown | null>(null);
 const winReason = ref<string>(''); // 'scoring' | 'resign'
 const resignedPlayerColor = ref<StoneColor | null>(null);
+const autoPassNotice = ref<string>('');
 
 const blackCaptures = computed(() => game.value.capturedByBlack);
 const whiteCaptures = computed(() => game.value.capturedByWhite);
 const currentTurn = computed(() => game.value.turn);
 
-const initGame = () => {
+// Save match state to survive accidental refreshes
+const saveMatchState = () => {
+  if (typeof window === 'undefined') return;
+  if (isGameOver.value || game.value.history.length === 0) {
+    localStorage.removeItem(STORAGE_KEY);
+    return;
+  }
+  const payload = {
+    boardSize: boardSize.value,
+    komi: komi.value,
+    history: game.value.history,
+    blackSeconds: blackSeconds.value,
+    whiteSeconds: whiteSeconds.value,
+    blackName: blackName.value,
+    whiteName: whiteName.value,
+    lastMove: lastMove.value
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+};
+
+// Restore ongoing match on page reload
+const restoreMatchState = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!data.history || data.history.length === 0) return false;
+
+    boardSize.value = data.boardSize || 9;
+    komi.value = data.komi || 3.5;
+    blackSeconds.value = data.blackSeconds || 0;
+    whiteSeconds.value = data.whiteSeconds || 0;
+    blackName.value = data.blackName || '黑方 (玩家1)';
+    whiteName.value = data.whiteName || '白方 (玩家2)';
+
+    const g = new GoGame(boardSize.value, komi.value);
+    for (const rec of data.history) {
+      if (rec.point === null) {
+        g.pass(rec.color);
+      } else {
+        g.playMove(rec.point.r, rec.point.c, rec.color);
+      }
+    }
+    game.value = g;
+    lastMove.value = data.lastMove || null;
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+  if (!isGameOver.value && game.value.history.length > 0) {
+    saveMatchState();
+    e.preventDefault();
+    e.returnValue = '对局正在进行中，刷新将可能中断当前棋局！';
+    return e.returnValue;
+  }
+};
+
+const initGame = (isFresh = false) => {
+  if (!isFresh && restoreMatchState()) {
+    isGameOver.value = false;
+    showScoreModal.value = false;
+    scoreResult.value = null;
+    return;
+  }
+
+  localStorage.removeItem(STORAGE_KEY);
   const k = boardSize.value <= 7 ? 2.5 : boardSize.value === 9 ? 3.5 : 5.5;
   komi.value = k;
   game.value = new GoGame(boardSize.value, k);
@@ -86,21 +158,25 @@ const initGame = () => {
 };
 
 onMounted(() => {
-  initGame();
+  initGame(false);
+  window.addEventListener('beforeunload', handleBeforeUnload);
+
   if (timer) clearInterval(timer);
   timer = setInterval(() => {
-    if (!isGameOver.value) {
+    if (!isGameOver.value && game.value.history.length > 0) {
       if (currentTurn.value === 'B') {
         blackSeconds.value++;
       } else {
         whiteSeconds.value++;
       }
+      saveMatchState();
     }
   }, 1000);
 });
 
 onUnmounted(() => {
   if (timer) clearInterval(timer);
+  window.removeEventListener('beforeunload', handleBeforeUnload);
 });
 
 const formatTime = (secs: number) => {
@@ -108,8 +184,6 @@ const formatTime = (secs: number) => {
   const s = secs % 60;
   return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
 };
-
-const autoPassNotice = ref<string>('');
 
 const handleMove = (point: Point) => {
   if (isGameOver.value) return;
@@ -127,8 +201,9 @@ const handleMove = (point: Point) => {
     playCaptureSound();
   }
   lastMove.value = point;
+  saveMatchState();
 
-  // 1. Check if game is immediately finished (passes, board full, neither side has moves)
+  // 1. Check if game is immediately finished
   if (game.value.isGameFinished()) {
     let reason = '双方双双停一手（Pass），棋局定型自动数子判定输赢！';
     if (game.value.isBoardFull()) {
@@ -143,8 +218,8 @@ const handleMove = (point: Point) => {
   // 2. Check if the next player has any legal moves left
   const nextColor = game.value.turn;
   if (!game.value.hasLegalMoves(nextColor)) {
-    // Next player has no moves, automatically pass
     game.value.pass(nextColor);
+    saveMatchState();
 
     if (game.value.isGameFinished()) {
       triggerScoringSettlement('一方无处落子自动停一手后双方均已无棋可下，自动终局数子判定胜负！');
@@ -163,6 +238,7 @@ const handlePass = () => {
 
   const ends = game.value.pass();
   playButtonSound();
+  saveMatchState();
 
   if (ends || game.value.isGameFinished()) {
     triggerScoringSettlement('双方连续停一手，棋局正式终局！裁判自动数子结算！');
@@ -172,6 +248,7 @@ const handlePass = () => {
   const nextColor = game.value.turn;
   if (!game.value.hasLegalMoves(nextColor)) {
     game.value.pass(nextColor);
+    saveMatchState();
     triggerScoringSettlement('停一手后对方亦无合法落子点，自动终局数子判定胜负！');
   }
 };
@@ -179,6 +256,8 @@ const handlePass = () => {
 const triggerScoringSettlement = (reasonDesc: string) => {
   isGameOver.value = true;
   showTerritory.value = true;
+  localStorage.removeItem(STORAGE_KEY);
+
   const score = game.value.calculateScore();
   scoreResult.value = score;
   winReason.value = reasonDesc;
@@ -188,16 +267,14 @@ const triggerScoringSettlement = (reasonDesc: string) => {
   triggerConfetti();
 
   // Record user stats if active profile exists
-  userStore.recordGameEnd(score.winner === 'B', score.winner === 'B' ? blackCaptures.value : whiteCaptures.value, game.value.history.length);
-  userStore.addCoins(30);
-  userStore.addExp(60);
+  if (userStore.hasProfile) {
+    userStore.recordGameEnd(score.winner === 'B', score.winner === 'B' ? blackCaptures.value : whiteCaptures.value, game.value.history.length);
+    userStore.addCoins(30);
+    userStore.addExp(60);
+  }
 };
 
 const handleManualCountScore = () => {
-  if (!userStore.hasProfile) {
-    userStore.openProfileModal();
-    return;
-  }
   triggerScoringSettlement('主动申请裁判点目数子判定胜负！');
 };
 
@@ -212,6 +289,7 @@ const handleResign = (color: StoneColor) => {
   }).then(confirmed => {
     if (confirmed) {
       isGameOver.value = true;
+      localStorage.removeItem(STORAGE_KEY);
       resignedPlayerColor.value = color;
       winReason.value = `${pName} 宣布认输，胜负已定！`;
       const winnerColor = color === 'B' ? 'W' : 'B';
@@ -241,12 +319,13 @@ const handleUndo = () => {
     game.value.undo();
     lastMove.value = game.value.history.length > 0 ? game.value.history[game.value.history.length - 1].point : null;
     playButtonSound();
+    saveMatchState();
   }
 };
 
 const changeSize = (size: BoardSize) => {
   boardSize.value = size;
-  initGame();
+  initGame(true);
 };
 </script>
 
@@ -268,14 +347,14 @@ const changeSize = (size: BoardSize) => {
             </button>
             <div class="inline-flex items-center gap-2 bg-purple-100 text-purple-900 px-3 py-1 rounded-full text-xs font-black">
               <Users class="w-3.5 h-3.5 text-purple-700" />
-              <span>亲子面对面对弈 (Pass & Play · 自动判输赢)</span>
+              <span>亲子面对面对弈 (防误触 · 刷新自动恢复)</span>
             </div>
           </div>
           <h1 class="text-xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
             双人同屏对战棋盘
           </h1>
           <p class="text-xs sm:text-sm text-gray-600 font-medium max-w-xl">
-            支持 5x5 到 13x13 棋盘、双人计时钟、连续停一手自动点目判定输赢与精美结算弹窗！
+            支持 5x5 到 13x13 棋盘、双人计时钟、断线与防误刷自动恢复、终局自动点目数子！
           </p>
         </div>
 
@@ -467,7 +546,7 @@ const changeSize = (size: BoardSize) => {
             </button>
 
             <button
-              @click="initGame"
+              @click="() => initGame(true)"
               class="w-full py-2.5 rounded-2xl bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold text-xs transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-gray-200"
             >
               <RotateCcw class="w-3.5 h-3.5" />
@@ -512,7 +591,7 @@ const changeSize = (size: BoardSize) => {
                 📢 {{ autoPassNotice }}
               </span>
               <span class="text-[11px] text-gray-400 font-medium">
-                {{ isGameOver ? '对局已终局判定' : '提示：双方停一手、下满棋盘或无处可下时将自动判输赢' }}
+                {{ isGameOver ? '对局已终局判定' : '提示：防误刷新已启用 · 双方停一手或无处可下自动判输赢' }}
               </span>
             </div>
           </div>
@@ -522,7 +601,7 @@ const changeSize = (size: BoardSize) => {
 
     </div>
 
-    <!-- 🏆 Two Player Settlement Score Modal (双人同屏专属对弈结算弹窗) -->
+    <!-- 🏆 Two Player Settlement Score Modal -->
     <Teleport to="body">
       <div
         v-if="showScoreModal && scoreResult"
@@ -621,22 +700,6 @@ const changeSize = (size: BoardSize) => {
             </div>
           </div>
 
-          
-          <!-- 💡 小科普：什么是“目”与“胜半子”？ -->
-          <div class="bg-amber-50/80 rounded-2xl p-2.5 sm:p-3 border border-amber-200 text-left space-y-1 text-xs">
-            <div class="font-black text-amber-950 flex items-center justify-between">
-              <span class="flex items-center gap-1">
-                <Sparkles class="w-3.5 h-3.5 text-amber-600" />
-                <span>小科普：什么是“目”与“胜半子”？</span>
-              </span>
-            </div>
-            <div class="text-[10px] sm:text-[11px] text-gray-700 font-medium leading-relaxed pt-1 space-y-0.5 border-t border-amber-200/60 mt-1">
-              <p>• <strong class="text-gray-900">“目”</strong>：指围住的空交叉点数量，围住 1 个空格就是 1 目地盘。</p>
-              <p>• <strong class="text-gray-900">“领先 X 目”</strong>：指胜方比败方多占领了 X 个空交叉点。</p>
-              <p>• <strong class="text-gray-900">“胜半子/半目胜”</strong>：围棋最小的胜负差距（0.5 目），代表仅以半个微小空位的微弱优势险胜！</p>
-            </div>
-          </div>
-
           <!-- Margin description banner -->
           <div v-if="!resignedPlayerColor && scoreResult.margin < 90" class="p-3 rounded-2xl bg-orange-50 border border-orange-200 text-xs font-bold text-orange-950">
             📊 根据中国围棋数子法计算，胜方净领先 <span class="text-sm font-black text-orange-600">{{ scoreResult.margin }}</span> 目/子！
@@ -652,7 +715,7 @@ const changeSize = (size: BoardSize) => {
             </button>
 
             <button
-              @click="initGame"
+              @click="() => initGame(true)"
               class="flex-1 py-3 px-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white font-black text-xs sm:text-sm shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center gap-1"
             >
               <RotateCcw class="w-4 h-4" />
@@ -665,3 +728,4 @@ const changeSize = (size: BoardSize) => {
 
   </div>
 </template>
+

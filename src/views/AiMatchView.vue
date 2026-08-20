@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { GoBoard } from '../engine/GoBoard';
 import { GoAI, AI_BOTS, type AIDifficulty, type AIPersonality } from '../engine/GoAI';
 import type { Point, StoneColor, ScoreBreakdown } from '../engine/types';
-import { useUserStore } from '../stores/userStore';
+import { useUserStore } from '../stores/useUserStore';
 import { sound } from '../utils/sound';
 import GoBoardComponent from '../components/GoBoard.vue';
 import MascotNuoNuo, { type MascotMood } from '../components/MascotNuoNuo.vue';
@@ -30,6 +30,8 @@ const goBack = () => {
   router.push('/battle');
 };
 
+const STORAGE_KEY = 'yinuo_active_aimatch';
+
 const selectedBot = ref<AIDifficulty>('puppy');
 const boardSize = ref<number>(9);
 const userColor = ref<StoneColor>('B');
@@ -55,7 +57,72 @@ const showScoreModal = ref(false);
 
 const activeBotInfo = computed<AIPersonality>(() => AI_BOTS[selectedBot.value]);
 
-const initGame = () => {
+const saveAiMatchState = () => {
+  if (typeof window === 'undefined') return;
+  if (isGameOver.value || board.value.history.length === 0) {
+    localStorage.removeItem(STORAGE_KEY);
+    return;
+  }
+  const payload = {
+    selectedBot: selectedBot.value,
+    boardSize: boardSize.value,
+    userColor: userColor.value,
+    komi: komi.value,
+    history: board.value.history,
+    lastMove: lastMove.value
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+};
+
+const restoreAiMatchState = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!data.history || data.history.length === 0) return false;
+
+    selectedBot.value = data.selectedBot || 'puppy';
+    boardSize.value = data.boardSize || 9;
+    userColor.value = data.userColor || 'B';
+    komi.value = data.komi || 5.5;
+
+    const b = new GoBoard(boardSize.value, komi.value);
+    for (const rec of data.history) {
+      if (rec.point === null) {
+        b.pass(rec.color);
+      } else {
+        b.playMove(rec.point.r, rec.point.c, rec.color);
+      }
+    }
+    board.value = b;
+    lastMove.value = data.lastMove || null;
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+  if (!isGameOver.value && board.value.history.length > 0) {
+    saveAiMatchState();
+    e.preventDefault();
+    e.returnValue = '对局正在进行中，刷新将可能中断当前棋局！';
+    return e.returnValue;
+  }
+};
+
+const initGame = (isFresh = false) => {
+  if (!isFresh && restoreAiMatchState()) {
+    isGameOver.value = false;
+    scoreResult.value = null;
+    showScoreModal.value = false;
+    mascotMood.value = 'happy';
+    mascotMessage.value = `✨ 已为你自动恢复刚才与【${activeBotInfo.value.name}】未下完的对局！`;
+    return;
+  }
+
+  localStorage.removeItem(STORAGE_KEY);
   board.value = new GoBoard(boardSize.value, komi.value);
   lastMove.value = null;
   highlightPoints.value = [];
@@ -74,7 +141,12 @@ const initGame = () => {
 };
 
 onMounted(() => {
-  initGame();
+  initGame(false);
+  window.addEventListener('beforeunload', handleBeforeUnload);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload);
 });
 
 const handlePlay = (point: Point) => {
@@ -101,6 +173,7 @@ const handlePlay = (point: Point) => {
   lastMove.value = point;
   highlightPoints.value = [];
   sound.playStoneSound();
+  saveAiMatchState();
 
   if (result.capturedStones.length > 0) {
     sound.playCaptureSound();
@@ -134,6 +207,7 @@ const triggerBotMove = () => {
     if (!movePoint) {
       const ends = board.value.pass(botColor);
       sound.playButtonSound();
+      saveAiMatchState();
       mascotMood.value = 'happy';
       mascotMessage.value = `${activeBotInfo.value.name} 选择了虚手 (Pass)！`;
       if (ends || board.value.isGameFinished()) {
@@ -142,6 +216,7 @@ const triggerBotMove = () => {
       }
       if (!board.value.hasLegalMoves(userColor.value)) {
         board.value.pass(userColor.value);
+        saveAiMatchState();
         endGame();
         return;
       }
@@ -149,6 +224,7 @@ const triggerBotMove = () => {
       const result = board.value.playMove(movePoint.r, movePoint.c, botColor);
       sound.playStoneSound();
       lastMove.value = movePoint;
+      saveAiMatchState();
 
       if (result.capturedStones.length > 0) {
         sound.playCaptureSound();
@@ -157,6 +233,24 @@ const triggerBotMove = () => {
       } else {
         mascotMood.value = 'happy';
         mascotMessage.value = `${activeBotInfo.value.name} 落子在 (${movePoint.r + 1}, ${movePoint.c + 1})。轮到你啦！`;
+      }
+
+      if (board.value.isGameFinished()) {
+        endGame();
+        return;
+      }
+
+      if (!board.value.hasLegalMoves(userColor.value)) {
+        board.value.pass(userColor.value);
+        saveAiMatchState();
+        mascotMessage.value = '你当前已无合法落子点，已自动停一手 (Pass)！';
+        if (board.value.isGameFinished() || !board.value.hasLegalMoves(botColor)) {
+          endGame();
+          return;
+        } else {
+          triggerBotMove();
+          return;
+        }
       }
     }
 
@@ -173,10 +267,11 @@ const handlePass = () => {
 
   sound.playButtonSound();
   const ends = board.value.pass(userColor.value);
+  saveAiMatchState();
   mascotMood.value = 'happy';
   mascotMessage.value = '你选择了虚手 (Pass)。';
 
-  if (ends) {
+  if (ends || board.value.isGameFinished()) {
     endGame();
   } else {
     triggerBotMove();
@@ -195,12 +290,14 @@ const handleUndo = () => {
     board.value.undo();
     sound.playButtonSound();
     lastMove.value = board.value.history.length > 0 ? board.value.history[board.value.history.length - 1].point : null;
+    saveAiMatchState();
     mascotMood.value = 'happy';
     mascotMessage.value = '已悔棋两步，重新仔细想想怎么走吧！';
   } else if (board.value.history.length === 1) {
     board.value.undo();
     sound.playButtonSound();
     lastMove.value = null;
+    saveAiMatchState();
   }
 };
 
@@ -212,6 +309,7 @@ const handleResign = () => {
   if (isGameOver.value) return;
   sound.playErrorSound();
   isGameOver.value = true;
+  localStorage.removeItem(STORAGE_KEY);
   mascotMood.value = 'comforting';
   mascotMessage.value = '胜败乃兵家常事，下局一定能赢！';
   const botColor = board.value.getOpponentColor(userColor.value);
@@ -248,6 +346,7 @@ const handleAIMoveHint = () => {
 
 const endGame = () => {
   isGameOver.value = true;
+  localStorage.removeItem(STORAGE_KEY);
   const score = board.value.calculateScore();
   scoreResult.value = score;
   showScoreModal.value = true;
@@ -299,14 +398,14 @@ const endGame = () => {
             </button>
             <div class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-black">
               <Bot class="w-3.5 h-3.5" />
-              <span>智能人机对弈场 (AI Arena)</span>
+              <span>智能人机对弈场 (防误触 · 刷新自动恢复)</span>
             </div>
           </div>
           <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
             挑战萌宠围棋大师
           </h1>
           <p class="text-xs sm:text-sm text-gray-600 font-medium max-w-xl">
-            选择不同棋力的对手，开启辅助提示，在实战中磨砺棋艺！
+            选择不同棋力的对手，开启辅助提示，实战对弈全程防误刷保护！
           </p>
         </div>
 
@@ -315,7 +414,7 @@ const endGame = () => {
           <button
             v-for="(bot, key) in AI_BOTS"
             :key="key"
-            @click="selectedBot = key; initGame()"
+            @click="selectedBot = key; initGame(true)"
             class="px-3 py-2 rounded-2xl border-2 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-1.5 text-xs font-black whitespace-nowrap flex-shrink-0 cursor-pointer shadow-2xs"
             :class="
               selectedBot === key
@@ -421,7 +520,7 @@ const endGame = () => {
                 </button>
 
                 <button
-                  @click="initGame"
+                  @click="() => initGame(true)"
                   class="py-2 px-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer"
                 >
                   <RotateCcw class="w-3.5 h-3.5" />
@@ -468,7 +567,7 @@ const endGame = () => {
           </div>
         </div>
 
-        <!-- Left / Bottom Column: Settings & Personality (order-2 on mobile, 4 cols on desktop) -->
+        <!-- Left / Bottom Column: Settings & Personality -->
         <div class="order-2 lg:order-1 lg:col-span-4 space-y-4">
           <!-- Opponent Card -->
           <div class="bg-white rounded-3xl p-5 border-2 border-orange-100 shadow-sm space-y-4">
@@ -489,7 +588,7 @@ const endGame = () => {
               </div>
             </div>
 
-            <!-- Game Setup Options (Board Size & Color) -->
+            <!-- Game Setup Options -->
             <div class="space-y-3 pt-2 border-t border-gray-100 text-xs font-bold text-gray-700">
               <div class="flex items-center justify-between">
                 <span>棋盘路数</span>
@@ -497,7 +596,7 @@ const endGame = () => {
                   <button
                     v-for="s in [5, 7, 9, 13, 19]"
                     :key="s"
-                    @click="boardSize = s; initGame()"
+                    @click="boardSize = s; initGame(true)"
                     class="px-2 py-1 rounded-lg border text-xs font-black transition cursor-pointer"
                     :class="boardSize === s ? 'bg-orange-500 text-white border-orange-500' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'"
                   >
@@ -510,14 +609,14 @@ const endGame = () => {
                 <span>执子先后</span>
                 <div class="flex gap-1">
                   <button
-                    @click="userColor = 'B'; initGame()"
+                    @click="userColor = 'B'; initGame(true)"
                     class="px-3 py-1 rounded-lg border text-xs font-black transition cursor-pointer"
                     :class="userColor === 'B' ? 'bg-black text-white border-black' : 'bg-gray-50 border-gray-200'"
                   >
                     执黑先下
                   </button>
                   <button
-                    @click="userColor = 'W'; initGame()"
+                    @click="userColor = 'W'; initGame(true)"
                     class="px-3 py-1 rounded-lg border text-xs font-black transition cursor-pointer"
                     :class="userColor === 'W' ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-gray-50 border-gray-200'"
                   >
@@ -540,7 +639,8 @@ const endGame = () => {
       :score="scoreResult"
       :userColor="userColor"
       @close="showScoreModal = false"
-      @restart="initGame"
+      @restart="() => initGame(true)"
     />
   </div>
 </template>
+
