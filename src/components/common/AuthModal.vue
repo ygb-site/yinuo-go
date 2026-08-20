@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from '../../stores/useUserStore';
-import {
-  isSupabaseConfigured,
-  getSupabaseConfig,
-  saveCustomSupabaseConfig,
-  getSupabaseClient
-} from '../../lib/supabase';
+import { isSupabaseConfigured } from '../../lib/supabase';
 import {
   signInWithEmail,
   signUpWithEmail,
@@ -24,15 +19,12 @@ import {
   Lock,
   Mail,
   X,
-  Settings,
   LogIn,
   UserPlus,
   LogOut,
   RefreshCw,
   Eye,
   EyeOff,
-  Key,
-  Globe,
   CheckCircle2,
   AlertCircle,
   ShieldCheck
@@ -48,7 +40,7 @@ const emit = defineEmits<{
 
 const userStore = useUserStore();
 
-type TabType = 'login' | 'register' | 'config' | 'account';
+type TabType = 'login' | 'register' | 'account';
 const activeTab = ref<TabType>('login');
 
 const email = ref('');
@@ -59,22 +51,11 @@ const isLoading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
 
-// Custom Supabase Config fields
-const supabaseUrl = ref('');
-const supabaseAnonKey = ref('');
-const isTestingConnection = ref(false);
-const configStatus = ref<{ ok?: boolean; msg?: string } | null>(null);
-
 const isConfigured = computed(() => isSupabaseConfigured());
 
 onMounted(() => {
-  const cfg = getSupabaseConfig();
-  supabaseUrl.value = cfg.url;
-  supabaseAnonKey.value = cfg.anonKey;
   if (userStore.isLoggedIn) {
     activeTab.value = 'account';
-  } else if (!isConfigured.value) {
-    activeTab.value = 'config';
   } else {
     activeTab.value = 'login';
   }
@@ -99,8 +80,7 @@ const handleLogin = async () => {
   }
 
   if (!isConfigured.value) {
-    activeTab.value = 'config';
-    errorMessage.value = '云端服务尚未配置，请先填入连接信息';
+    errorMessage.value = '云端数据库连接未就绪，请联系管理员';
     playErrorSound();
     return;
   }
@@ -153,8 +133,7 @@ const handleRegister = async () => {
   }
 
   if (!isConfigured.value) {
-    activeTab.value = 'config';
-    errorMessage.value = '云端服务尚未配置，请先填入连接信息';
+    errorMessage.value = '云端数据库连接未就绪，请联系管理员';
     playErrorSound();
     return;
   }
@@ -215,47 +194,6 @@ const handleManualSync = async () => {
   } else {
     playErrorSound();
     errorMessage.value = userStore.cloudSyncError || '同步失败，请检查网络连接';
-  }
-};
-
-const handleSaveConfig = async () => {
-  isTestingConnection.value = true;
-  configStatus.value = null;
-
-  const cleanUrl = supabaseUrl.value.trim();
-  const cleanKey = supabaseAnonKey.value.trim();
-
-  if (!cleanUrl || !cleanKey) {
-    saveCustomSupabaseConfig('', '');
-    configStatus.value = { ok: true, msg: '已重置为空（使用默认配置）' };
-    isTestingConnection.value = false;
-    return;
-  }
-
-  saveCustomSupabaseConfig(cleanUrl, cleanKey);
-  const client = getSupabaseClient();
-
-  if (!client) {
-    configStatus.value = { ok: false, msg: 'URL 或 Key 格式不正确' };
-    isTestingConnection.value = false;
-    playErrorSound();
-    return;
-  }
-
-  try {
-    const { error } = await client.from('user_profiles').select('id').limit(1);
-    if (error && error.code !== 'PGRST116' && !error.message.includes('permission') && !error.message.includes('policy') && error.message.includes('fetch')) {
-      configStatus.value = { ok: false, msg: '连接失败：' + error.message };
-      playErrorSound();
-    } else {
-      configStatus.value = { ok: true, msg: '✅ Supabase 云数据库连接成功！' };
-      playWinSound();
-    }
-  } catch (err: any) {
-    configStatus.value = { ok: false, msg: '网络连接异常：' + (err?.message || '') };
-    playErrorSound();
-  } finally {
-    isTestingConnection.value = false;
   }
 };
 
@@ -508,82 +446,9 @@ const formatTime = (ts: number | null) => {
           </button>
         </form>
 
-        <!-- TAB 4: Supabase Config Settings (Developer Custom Override) -->
-        <div v-else-if="activeTab === 'config'" class="space-y-3.5 text-left">
-          <div class="bg-amber-50 rounded-2xl p-3.5 border border-amber-200 text-xs space-y-1.5">
-            <div class="font-black text-amber-950 flex items-center gap-1.5">
-              <span>🛠️ 开发者 / 自建云端配置</span>
-            </div>
-            <p class="text-[11px] text-gray-600 leading-relaxed font-medium">
-              默认项目已预设云端数据库。如果你需要连接自建的 Supabase 实例，可在下方自定义覆盖。
-            </p>
-          </div>
-
-          <div class="space-y-2">
-            <div>
-              <label class="text-xs font-black text-gray-700 block mb-1">Supabase Project URL</label>
-              <div class="relative">
-                <input
-                  v-model="supabaseUrl"
-                  type="text"
-                  placeholder="https://xyzcompany.supabase.co"
-                  class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-xs font-mono text-gray-800 focus:border-orange-500 focus:outline-none"
-                />
-                <Globe class="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-              </div>
-            </div>
-
-            <div>
-              <label class="text-xs font-black text-gray-700 block mb-1">Supabase Anon Public Key</label>
-              <div class="relative">
-                <input
-                  v-model="supabaseAnonKey"
-                  type="password"
-                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."
-                  class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-xs font-mono text-gray-800 focus:border-orange-500 focus:outline-none"
-                />
-                <Key class="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-              </div>
-            </div>
-          </div>
-
-          <div v-if="configStatus" class="p-2.5 rounded-xl text-xs font-bold" :class="configStatus.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'">
-            {{ configStatus.msg }}
-          </div>
-
-          <div class="flex gap-2">
-            <button
-              type="button"
-              @click="handleSaveConfig"
-              :disabled="isTestingConnection"
-              class="flex-1 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white font-black text-xs rounded-xl shadow-xs transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <CheckCircle2 class="w-3.5 h-3.5" />
-              <span>{{ isTestingConnection ? '测试中...' : '保存并测试连接' }}</span>
-            </button>
-
-            <button
-              type="button"
-              @click="switchTab(userStore.isLoggedIn ? 'account' : 'login')"
-              class="py-2.5 px-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition active:scale-95 cursor-pointer"
-            >
-              返回
-            </button>
-          </div>
-        </div>
-
         <!-- Bottom Footer -->
-        <div class="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400 font-bold">
-          <span>🛡️ 采用安全加密存储</span>
-          <button
-            type="button"
-            @click="switchTab('config')"
-            class="text-gray-400 hover:text-gray-600 flex items-center gap-1 cursor-pointer"
-            title="高级开发者配置"
-          >
-            <Settings class="w-3 h-3" />
-            <span>自建配置</span>
-          </button>
+        <div class="pt-2 border-t border-gray-100 flex items-center justify-center text-[11px] text-gray-400 font-bold">
+          <span>🛡️ 采用安全加密存储 · 个人数据独立隔离</span>
         </div>
       </div>
     </div>
