@@ -171,20 +171,20 @@ const isNavActive = (itemPath: string) => {
           title="返回首页"
         >
           <div
-            class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-rose-500 p-0.5 shadow-sm flex items-center justify-center border-2 border-white group-hover:rotate-6 transition-transform flex-shrink-0 overflow-hidden"
+            class="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-rose-500 p-0.5 shadow-sm flex items-center justify-center border-2 border-white group-hover:rotate-6 transition-transform flex-shrink-0 overflow-hidden"
           >
             <img src="/logo/logo-avatar-circle-144.png" alt="一诺弈学" class="w-full h-full object-contain" />
           </div>
           <div class="flex flex-col justify-center">
-            <div class="flex items-center gap-1 sm:gap-1.5">
-              <span class="text-lg sm:text-2xl font-cartoon font-bold bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 bg-clip-text text-transparent leading-none whitespace-nowrap tracking-wider">
+            <div class="flex items-center gap-1.5 leading-none">
+              <span class="text-lg sm:text-2xl font-cartoon font-extrabold bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 bg-clip-text text-transparent whitespace-nowrap tracking-wide sm:tracking-wider">
                 一诺弈学
               </span>
-              <span class="bg-orange-100 text-orange-800 text-[9px] sm:text-[10px] font-black px-1.5 py-0.2 rounded-full border border-orange-300 shadow-2xs whitespace-nowrap">
-                YiNuo Go
+              <span class="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-2xs tracking-wider whitespace-nowrap">
+                Go
               </span>
             </div>
-            <span class="text-[9px] sm:text-[10px] font-bold text-gray-400 leading-tight whitespace-nowrap">
+            <span class="hidden sm:block text-[10px] font-bold text-gray-400 leading-tight whitespace-nowrap mt-0.5">
               少儿互动启蒙 · 快乐学棋
             </span>
           </div>
@@ -217,7 +217,7 @@ const isNavActive = (itemPath: string) => {
           <button
             v-if="!userStore.isLoggedIn"
             @click="userStore.openAuthModal()"
-            class="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white border border-amber-300 px-3 sm:px-4 py-1.5 rounded-2xl cursor-pointer shadow-md transition transform active:scale-95 text-xs font-black"
+            class="flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white border border-amber-300 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl cursor-pointer shadow-2xs sm:shadow-md transition transform active:scale-95 text-xs font-black"
             title="登录或注册账号开启学棋"
           >
             <LogIn class="w-3.5 h-3.5 flex-shrink-0" />
@@ -228,7 +228,7 @@ const isNavActive = (itemPath: string) => {
           <button
             v-else-if="!userStore.hasProfile"
             @click="userStore.openProfileModal()"
-            class="flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border border-emerald-300 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl cursor-pointer shadow-sm transition transform active:scale-95 text-xs font-black"
+            class="flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border border-emerald-300 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl cursor-pointer shadow-2xs transition transform active:scale-95 text-xs font-black"
             title="创建第一个宝贝档案"
           >
             <UserPlus class="w-3.5 h-3.5 flex-shrink-0" />
@@ -236,27 +236,27 @@ const isNavActive = (itemPath: string) => {
           </button>
 
           <!-- CASE 3: Logged In & Has Profile -> Show Child Avatar Switcher Dropdown -->
-          <div v-else ref="userMenuRef" class="relative">
+          <div v-else ref="userMenuRef" class="relative flex-shrink-0">
             <button
               @click="showUserMenu = !showUserMenu"
-              class="flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-orange-300/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl cursor-pointer shadow-2xs transition transform active:scale-95 flex-shrink-0"
+              class="flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-orange-300/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl cursor-pointer shadow-xs transition transform active:scale-95 flex-shrink-0"
               title="点击切换宝贝或查看账号"
             >
-              <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white flex items-center justify-center text-xs sm:text-sm shadow-inner border border-orange-200 flex-shrink-0">
+              <div class="w-5.5 h-5.5 sm:w-6.5 sm:h-6.5 rounded-full bg-white flex items-center justify-center text-xs sm:text-sm shadow-inner border border-orange-200 flex-shrink-0">
                 {{ userStore.avatar }}
               </div>
-              <div class="flex items-center gap-1 whitespace-nowrap">
-                <span class="text-xs sm:text-sm font-black text-gray-800 whitespace-nowrap max-w-[50px] sm:max-w-[90px] truncate">
+              <div class="flex items-center gap-0.5 sm:gap-1 whitespace-nowrap">
+                <span class="text-xs sm:text-sm font-black text-gray-800 whitespace-nowrap max-w-[48px] sm:max-w-[90px] truncate">
                   {{ userStore.nickname }}
                 </span>
-                <ChevronDown class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-500 flex-shrink-0" />
+                <ChevronDown class="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
               </div>
             </button>
 
             <!-- User Menu Dropdown -->
             <div
               v-if="showUserMenu"
-              class="absolute right-0 mt-2 w-52 bg-white rounded-3xl shadow-xl border-2 border-orange-100 p-2 z-50 animate-pop-in space-y-1"
+              class="absolute right-0 mt-2 w-52 bg-white rounded-3xl shadow-xl border-2 border-orange-100 p-2 z-50 animate-pop-in space-y-1 max-w-[calc(100vw-1rem)]"
             >
               <div class="px-3 py-2 border-b border-gray-100">
                 <div class="text-[10px] font-black text-gray-400 uppercase tracking-wider">已登录家长</div>
@@ -306,15 +306,18 @@ const isNavActive = (itemPath: string) => {
             </div>
           </div>
 
-          <!-- Stars & Coins (Visible once a child profile exists) -->
-          <div v-if="userStore.hasProfile" class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
-            <div class="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-2xl text-xs font-black text-amber-900 shadow-2xs whitespace-nowrap" title="已收集星星">
-              <Star class="w-3.5 h-3.5 text-amber-500 fill-current flex-shrink-0" />
+          <!-- Unified Golden Reward Capsule (Stars & Coins) -->
+          <div
+            v-if="userStore.hasProfile"
+            class="flex items-center bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border border-amber-300/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl shadow-xs gap-1.5 sm:gap-2.5 text-xs font-black text-amber-950 flex-shrink-0"
+          >
+            <div class="flex items-center gap-1" title="已收集星星">
+              <Star class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 fill-amber-400 drop-shadow-2xs flex-shrink-0" />
               <span>{{ userStore.totalStars }}</span>
             </div>
-
-            <div class="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-2xl text-xs font-black text-amber-900 shadow-2xs whitespace-nowrap" title="金币余额">
-              <Coins class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+            <div class="w-px h-3 bg-amber-300/80"></div>
+            <div class="flex items-center gap-1" title="金币余额">
+              <Coins class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 drop-shadow-2xs flex-shrink-0" />
               <span>{{ userStore.coins }}</span>
             </div>
           </div>
@@ -322,27 +325,27 @@ const isNavActive = (itemPath: string) => {
           <!-- Sound Toggle Button -->
           <button
             @click="toggleSound"
-            class="w-7 h-7 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 transition active:scale-90 flex items-center justify-center flex-shrink-0 cursor-pointer"
+            class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl border border-orange-200/80 bg-white/90 hover:bg-orange-50 text-gray-600 transition active:scale-90 flex items-center justify-center flex-shrink-0 cursor-pointer shadow-xs"
             :title="userStore.soundEnabled ? '音效已开启（点击静音）' : '音效已静音（点击开启）'"
           >
-            <Volume2 v-if="userStore.soundEnabled" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
-            <VolumeX v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
+            <Volume2 v-if="userStore.soundEnabled" class="w-4 h-4 sm:w-4.5 sm:h-4.5 text-emerald-600" />
+            <VolumeX v-else class="w-4 h-4 sm:w-4.5 sm:h-4.5 text-gray-400" />
           </button>
 
           <!-- Theme Dropdown Button (Respects Shop Ownership) -->
           <div ref="themeDropdownRef" class="relative flex-shrink-0">
             <button
               @click.stop="showThemeDropdown = !showThemeDropdown"
-              class="w-7 h-7 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-amber-600 transition active:scale-90 flex items-center justify-center cursor-pointer relative z-50"
+              class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl border border-orange-200/80 bg-white/90 hover:bg-orange-50 text-amber-600 transition active:scale-90 flex items-center justify-center cursor-pointer relative z-50 flex-shrink-0 shadow-xs"
               title="切换已解锁的棋盘皮肤"
             >
-              <Palette class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <Palette class="w-4 h-4 sm:w-4.5 sm:h-4.5" />
             </button>
 
             <!-- Theme Dropdown Menu -->
             <div
               v-if="showThemeDropdown"
-              class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border-2 border-orange-100 p-2 z-50 animate-pop-in space-y-1"
+              class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border-2 border-orange-100 p-2 z-50 animate-pop-in space-y-1 max-w-[calc(100vw-1rem)]"
             >
               <div class="text-[10px] font-black text-gray-400 px-2 py-1 uppercase tracking-wider">
                 选择棋盘皮肤

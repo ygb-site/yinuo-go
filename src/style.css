@@ -7,6 +7,7 @@
     @apply bg-[#FDFBF7] text-[#2D3748] font-sans antialiased select-none;
     touch-action: manipulation;
     overscroll-behavior-y: contain;
+    overflow-x: hidden;
   }
 }
 
