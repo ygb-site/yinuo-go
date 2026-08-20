@@ -41,21 +41,38 @@ const isEditingName = ref(false);
 const newNickname = ref(userStore.nickname);
 const showCertModal = ref(false);
 
-// 5-Dimension Radar Chart Calculation
+// 5-Dimension Radar Chart Calculation (Mathematically Symmetrical Regular Pentagon)
+const RADAR_CX = 100;
+const RADAR_CY = 105;
+const RADAR_MAX_R = 65;
+const RADAR_ANGLES = [
+  -Math.PI / 2,
+  -Math.PI / 2 + (2 * Math.PI / 5),
+  -Math.PI / 2 + (4 * Math.PI / 5),
+  -Math.PI / 2 + (6 * Math.PI / 5),
+  -Math.PI / 2 + (8 * Math.PI / 5)
+];
+
 const radarStats = computed(() => {
   const cap = Math.min(100, Math.max(30, (userStore.stats.captureCount * 6 + (userStore.arcadeHighScores.speedCapture || 0) / 4) || 45));
   const lib = Math.min(100, Math.max(30, (userStore.totalStars * 3 + (userStore.arcadeHighScores.countLiberties || 0) / 4) || 50));
   const life = Math.min(100, Math.max(30, (userStore.solvedPuzzles.length * 4 + 35) || 40));
   const macro = Math.min(100, Math.max(30, (userStore.totalStars * 4 + 30) || 45));
-  const grit = Math.min(100, Math.max(40, (userStore.stats.gamesPlayed * 8 + userStore.solvedMistakes.length * 15 + 50) || 65));
+  const grit = Math.min(100, Math.max(35, (userStore.stats.gamesPlayed * 6 + userStore.solvedMistakes.length * 12 + 45) || 55));
 
-  return [
-    { label: '吃子敏锐', value: cap, x: 100, y: 100 - cap * 0.75 },
-    { label: '数气熟练', value: lib, x: 100 + lib * 0.71, y: 100 - lib * 0.23 },
-    { label: '死活做眼', value: life, x: 100 + life * 0.44, y: 100 + life * 0.61 },
-    { label: '大局观念', value: macro, x: 100 - macro * 0.44, y: 100 + macro * 0.61 },
-    { label: '抗挫逆商', value: grit, x: 100 - grit * 0.71, y: 100 - grit * 0.23 }
-  ];
+  const values = [cap, lib, life, macro, grit];
+  const labels = ['吃子敏锐', '数气熟练', '死活做眼', '大局观念', '抗挫逆商'];
+
+  return values.map((val, i) => {
+    const angle = RADAR_ANGLES[i];
+    const r = RADAR_MAX_R * Math.min(1, Math.max(0.15, val / 100));
+    return {
+      label: labels[i],
+      value: val,
+      x: Number((RADAR_CX + r * Math.cos(angle)).toFixed(1)),
+      y: Number((RADAR_CY + r * Math.sin(angle)).toFixed(1))
+    };
+  });
 });
 
 const radarPolygonPoints = computed(() => {
@@ -517,27 +534,31 @@ const confirmReset = async () => {
           <!-- SVG Radar Polygon -->
           <div class="md:col-span-6 flex justify-center">
             <div class="relative w-64 h-64">
-              <svg viewBox="0 0 200 200" class="w-full h-full transform">
-                <polygon points="100,25 171,48 144,132 56,132 29,48" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
-                <polygon points="100,40 157,59 135,126 65,126 43,59" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
-                <polygon points="100,55 143,69 127,119 73,119 57,69" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
-                <polygon points="100,70 128,79 118,113 82,113 72,79" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
-                <polygon points="100,85 114,90 109,106 91,106 86,90" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
+              <svg viewBox="0 0 200 200" class="w-full h-full transform overflow-visible">
+                <!-- 5 Concentric Symmetrical Pentagon Webs (20%, 40%, 60%, 80%, 100%) -->
+                <polygon points="100.0,40.0 161.8,84.9 138.2,157.6 61.8,157.6 38.2,84.9" fill="none" stroke="#FDE68A" stroke-width="1.2" />
+                <polygon points="100.0,53.0 149.5,88.9 130.6,147.1 69.4,147.1 50.5,88.9" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
+                <polygon points="100.0,66.0 137.1,92.9 122.9,136.6 77.1,136.6 62.9,92.9" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
+                <polygon points="100.0,79.0 124.7,97.0 115.3,126.0 84.7,126.0 75.3,97.0" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
+                <polygon points="100.0,92.0 112.4,101.0 107.6,115.5 92.4,115.5 87.6,101.0" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
 
-                <line x1="100" y1="100" x2="100" y2="25" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
-                <line x1="100" y1="100" x2="171" y2="48" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
-                <line x1="100" y1="100" x2="144" y2="132" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
-                <line x1="100" y1="100" x2="56" y2="132" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
-                <line x1="100" y1="100" x2="29" y2="48" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
+                <!-- 5 Symmetrical Radial Axes -->
+                <line x1="100" y1="105" x2="100.0" y2="40.0" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
+                <line x1="100" y1="105" x2="161.8" y2="84.9" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
+                <line x1="100" y1="105" x2="138.2" y2="157.6" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
+                <line x1="100" y1="105" x2="61.8" y2="157.6" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
+                <line x1="100" y1="105" x2="38.2" y2="84.9" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
 
-                <polygon :points="radarPolygonPoints" fill="rgba(249, 115, 22, 0.25)" stroke="#EA580C" stroke-width="2.5" />
-                <circle v-for="pt in radarStats" :key="pt.label" :cx="pt.x" :cy="pt.y" r="4" fill="#EA580C" stroke="#FFFFFF" stroke-width="1.5" />
+                <!-- Dynamic Data Area Polygon -->
+                <polygon :points="radarPolygonPoints" fill="rgba(249, 115, 22, 0.28)" stroke="#EA580C" stroke-width="2.5" />
+                <circle v-for="pt in radarStats" :key="pt.label" :cx="pt.x" :cy="pt.y" r="4.5" fill="#EA580C" stroke="#FFFFFF" stroke-width="2" />
 
-                <text x="100" y="15" text-anchor="middle" font-size="10" font-weight="900" fill="#9A3412">吃子敏锐</text>
-                <text x="180" y="52" text-anchor="start" font-size="10" font-weight="900" fill="#9A3412">数气熟练</text>
-                <text x="150" y="148" text-anchor="middle" font-size="10" font-weight="900" fill="#9A3412">死活做眼</text>
-                <text x="50" y="148" text-anchor="middle" font-size="10" font-weight="900" fill="#9A3412">大局观念</text>
-                <text x="20" y="52" text-anchor="end" font-size="10" font-weight="900" fill="#9A3412">抗挫逆商</text>
+                <!-- Clean Padded Axis Labels -->
+                <text x="100" y="24" text-anchor="middle" font-size="11" font-weight="900" fill="#9A3412">吃子敏锐</text>
+                <text x="174" y="88" text-anchor="start" font-size="11" font-weight="900" fill="#9A3412">数气熟练</text>
+                <text x="145" y="176" text-anchor="middle" font-size="11" font-weight="900" fill="#9A3412">死活做眼</text>
+                <text x="55" y="176" text-anchor="middle" font-size="11" font-weight="900" fill="#9A3412">大局观念</text>
+                <text x="26" y="88" text-anchor="end" font-size="11" font-weight="900" fill="#9A3412">抗挫逆商</text>
               </svg>
             </div>
           </div>
