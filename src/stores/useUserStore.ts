@@ -324,10 +324,7 @@ export const useUserStore = defineStore('userStore', {
         }
       }
 
-      // If user has no child profiles yet, prompt to create one!
-      if (this.profiles.length === 0) {
-        this.isProfileModalOpen = true;
-      }
+
 
       this.lastSavedAt = Date.now();
     },

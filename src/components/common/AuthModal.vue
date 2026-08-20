@@ -27,7 +27,8 @@ import {
   EyeOff,
   CheckCircle2,
   AlertCircle,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -72,6 +73,11 @@ const handleClose = () => {
   emit('close');
 };
 
+const openProfileModalAndCloseAuth = () => {
+  emit('close');
+  userStore.openProfileModal();
+};
+
 const handleLogin = async () => {
   if (!email.value.trim() || !password.value) {
     errorMessage.value = '请输入邮箱与密码';
@@ -102,15 +108,11 @@ const handleLogin = async () => {
 
   playWinSound();
   triggerConfetti();
-  successMessage.value = '🎉 登录成功！正在加载您的宝贝数据...';
+  successMessage.value = '🎉 登录成功！已载入您的云端档案。';
 
-  // Load user data into store
+  // Load user data into store and stay in account view
   await userStore.setCloudUser(res.user?.id || '', res.user?.email || email.value.trim());
   activeTab.value = 'account';
-
-  setTimeout(() => {
-    handleClose();
-  }, 1000);
 };
 
 const handleRegister = async () => {
@@ -155,13 +157,9 @@ const handleRegister = async () => {
   triggerConfetti();
   successMessage.value = '🎉 注册成功！欢迎加入一诺弈学！';
 
-  // Load user data into store
+  // Load user data into store and stay in account view (do not close modal, do not popup create profile)
   await userStore.setCloudUser(res.user?.id || '', res.user?.email || email.value.trim());
   activeTab.value = 'account';
-
-  setTimeout(() => {
-    handleClose();
-  }, 1200);
 };
 
 const handleLogout = async () => {
@@ -284,7 +282,7 @@ const formatTime = (ts: number | null) => {
               <span class="text-xs font-black text-gray-500 uppercase tracking-wide">当前登录家长账号</span>
               <span class="text-[11px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <CheckCircle2 class="w-3 h-3 text-emerald-600" />
-                <span>实时同步中</span>
+                <span>已登录 · 实时同步</span>
               </span>
             </div>
 
@@ -308,27 +306,64 @@ const formatTime = (ts: number | null) => {
             </div>
           </div>
 
+          <!-- Associated Children Preview or Prompt -->
+          <div v-if="userStore.profiles.length > 0" class="p-3 bg-gray-50 rounded-2xl border border-gray-200 space-y-1.5">
+            <div class="text-[11px] font-bold text-gray-500">我的宝贝档案：</div>
+            <div class="flex flex-wrap gap-1.5">
+              <span
+                v-for="c in userStore.profiles"
+                :key="c.id"
+                class="inline-flex items-center gap-1 bg-white border border-orange-200 px-2.5 py-1 rounded-xl text-xs font-bold text-gray-800 shadow-2xs"
+                :class="c.id === userStore.currentProfileId ? 'ring-2 ring-orange-400 bg-orange-50/50' : ''"
+              >
+                <span>{{ c.avatar }}</span>
+                <span>{{ c.nickname }}</span>
+                <span class="text-orange-600 font-black">⭐{{ c.totalStars || 0 }}</span>
+              </span>
+            </div>
+          </div>
+
           <!-- Actions -->
           <div class="space-y-2">
             <button
               type="button"
+              @click="openProfileModalAndCloseAuth"
+              class="w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 text-white rounded-2xl font-black text-xs sm:text-sm shadow-sm transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <UserPlus class="w-4 h-4" />
+              <span>{{ userStore.profiles.length > 0 ? '管理 / 切换宝贝档案' : '创建第一个宝贝档案 👶' }}</span>
+            </button>
+
+            <button
+              type="button"
               @click="handleManualSync"
               :disabled="isLoading || userStore.isSyncing"
-              class="w-full py-3.5 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl font-black text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl font-black text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': isLoading || userStore.isSyncing }" />
               <span>{{ userStore.isSyncing ? '正在同步中...' : '立即同步数据 🚀' }}</span>
             </button>
 
-            <button
-              type="button"
-              @click="handleLogout"
-              :disabled="isLoading"
-              class="w-full py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-black text-xs rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-rose-200"
-            >
-              <LogOut class="w-3.5 h-3.5" />
-              <span>退出当前账号</span>
-            </button>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                @click="handleClose"
+                class="py-2.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-black text-xs rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Sparkles class="w-3.5 h-3.5 text-amber-500" />
+                <span>进入围棋世界 🚀</span>
+              </button>
+
+              <button
+                type="button"
+                @click="handleLogout"
+                :disabled="isLoading"
+                class="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-black text-xs rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-rose-200"
+              >
+                <LogOut class="w-3.5 h-3.5" />
+                <span>退出账号</span>
+              </button>
+            </div>
           </div>
         </div>
 
