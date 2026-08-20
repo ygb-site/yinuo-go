@@ -24,7 +24,9 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  Sparkles
+  Sparkles,
+  CheckCircle2,
+  Trophy
 } from 'lucide-vue-next';
 
 const route = useRoute();
@@ -61,20 +63,7 @@ const nextLessonItem = computed(() => {
   return null;
 });
 
-// Board & Play State
-const game = ref<GoGame>(new GoGame(5));
-const lastMove = ref<Point | null>(null);
-const highlightPoints = ref<Point[]>([]);
-const mascotMood = ref<'happy' | 'excited' | 'thinking' | 'cheering' | 'comforting' | 'surprised'>('happy');
-const mascotDialogue = ref<string>('');
-const isLessonComplete = ref(false);
-const showStarModal = ref(false);
-const isBotThinking = ref(false);
-const earnedStars = ref(3);
-const attemptCount = ref(0);
-
-// Multi-step sub-puzzle state
-const currentStepIndex = ref(0);
+// Multi-step sub-puzzle list
 const subPuzzlesList = computed<LessonSubPuzzle[]>(() => {
   const les = currentLesson.value;
   if (les.subPuzzles && les.subPuzzles.length > 0) {
@@ -98,16 +87,36 @@ const subPuzzlesList = computed<LessonSubPuzzle[]>(() => {
   ];
 });
 
+const totalSteps = computed(() => subPuzzlesList.value.length);
+const currentStepIndex = ref(0);
+
 const currentSubPuzzle = computed<LessonSubPuzzle>(() => {
   const list = subPuzzlesList.value;
   return list[currentStepIndex.value] || list[0];
 });
 
-const totalSteps = computed(() => subPuzzlesList.value.length);
+/**
+ * 每一道子题的独立会话状态（持久保存已解出的最终盘面、落子历史与成功评语，避免切题时被重置）
+ */
+interface StepSessionState {
+  completed: boolean;
+  game: GoGame;
+  lastMove: Point | null;
+  highlightPoints: Point[];
+  mascotDialogue: string;
+  mascotMood: 'happy' | 'excited' | 'thinking' | 'cheering' | 'comforting' | 'surprised';
+  currentBranches: PuzzleNode[];
+  storyDialogueIndex: number;
+}
 
-// Active Branch Tree for Practice Mode
-const currentBranches = ref<PuzzleNode[]>([]);
-const storyDialogueIndex = ref(0);
+const stepStates = ref<StepSessionState[]>([]);
+
+// Global Lesson Play State
+const isLessonComplete = ref(false);
+const showStarModal = ref(false);
+const isBotThinking = ref(false);
+const earnedStars = ref(3);
+const attemptCount = ref(0);
 
 // Visual Aids
 const showLiberties = ref(true);
@@ -118,13 +127,53 @@ const showBreathingTubes = ref(true);
 const showConceptDrawer = ref(false);
 const isConceptExpanded = ref(false);
 
+const createInitialStepState = (sub: LessonSubPuzzle): StepSessionState => {
+  const bSize = sub.boardSize || currentLesson.value.boardSize || 5;
+  const g = new GoGame(bSize);
+  for (const st of sub.initialStones) {
+    g.setCell(st.r, st.c, st.color);
+  }
+  g.turn = sub.playerColor;
+
+  const dialogue =
+    sub.storyDialogues && sub.storyDialogues.length > 0
+      ? sub.storyDialogues[0]
+      : '【' + sub.title + '】' + sub.goalText;
+
+  return {
+    completed: false,
+    game: g,
+    lastMove: null,
+    highlightPoints: sub.targetHighlight ? [...sub.targetHighlight] : [],
+    mascotDialogue: dialogue,
+    mascotMood: 'happy',
+    currentBranches: sub.puzzleRoot ? [...sub.puzzleRoot] : [],
+    storyDialogueIndex: 0
+  };
+};
+
+const currentStepState = computed<StepSessionState>(() => {
+  if (stepStates.value.length === 0) {
+    return createInitialStepState(currentSubPuzzle.value);
+  }
+  return stepStates.value[currentStepIndex.value] || stepStates.value[0];
+});
+
+const isCurrentStepCompleted = computed(() => {
+  return !!currentStepState.value?.completed;
+});
+
+const nextIncompleteStepIndex = computed(() => {
+  return stepStates.value.findIndex(s => !s.completed);
+});
+
 const narrateText = (text: string) => {
   speakText(text);
 };
 
 const speakConcept = () => {
   const term = currentLesson.value.bilingualTerm;
-  const text = `${term.chinese}，${term.pinyin}。${term.concept}。${currentLesson.value.explanation}`;
+  const text = term.chinese + '，' + term.pinyin + '。' + term.concept + '。' + currentLesson.value.explanation;
   speakText(text);
 };
 
@@ -133,30 +182,12 @@ const toggleVoice = () => {
   playButtonSound();
 };
 
-const loadCurrentStep = (stepIdx: number) => {
+/** 切换到指定题号（已做完的题目展示做完后的最终盘面进行复盘，未做完的继续作答） */
+const switchStep = (stepIdx: number) => {
+  if (stepIdx < 0 || stepIdx >= totalSteps.value) return;
+  playButtonSound();
+  stopSpeech();
   currentStepIndex.value = stepIdx;
-  const sub = subPuzzlesList.value[stepIdx] || subPuzzlesList.value[0];
-  const bSize = sub.boardSize || currentLesson.value.boardSize || 5;
-
-  game.value = new GoGame(bSize);
-  lastMove.value = null;
-  highlightPoints.value = sub.targetHighlight ? [...sub.targetHighlight] : [];
-  isBotThinking.value = false;
-  storyDialogueIndex.value = 0;
-
-  for (const st of sub.initialStones) {
-    game.value.setCell(st.r, st.c, st.color);
-  }
-  game.value.turn = sub.playerColor;
-
-  if (sub.storyDialogues && sub.storyDialogues.length > 0) {
-    mascotMood.value = 'happy';
-    mascotDialogue.value = sub.storyDialogues[0];
-  } else {
-    currentBranches.value = sub.puzzleRoot || [];
-    mascotMood.value = 'happy';
-    mascotDialogue.value = '【' + sub.title + '】' + sub.goalText;
-  }
 };
 
 const initLesson = () => {
@@ -166,7 +197,9 @@ const initLesson = () => {
   earnedStars.value = 3;
   attemptCount.value = 0;
   showConceptDrawer.value = false;
-  loadCurrentStep(0);
+  currentStepIndex.value = 0;
+
+  stepStates.value = subPuzzlesList.value.map(sub => createInitialStepState(sub));
 };
 
 onMounted(() => {
@@ -199,8 +232,9 @@ const handleMove = (point: Point) => {
     userStore.openProfileModal();
     return;
   }
-  if (isLessonComplete.value || isBotThinking.value) return;
+  if (isLessonComplete.value || isBotThinking.value || isCurrentStepCompleted.value) return;
 
+  const state = currentStepState.value;
   const sub = currentSubPuzzle.value;
   const { r, c } = point;
 
@@ -209,74 +243,74 @@ const handleMove = (point: Point) => {
     const isTarget = sub.targetHighlight.some(p => p.r === r && p.c === c);
     if (!isTarget) {
       playErrorSound();
-      mascotMood.value = 'comforting';
-      mascotDialogue.value = '请点击闪烁的高亮目标点进行学习演练哦！';
+      state.mascotMood = 'comforting';
+      state.mascotDialogue = '请点击闪烁的高亮目标点进行学习演练哦！';
       return;
     }
 
-    const moveRes = game.value.playMove(r, c, sub.playerColor);
+    const moveRes = state.game.playMove(r, c, sub.playerColor);
     if (!moveRes.success) {
       playErrorSound();
-      mascotMood.value = 'comforting';
-      mascotDialogue.value = '这个位置已经有棋子啦，换个地方试试吧！';
+      state.mascotMood = 'comforting';
+      state.mascotDialogue = '这个位置已经有棋子啦，换个地方试试吧！';
       return;
     }
     playStoneSound();
     if (moveRes.capturedStones.length > 0) playCaptureSound();
-    lastMove.value = point;
-    highlightPoints.value = [];
+    state.lastMove = point;
+    state.highlightPoints = [];
 
-    const remainingTargets = (sub.targetHighlight || []).filter(p => game.value.getCell(p.r, p.c) === null);
+    const remainingTargets = (sub.targetHighlight || []).filter(p => state.game.getCell(p.r, p.c) === null);
 
-    if (sub.storyDialogues && storyDialogueIndex.value < sub.storyDialogues.length - 1 && remainingTargets.length > 0) {
-      storyDialogueIndex.value++;
-      mascotMood.value = 'excited';
-      mascotDialogue.value = sub.storyDialogues[storyDialogueIndex.value];
+    if (sub.storyDialogues && state.storyDialogueIndex < sub.storyDialogues.length - 1 && remainingTargets.length > 0) {
+      state.storyDialogueIndex++;
+      state.mascotMood = 'excited';
+      state.mascotDialogue = sub.storyDialogues[state.storyDialogueIndex];
     } else {
-      advanceStepOrWin();
+      advanceStepOrWin('太棒啦！【' + sub.title + '】点位演练完成！');
     }
     return;
   }
 
   // 2. Multi-Branch Puzzle Decision Node
-  const branches = sub.puzzleRoot || [];
+  const branches = state.currentBranches && state.currentBranches.length > 0 ? state.currentBranches : (sub.puzzleRoot || []);
   const matchedNode = branches.find(b => b.coord.r === r && b.coord.c === c);
 
   if (matchedNode && matchedNode.isCorrect) {
-    const moveRes = game.value.playMove(r, c, sub.playerColor);
+    const moveRes = state.game.playMove(r, c, sub.playerColor);
     playStoneSound();
     if (moveRes.capturedStones.length > 0) playCaptureSound();
-    lastMove.value = point;
-    mascotMood.value = 'excited';
-    mascotDialogue.value = matchedNode.comment;
-    highlightPoints.value = [];
+    state.lastMove = point;
+    state.mascotMood = 'excited';
+    state.mascotDialogue = matchedNode.comment;
+    state.highlightPoints = [];
 
     if (matchedNode.opponentResponse) {
       isBotThinking.value = true;
-      mascotMood.value = 'thinking';
+      state.mascotMood = 'thinking';
 
       setTimeout(() => {
         if (matchedNode.opponentResponse) {
           const oppPoint = matchedNode.opponentResponse.coord;
-          game.value.playMove(oppPoint.r, oppPoint.c, game.value.turn);
+          state.game.playMove(oppPoint.r, oppPoint.c, state.game.turn);
           playStoneSound();
-          lastMove.value = oppPoint;
-          mascotMood.value = 'surprised';
-          mascotDialogue.value = matchedNode.opponentResponse.comment;
+          state.lastMove = oppPoint;
+          state.mascotMood = 'surprised';
+          state.mascotDialogue = matchedNode.opponentResponse.comment;
         }
         isBotThinking.value = false;
 
         if (matchedNode.nextBranches && matchedNode.nextBranches.length > 0) {
-          currentBranches.value = matchedNode.nextBranches;
+          state.currentBranches = matchedNode.nextBranches;
         } else {
-          advanceStepOrWin();
+          advanceStepOrWin(matchedNode.comment);
         }
       }, 500);
     } else {
       if (matchedNode.nextBranches && matchedNode.nextBranches.length > 0) {
-        currentBranches.value = matchedNode.nextBranches;
+        state.currentBranches = matchedNode.nextBranches;
       } else {
-        advanceStepOrWin();
+        advanceStepOrWin(matchedNode.comment);
       }
     }
   } else {
@@ -286,52 +320,84 @@ const handleMove = (point: Point) => {
     if (attemptCount.value >= 2) {
       earnedStars.value = Math.max(1, earnedStars.value - 1);
     }
-    mascotMood.value = 'comforting';
-    mascotDialogue.value = '这步棋没有击中要害！提示：' + sub.hint;
+    state.mascotMood = 'comforting';
+    state.mascotDialogue = '这步棋没有击中要害！提示：' + sub.hint;
   }
 };
 
-const advanceStepOrWin = () => {
-  if (currentStepIndex.value < totalSteps.value - 1) {
-    playCaptureSound();
-    mascotMood.value = 'cheering';
-    mascotDialogue.value = '太棒啦！第 ' + (currentStepIndex.value + 1) + ' 题攻克成功！进入下一道变式实战！';
+const advanceStepOrWin = (successComment?: string) => {
+  const curIdx = currentStepIndex.value;
+  const state = stepStates.value[curIdx];
+  if (state) {
+    state.completed = true;
+    state.highlightPoints = [];
+    state.mascotMood = 'cheering';
+    state.mascotDialogue = successComment || ('🎉 太棒啦！第 ' + (curIdx + 1) + ' 题攻克成功！');
+  }
 
-    setTimeout(() => {
-      loadCurrentStep(currentStepIndex.value + 1);
-    }, 900);
-  } else {
+  // 检查是否全部子题都已完成
+  const allCompleted = stepStates.value.every(s => s.completed);
+
+  if (allCompleted) {
     triggerWin();
+  } else {
+    playCaptureSound();
+    setTimeout(() => {
+      // 自动前往下一道未完成的子题
+      const nextUnsolved = stepStates.value.findIndex((s, idx) => idx > curIdx && !s.completed);
+      if (nextUnsolved !== -1) {
+        currentStepIndex.value = nextUnsolved;
+      } else {
+        const firstUnsolved = stepStates.value.findIndex(s => !s.completed);
+        if (firstUnsolved !== -1) {
+          currentStepIndex.value = firstUnsolved;
+        }
+      }
+    }, 1000);
   }
 };
 
 const triggerWin = () => {
   isLessonComplete.value = true;
-  mascotMood.value = 'cheering';
-  mascotDialogue.value = '太棒啦！你完美通关了【' + currentLesson.value.title + '】全部 ' + totalSteps.value + ' 道试炼！';
+  const state = currentStepState.value;
+  if (state) {
+    state.mascotMood = 'cheering';
+    state.mascotDialogue = '🏆 太棒啦！你完美通关了【' + currentLesson.value.title + '】全部 ' + totalSteps.value + ' 道试炼！';
+  }
 
   setTimeout(() => {
     showStarModal.value = true;
-  }, 500);
+  }, 600);
 };
 
 const handleHint = () => {
   playHintSound();
   const sub = currentSubPuzzle.value;
-  mascotMood.value = 'excited';
-  mascotDialogue.value = '【小诺锦囊】' + sub.hint;
+  const state = currentStepState.value;
+  state.mascotMood = 'excited';
+  state.mascotDialogue = '【小诺锦囊】' + sub.hint;
 
   if (sub.targetHighlight && sub.targetHighlight.length > 0) {
-    highlightPoints.value = [...sub.targetHighlight];
+    state.highlightPoints = [...sub.targetHighlight];
   } else if (sub.puzzleRoot && sub.puzzleRoot.length > 0) {
-    const correctBranch = sub.puzzleRoot.find(b => b.isCorrect);
+    const branches = state.currentBranches.length > 0 ? state.currentBranches : sub.puzzleRoot;
+    const correctBranch = branches.find(b => b.isCorrect);
     if (correctBranch) {
-      highlightPoints.value = [correctBranch.coord];
+      state.highlightPoints = [correctBranch.coord];
     }
   }
 };
 
-const handleRestart = () => {
+/** 重做当前单道题（保留其他题目的做完盘面与进度） */
+const handleRedoCurrentStep = () => {
+  playButtonSound();
+  stopSpeech();
+  const sub = currentSubPuzzle.value;
+  stepStates.value[currentStepIndex.value] = createInitialStepState(sub);
+};
+
+/** 重新开始整个关卡 */
+const handleRestartAll = () => {
   playButtonSound();
   initLesson();
 };
@@ -353,7 +419,7 @@ const handleBackToMap = () => {
   <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-2 sm:py-5 px-2.5 sm:px-6 lg:px-8 select-none">
     <div class="max-w-7xl mx-auto space-y-3 sm:space-y-4">
 
-      <!-- Top Header Navigation & Sleek Segmented Progress Bar (多邻国风格极简清爽顶栏) -->
+      <!-- Top Header Navigation & Sleek Segmented Progress Bar (多邻国风格分段式进度条，支持自由复盘回看) -->
       <div class="bg-white rounded-3xl p-3 sm:p-4 border-2 border-orange-100 shadow-sm space-y-2.5">
         <!-- 1st Row: Back + Title + Sound + Stars -->
         <div class="flex items-center justify-between gap-2">
@@ -398,32 +464,46 @@ const handleBackToMap = () => {
           </div>
         </div>
 
-        <!-- 2nd Row: Sleek Segmented Progress Bar (多题阶梯分段式进度条，极简无横向溢出) -->
+        <!-- 2nd Row: Sleek Segmented Progress Bar (阶梯分段式进度条，支持随时点击回看已做完题目的最终盘面) -->
         <div v-if="totalSteps > 1" class="flex items-center gap-2 pt-1 border-t border-gray-100">
           <div class="flex-1 flex items-center gap-1.5">
             <div
               v-for="(sub, sIdx) in subPuzzlesList"
               :key="sub.stepIndex"
-              @click="loadCurrentStep(sIdx)"
-              class="flex-1 h-2 sm:h-2.5 rounded-full overflow-hidden bg-gray-100 transition-all duration-300 cursor-pointer relative group"
-              :title="'点击切换至第 ' + (sIdx + 1) + ' 题：' + (sub.title.split('：')[1] || sub.title)"
+              @click="switchStep(sIdx)"
+              class="flex-1 h-3 sm:h-3.5 rounded-full overflow-hidden transition-all duration-300 cursor-pointer relative group p-0.5"
+              :class="
+                sIdx === currentStepIndex
+                  ? 'ring-2 ring-orange-400 bg-orange-100/60'
+                  : 'bg-gray-100 hover:bg-gray-200'
+              "
+              :title="'点击切换至第 ' + (sIdx + 1) + ' 题：' + (sub.title.split('：')[1] || sub.title) + (stepStates[sIdx]?.completed ? '（已攻克·可复盘）' : '')"
             >
               <div
-                class="h-full rounded-full transition-all duration-500"
+                class="h-full rounded-full transition-all duration-500 flex items-center justify-center"
                 :class="
-                  sIdx < currentStepIndex
-                    ? 'bg-emerald-500'
+                  stepStates[sIdx]?.completed
+                    ? 'bg-emerald-500 shadow-xs'
                     : sIdx === currentStepIndex
-                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 shadow-xs ring-1 ring-orange-300'
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 shadow-xs'
                     : 'bg-transparent'
                 "
               ></div>
             </div>
           </div>
 
-          <div class="text-[11px] font-black text-orange-600 whitespace-nowrap flex-shrink-0 flex items-center gap-1">
+          <div class="text-[11px] font-black text-orange-600 whitespace-nowrap flex-shrink-0 flex items-center gap-1.5">
             <span>第 {{ currentStepIndex + 1 }} / {{ totalSteps }} 题</span>
-            <span class="hidden sm:inline text-gray-400 font-bold">· {{ currentSubPuzzle.title.split('：')[1] || currentSubPuzzle.title }}</span>
+            <span
+              v-if="isCurrentStepCompleted"
+              class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-1.5 py-0.2 rounded-md flex items-center gap-0.5 border border-emerald-200"
+            >
+              <CheckCircle2 class="w-3 h-3 text-emerald-600" />
+              <span>已攻克·复盘</span>
+            </span>
+            <span v-else class="hidden sm:inline text-gray-400 font-bold">
+              · {{ currentSubPuzzle.title.split('：')[1] || currentSubPuzzle.title }}
+            </span>
           </div>
         </div>
       </div>
@@ -432,17 +512,27 @@ const handleBackToMap = () => {
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 items-start">
         
         <!-- Center/Left Column: Large Responsive Board (7 cols) -->
-        <div class="lg:col-span-7 bg-white rounded-3xl p-3 sm:p-5 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-2.5 sm:space-y-4">
+        <div class="lg:col-span-7 bg-white rounded-3xl p-3 sm:p-5 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-2.5 sm:space-y-4 relative">
+          
+          <!-- Solved Review Floating Badge (已做完复盘水印提示) -->
+          <div
+            v-if="isCurrentStepCompleted"
+            class="absolute top-3 left-3 sm:top-5 sm:left-5 z-20 bg-emerald-500/90 text-white text-[11px] sm:text-xs font-black px-2.5 py-1 rounded-xl shadow-md backdrop-blur-xs flex items-center gap-1.5 animate-pop-in"
+          >
+            <CheckCircle2 class="w-3.5 h-3.5" />
+            <span>第 {{ currentStepIndex + 1 }} 题已攻克（复盘展示）</span>
+          </div>
+
           <GoBoard
-            :game="game"
-            :readonly="isLessonComplete || isBotThinking"
+            :game="currentStepState.game"
+            :readonly="isLessonComplete || isBotThinking || isCurrentStepCompleted"
             :showLiberties="showLiberties"
             :showAtari="showAtari"
             :showBreathingTubes="showBreathingTubes"
             :theme="userStore.theme"
             :manualMove="true"
-            :highlightPoints="highlightPoints"
-            :lastMove="lastMove"
+            :highlightPoints="currentStepState.highlightPoints"
+            :lastMove="currentStepState.lastMove"
             :sizePx="440"
             @move="handleMove"
           />
@@ -499,11 +589,11 @@ const handleBackToMap = () => {
         <div class="lg:col-span-5 space-y-3 sm:space-y-3.5">
           
           <!-- Mascot NuoNuo Speech Bubble Guidance (Clickable to Replay Voice) -->
-          <div @click="narrateText(mascotDialogue)" class="cursor-pointer group" title="点这里让小诺朗读这段话">
+          <div @click="narrateText(currentStepState.mascotDialogue)" class="cursor-pointer group" title="点这里让小诺朗读这段话">
             <SpeechBubble
-              :text="mascotDialogue"
-              :mood="mascotMood"
-              :subtext="'目标：' + currentSubPuzzle.goalText"
+              :text="currentStepState.mascotDialogue"
+              :mood="currentStepState.mascotMood"
+              :subtext="isCurrentStepCompleted ? '本题已通关 · 答案复盘' : ('目标：' + currentSubPuzzle.goalText)"
             />
           </div>
 
@@ -511,10 +601,42 @@ const handleBackToMap = () => {
           <div class="bg-white rounded-3xl p-3.5 sm:p-4 border-2 border-orange-100 shadow-sm space-y-2 sm:space-y-2.5">
             <div class="text-xs font-black text-gray-500 uppercase tracking-wide flex items-center justify-between">
               <span>行动指南 (Actions)</span>
-              <span class="text-orange-600 font-bold truncate max-w-[200px]">目标：{{ currentSubPuzzle.goalText }}</span>
+              <span v-if="isCurrentStepCompleted" class="text-emerald-600 font-extrabold">✅ 本题已攻克（复盘展示）</span>
+              <span v-else class="text-orange-600 font-bold truncate max-w-[200px]">目标：{{ currentSubPuzzle.goalText }}</span>
             </div>
 
-            <div class="grid grid-cols-2 gap-2">
+            <!-- CASE A: 当前题已完成 -> 提供「重做本题」与「跳转未完成题 / 下一题 / 查看奖励」 -->
+            <div v-if="isCurrentStepCompleted" class="grid grid-cols-2 gap-2">
+              <button
+                @click="handleRedoCurrentStep"
+                class="py-2.5 sm:py-3 px-3 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-black text-xs sm:text-sm shadow-2xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+                title="重新演练本题"
+              >
+                <RotateCcw class="w-4 h-4 text-amber-600" />
+                <span>重做本题</span>
+              </button>
+
+              <!-- 若还有未完成的题，引导前往最新题；若全完成，引导看通关奖励 -->
+              <button
+                v-if="nextIncompleteStepIndex !== -1"
+                @click="switchStep(nextIncompleteStepIndex)"
+                class="py-2.5 sm:py-3 px-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white font-black text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+              >
+                <span>第 {{ nextIncompleteStepIndex + 1 }} 题 ➡️</span>
+              </button>
+
+              <button
+                v-else
+                @click="showStarModal = true"
+                class="py-2.5 sm:py-3 px-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 text-white font-black text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+              >
+                <Trophy class="w-4 h-4" />
+                <span>通关奖励</span>
+              </button>
+            </div>
+
+            <!-- CASE B: 当前题进行中 -> 提供「锦囊提示」与「重新开始本题」 -->
+            <div v-else class="grid grid-cols-2 gap-2">
               <button
                 @click="handleHint"
                 class="py-2.5 sm:py-3 px-3 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
@@ -524,7 +646,7 @@ const handleBackToMap = () => {
               </button>
 
               <button
-                @click="handleRestart"
+                @click="handleRedoCurrentStep"
                 class="py-2.5 sm:py-3 px-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
               >
                 <RotateCcw class="w-4 h-4" />
@@ -695,7 +817,7 @@ const handleBackToMap = () => {
       :stars="earnedStars"
       :hasNextLesson="hasNextLesson"
       @next="handleNextLesson"
-      @replay="handleRestart"
+      @replay="handleRestartAll"
       @map="handleBackToMap"
       @close="showStarModal = false"
     />
