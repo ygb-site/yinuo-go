@@ -149,7 +149,6 @@ const handleUnlockChapterProgress = async () => {
   const targetChapter = Number(targetChapterUnlock.value);
 
   if (targetChapter === 0) {
-    // 重置进度为初始第 1 关
     child.progress = {};
     child.totalStars = 0;
     child.badges = [];
@@ -176,7 +175,6 @@ const handleUnlockChapterProgress = async () => {
     child.exp = Math.max(child.exp || 0, targetChapter * 250);
     child.coins = Math.max(child.coins || 0, targetChapter * 150);
 
-    // 自动解锁对应章节通关勋章
     const badgeList = ['first_move', 'first_door'];
     if (targetChapter >= 1) badgeList.push('chapter_1_clear');
     if (targetChapter >= 2) badgeList.push('chapter_2_clear');
@@ -291,7 +289,7 @@ const formatTime = (iso?: string) => {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-5rem)] bg-[#F8FAFC] py-4 sm:py-8 lg:py-10 px-2.5 sm:px-6 lg:px-8 select-none text-gray-800">
+  <div class="min-h-[calc(100vh-5rem)] bg-[#F8FAFC] py-5 sm:py-8 lg:py-10 px-3 sm:px-6 lg:px-8 select-none text-gray-800">
     <div class="max-w-7xl mx-auto space-y-4 sm:space-y-6">
 
       <!-- Header Bar -->
@@ -307,7 +305,7 @@ const formatTime = (iso?: string) => {
             </button>
             <div class="inline-flex items-center gap-1.5 bg-purple-100 text-purple-900 px-3 py-1 rounded-full text-xs font-black">
               <ShieldAlert class="w-3.5 h-3.5 text-purple-700" />
-              <span>一诺弈学 · 后台管理系统</span>
+              <span>一诺弈学 · 官方后台管理系统</span>
             </div>
           </div>
           <h1 class="text-xl sm:text-2xl lg:text-3xl font-cartoon font-bold text-gray-900 tracking-wide pt-1">
@@ -318,7 +316,7 @@ const formatTime = (iso?: string) => {
           </p>
         </div>
 
-        <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+        <div class="flex items-center gap-2 w-full md:w-auto justify-center md:justify-end">
           <button
             @click="loadAdminData"
             :disabled="isLoading"
@@ -330,10 +328,10 @@ const formatTime = (iso?: string) => {
         </div>
       </div>
 
-      <!-- Top Metric Cards Grid (6 维核心指标 · 移动端2列自适应) -->
+      <!-- Top Metric Cards Grid (6 维核心指标 · 自适应整洁卡片) -->
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-4">
         <!-- Parents -->
-        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-indigo-100 shadow-sm space-y-0.5 text-center">
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-indigo-100 shadow-sm space-y-1 text-center">
           <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-sm">
             <Users class="w-4 h-4" />
           </div>
@@ -342,7 +340,7 @@ const formatTime = (iso?: string) => {
         </div>
 
         <!-- Children -->
-        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-orange-100 shadow-sm space-y-0.5 text-center">
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-orange-100 shadow-sm space-y-1 text-center">
           <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto text-sm">
             <span>👶</span>
           </div>
@@ -351,7 +349,7 @@ const formatTime = (iso?: string) => {
         </div>
 
         <!-- Stars -->
-        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-amber-100 shadow-sm space-y-0.5 text-center">
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-amber-100 shadow-sm space-y-1 text-center">
           <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-sm">
             <Star class="w-4 h-4 fill-current text-amber-500" />
           </div>
@@ -360,7 +358,7 @@ const formatTime = (iso?: string) => {
         </div>
 
         <!-- Games -->
-        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-rose-100 shadow-sm space-y-0.5 text-center">
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-rose-100 shadow-sm space-y-1 text-center">
           <div class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto text-sm">
             <Gamepad2 class="w-4 h-4" />
           </div>
@@ -369,7 +367,7 @@ const formatTime = (iso?: string) => {
         </div>
 
         <!-- Coins -->
-        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-amber-100 shadow-sm space-y-0.5 text-center">
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-amber-100 shadow-sm space-y-1 text-center">
           <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-sm">
             <Coins class="w-4 h-4 text-amber-500" />
           </div>
@@ -378,7 +376,7 @@ const formatTime = (iso?: string) => {
         </div>
 
         <!-- XP -->
-        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-purple-100 shadow-sm space-y-0.5 text-center">
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-purple-100 shadow-sm space-y-1 text-center">
           <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto text-sm">
             <Trophy class="w-4 h-4" />
           </div>
@@ -410,8 +408,8 @@ const formatTime = (iso?: string) => {
           </div>
         </div>
 
-        <!-- 📱 Mobile Friendly Cards View (移动端专属卡片式流式布局，告别被挤压截断) -->
-        <div class="lg:hidden space-y-3">
+        <!-- 📱 Clean Mobile & Tablet Card Layout (< 1280px 专属全宽家庭卡片，杜绝表格挤压) -->
+        <div class="xl:hidden space-y-3">
           <div v-if="filteredUsers.length === 0" class="py-8 text-center text-gray-400 font-bold text-xs bg-gray-50 rounded-2xl">
             没有找到匹配的用户记录
           </div>
@@ -419,13 +417,13 @@ const formatTime = (iso?: string) => {
           <div
             v-for="u in filteredUsers"
             :key="u.id"
-            class="bg-gradient-to-br from-white to-gray-50/50 rounded-2xl p-4 border-2 border-indigo-100 shadow-xs space-y-3 text-left"
+            class="bg-gradient-to-br from-white via-indigo-50/10 to-gray-50/50 rounded-2xl p-4 border-2 border-indigo-100 shadow-xs space-y-3 text-left"
           >
-            <!-- Card Top: Email & Role -->
+            <!-- Card Header: Email & Role -->
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0 flex-1">
                 <div class="font-black text-sm text-gray-900 truncate">{{ u.email }}</div>
-                <div class="text-[10px] text-gray-400 font-mono">ID: {{ u.id.slice(0, 8) }}... · 注册: {{ formatTime(u.created_at) }}</div>
+                <div class="text-[10px] text-gray-400 font-mono mt-0.5">ID: {{ u.id.slice(0, 8) }}... · 注册: {{ formatTime(u.created_at) }}</div>
               </div>
               <span
                 class="px-2 py-0.5 rounded-full text-[10px] font-black border flex-shrink-0 flex items-center gap-1"
@@ -436,11 +434,11 @@ const formatTime = (iso?: string) => {
               </span>
             </div>
 
-            <!-- Card Middle: Children Profiles -->
-            <div class="bg-amber-50/70 p-3 rounded-xl border border-orange-200/80 space-y-1.5">
+            <!-- Card Body: Children Profiles List -->
+            <div class="bg-amber-50/80 p-3 rounded-2xl border border-orange-200 space-y-2">
               <div class="text-[10px] font-bold text-gray-500 flex items-center justify-between">
                 <span>关联宝贝档案：</span>
-                <span class="text-amber-800 font-black">
+                <span class="text-amber-900 font-black">
                   总币: {{ (u.profiles_data || []).reduce((acc, cur) => acc + (cur.coins || 0), 0) }} · 
                   总星: {{ (u.profiles_data || []).reduce((acc, cur) => acc + (cur.totalStars || 0), 0) }} ⭐
                 </span>
@@ -450,57 +448,57 @@ const formatTime = (iso?: string) => {
                 <span
                   v-for="c in u.profiles_data"
                   :key="c.id"
-                  class="inline-flex items-center gap-1 bg-white border border-orange-200 px-2 py-1 rounded-lg text-xs font-bold text-gray-800 shadow-2xs"
+                  class="inline-flex items-center gap-1.5 bg-white border border-orange-200 px-2.5 py-1 rounded-xl text-xs font-bold text-gray-800 shadow-2xs"
                 >
-                  <span>{{ c.avatar }}</span>
-                  <span>{{ c.nickname }}</span>
-                  <span class="text-orange-600 font-black">⭐{{ c.totalStars || 0 }}</span>
+                  <span class="text-base">{{ c.avatar }}</span>
+                  <span class="font-black text-gray-900">{{ c.nickname }}</span>
+                  <span class="text-orange-600 font-black">⭐{{ c.totalStars || 0 }}星</span>
                   <span class="text-gray-400 text-[10px]">({{ Object.keys(c.progress || {}).length }}关)</span>
                 </span>
               </div>
-              <div v-else class="text-gray-400 text-xs italic">尚未创建宝贝</div>
+              <div v-else class="text-gray-400 text-xs italic py-1">尚未创建宝贝档案</div>
             </div>
 
-            <!-- Card Actions Grid -->
-            <div class="grid grid-cols-4 gap-1.5 pt-1">
+            <!-- Card Footer Actions (4 大触控按钮) -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
               <button
                 @click="openInspect(u)"
-                class="py-2 px-1 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-black text-[11px] flex items-center justify-center gap-1 border border-sky-200 transition active:scale-95 cursor-pointer"
+                class="py-2.5 px-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 font-black text-xs flex items-center justify-center gap-1.5 border border-sky-200 transition active:scale-95 cursor-pointer shadow-2xs"
               >
-                <Eye class="w-3.5 h-3.5" />
-                <span>学情</span>
+                <Eye class="w-3.5 h-3.5 text-sky-600" />
+                <span>查看学情</span>
               </button>
 
               <button
                 @click="openAdjust(u)"
-                class="py-2 px-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-black text-[11px] flex items-center justify-center gap-1 border border-amber-300 transition active:scale-95 cursor-pointer"
+                class="py-2.5 px-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-black text-xs flex items-center justify-center gap-1.5 border border-amber-300 transition active:scale-95 cursor-pointer shadow-2xs"
               >
                 <Zap class="w-3.5 h-3.5 text-amber-600" />
-                <span>调控</span>
+                <span>进度/奖励调控</span>
               </button>
 
               <button
                 @click="handleToggleAdmin(u)"
-                class="py-2 px-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-black text-[11px] flex items-center justify-center gap-1 border border-purple-200 transition active:scale-95 cursor-pointer"
+                class="py-2.5 px-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-black text-xs flex items-center justify-center gap-1.5 border border-purple-200 transition active:scale-95 cursor-pointer shadow-2xs"
               >
-                <ShieldAlert class="w-3.5 h-3.5" />
-                <span>{{ u.is_admin ? '降权' : '设管理' }}</span>
+                <ShieldAlert class="w-3.5 h-3.5 text-purple-600" />
+                <span>{{ u.is_admin ? '撤销管理' : '设为管理' }}</span>
               </button>
 
               <button
                 @click="handleDeleteUser(u)"
-                class="py-2 px-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-black text-[11px] flex items-center justify-center gap-1 border border-rose-200 transition active:scale-95 cursor-pointer"
+                class="py-2.5 px-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-black text-xs flex items-center justify-center gap-1.5 border border-rose-200 transition active:scale-95 cursor-pointer shadow-2xs"
               >
-                <Trash2 class="w-3.5 h-3.5" />
-                <span>删除</span>
+                <Trash2 class="w-3.5 h-3.5 text-rose-600" />
+                <span>删除用户</span>
               </button>
             </div>
           </div>
         </div>
 
-        <!-- 🖥️ Desktop Full Table View (桌面端大屏表格视图) -->
-        <div class="hidden lg:block overflow-x-auto rounded-2xl border border-gray-100">
-          <table class="w-full text-left text-xs font-medium">
+        <!-- 🖥️ Large Desktop Full Table View (>= 1280px 大屏幕宽表格) -->
+        <div class="hidden xl:block overflow-x-auto rounded-2xl border border-gray-100">
+          <table class="w-full text-left text-xs font-medium min-w-[860px]">
             <thead class="bg-gray-50 text-gray-500 text-[11px] font-black uppercase border-b border-gray-100">
               <tr>
                 <th class="py-3 px-4">家长账号</th>
@@ -535,7 +533,7 @@ const formatTime = (iso?: string) => {
                     <span
                       v-for="c in u.profiles_data"
                       :key="c.id"
-                      class="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg text-xs font-bold text-amber-950"
+                      class="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg text-xs font-bold text-amber-950"
                     >
                       <span>{{ c.avatar }}</span>
                       <span>{{ c.nickname }}</span>
@@ -616,7 +614,7 @@ const formatTime = (iso?: string) => {
         </div>
       </div>
 
-      <!-- System Content & Curriculum Overview Card (已修正文案重复) -->
+      <!-- System Content & Curriculum Overview Card -->
       <div class="bg-white rounded-3xl p-4 sm:p-6 border-2 border-indigo-100 shadow-sm space-y-3 sm:space-y-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
