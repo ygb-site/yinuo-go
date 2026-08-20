@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../../stores/useUserStore';
 import { useUnlockStore } from '../../stores/unlockStore';
@@ -37,11 +37,19 @@ const userStore = useUserStore();
 const unlockStore = useUnlockStore();
 const tsumegoStore = useTsumegoStore();
 
-// Consecutive Streak Days
+// Consecutive Streak Days (Real Date-based Continuous Check-In)
 const streakDays = computed(() => {
-  const completedLessons = unlockStore.completedLessonsCount;
-  const gamesPlayed = userStore.stats?.gamesPlayed || 0;
-  return Math.min(7, Math.max(1, ((completedLessons + gamesPlayed) % 7) + 1));
+  return userStore.checkInStreak;
+});
+
+onMounted(() => {
+  if (userStore.hasProfile) {
+    const res = userStore.performDailyCheckIn();
+    if (res.isNewCheckIn) {
+      playCoinSound();
+      triggerConfetti();
+    }
+  }
 });
 
 const completedLessons = computed(() => unlockStore.completedLessonsCount);

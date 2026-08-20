@@ -24,6 +24,8 @@ export interface ChildProfile {
   unlockedThemes?: string[];
   unlockedAvatars?: string[];
   mistakes?: string[];
+  lastCheckInDate?: string;
+  checkInStreak?: number;
   solvedMistakes?: string[];
   arcadeHighScores?: {
     speedCapture: number;
@@ -287,6 +289,20 @@ export const useUserStore = defineStore('userStore', {
 
     allBadges(): AchievementBadge[] {
       return BADGES_DATA;
+    },
+
+    checkInStreak(): number {
+      const prof = this.currentProfile;
+      if (!prof.id || prof.id === '') return 1;
+      const today = new Date().toLocaleDateString('en-CA');
+      if (!prof.lastCheckInDate) return 1;
+      const lastDate = new Date(prof.lastCheckInDate);
+      const nowDate = new Date(today);
+      const diffDays = Math.round((nowDate.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
+      if (diffDays === 0 || diffDays === 1) {
+        return Math.max(1, Math.min(7, prof.checkInStreak || 1));
+      }
+      return 1;
     }
   },
 
@@ -801,6 +817,43 @@ export const useUserStore = defineStore('userStore', {
       this.volume = val;
       sound.volume = val;
       this.touchSave();
+    },
+
+    performDailyCheckIn(): { isNewCheckIn: boolean; streak: number; rewardCoins: number } {
+      if (!this.hasProfile) return { isNewCheckIn: false, streak: 1, rewardCoins: 0 };
+      const prof = this.currentProfile;
+      const today = new Date().toLocaleDateString('en-CA');
+      const last = prof.lastCheckInDate;
+
+      if (last === today) {
+        return {
+          isNewCheckIn: false,
+          streak: Math.max(1, Math.min(7, prof.checkInStreak || 1)),
+          rewardCoins: 0
+        };
+      }
+
+      let newStreak = 1;
+      if (last) {
+        const lastDate = new Date(last);
+        const nowDate = new Date(today);
+        const diffDays = Math.round((nowDate.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
+        if (diffDays === 1) {
+          newStreak = ((prof.checkInStreak || 1) % 7) + 1;
+        }
+      }
+
+      prof.lastCheckInDate = today;
+      prof.checkInStreak = newStreak;
+      const coinsGained = newStreak === 7 ? 50 : 15;
+      this.addCoins(coinsGained);
+      this.touchSave();
+
+      return {
+        isNewCheckIn: true,
+        streak: newStreak,
+        rewardCoins: coinsGained
+      };
     },
 
     toggleTouchConfirm() {

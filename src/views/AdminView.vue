@@ -190,7 +190,6 @@ const handleUnlockChapterProgress = async () => {
 
   const res = await updateUserByAdmin(u.id, { profiles_data: profiles });
   if (res.success) {
-    // 如果修改的是当前管理员自己的账号，实时更新本地内存
     if (userStore.currentUserId === u.id) {
       userStore.profiles = profiles;
     }
@@ -292,38 +291,38 @@ const formatTime = (iso?: string) => {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-5rem)] bg-[#F8FAFC] py-6 sm:py-10 px-4 sm:px-6 lg:px-8 select-none text-gray-800">
-    <div class="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+  <div class="min-h-[calc(100vh-5rem)] bg-[#F8FAFC] py-4 sm:py-8 lg:py-10 px-2.5 sm:px-6 lg:px-8 select-none text-gray-800">
+    <div class="max-w-7xl mx-auto space-y-4 sm:space-y-6">
 
       <!-- Header Bar -->
-      <div class="bg-white rounded-3xl p-5 sm:p-7 border-2 border-indigo-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="space-y-1.5 text-center md:text-left">
-          <div class="flex items-center gap-2 flex-wrap justify-center md:justify-start">
+      <div class="bg-white rounded-3xl p-4 sm:p-6 border-2 border-indigo-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
+        <div class="space-y-1 text-center md:text-left w-full md:w-auto">
+          <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center md:justify-start">
             <button
               @click="router.push('/')"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-black transition active:scale-95 cursor-pointer border border-gray-200"
+              class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-black transition active:scale-95 cursor-pointer border border-gray-200"
             >
               <ArrowLeft class="w-3.5 h-3.5" />
               <span>返回前台</span>
             </button>
             <div class="inline-flex items-center gap-1.5 bg-purple-100 text-purple-900 px-3 py-1 rounded-full text-xs font-black">
               <ShieldAlert class="w-3.5 h-3.5 text-purple-700" />
-              <span>一诺弈学 · 官方后台管理系统 (Admin Control)</span>
+              <span>一诺弈学 · 后台管理系统</span>
             </div>
           </div>
-          <h1 class="text-2xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
+          <h1 class="text-xl sm:text-2xl lg:text-3xl font-cartoon font-bold text-gray-900 tracking-wide pt-1">
             全站用户与教学数据中心
           </h1>
-          <p class="text-xs sm:text-sm text-gray-500 font-medium">
-            支持一键调整宝贝通关章节、解锁全功能玩法、实时查看全站家庭学情与发放金币星星。
+          <p class="text-xs text-gray-500 font-medium">
+            一键调控宝贝关卡进度、解锁全套玩法、实时查看全站学情与发放金币星星。
           </p>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 w-full md:w-auto justify-end">
           <button
             @click="loadAdminData"
             :disabled="isLoading"
-            class="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black shadow-md transition active:scale-95 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            class="w-full md:w-auto px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': isLoading }" />
             <span>刷新云端数据</span>
@@ -331,70 +330,70 @@ const formatTime = (iso?: string) => {
         </div>
       </div>
 
-      <!-- Top Metric Cards Grid (6 维核心指标) -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      <!-- Top Metric Cards Grid (6 维核心指标 · 移动端2列自适应) -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-4">
         <!-- Parents -->
-        <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-indigo-100 shadow-sm space-y-1 text-center">
-          <div class="w-9 h-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-base">
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-indigo-100 shadow-sm space-y-0.5 text-center">
+          <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-sm">
             <Users class="w-4 h-4" />
           </div>
-          <div class="text-[11px] font-bold text-gray-400">注册家长数</div>
-          <div class="text-2xl font-black text-indigo-900 font-mono">{{ stats.totalParents }}</div>
+          <div class="text-[10px] sm:text-[11px] font-bold text-gray-400">注册家长数</div>
+          <div class="text-xl sm:text-2xl font-black text-indigo-900 font-mono">{{ stats.totalParents }}</div>
         </div>
 
         <!-- Children -->
-        <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-orange-100 shadow-sm space-y-1 text-center">
-          <div class="w-9 h-9 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto text-base">
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-orange-100 shadow-sm space-y-0.5 text-center">
+          <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto text-sm">
             <span>👶</span>
           </div>
-          <div class="text-[11px] font-bold text-gray-400">宝贝档案总数</div>
-          <div class="text-2xl font-black text-orange-900 font-mono">{{ stats.totalChildren }}</div>
+          <div class="text-[10px] sm:text-[11px] font-bold text-gray-400">宝贝档案总数</div>
+          <div class="text-xl sm:text-2xl font-black text-orange-900 font-mono">{{ stats.totalChildren }}</div>
         </div>
 
         <!-- Stars -->
-        <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-amber-100 shadow-sm space-y-1 text-center">
-          <div class="w-9 h-9 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-base">
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-amber-100 shadow-sm space-y-0.5 text-center">
+          <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-sm">
             <Star class="w-4 h-4 fill-current text-amber-500" />
           </div>
-          <div class="text-[11px] font-bold text-gray-400">全站累积星星</div>
-          <div class="text-2xl font-black text-amber-900 font-mono">{{ stats.totalStars }}</div>
+          <div class="text-[10px] sm:text-[11px] font-bold text-gray-400">全站累积星星</div>
+          <div class="text-xl sm:text-2xl font-black text-amber-900 font-mono">{{ stats.totalStars }}</div>
         </div>
 
         <!-- Games -->
-        <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-rose-100 shadow-sm space-y-1 text-center">
-          <div class="w-9 h-9 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto text-base">
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-rose-100 shadow-sm space-y-0.5 text-center">
+          <div class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto text-sm">
             <Gamepad2 class="w-4 h-4" />
           </div>
-          <div class="text-[11px] font-bold text-gray-400">总对局场次</div>
-          <div class="text-2xl font-black text-rose-900 font-mono">{{ stats.totalGames }}</div>
+          <div class="text-[10px] sm:text-[11px] font-bold text-gray-400">总对局场次</div>
+          <div class="text-xl sm:text-2xl font-black text-rose-900 font-mono">{{ stats.totalGames }}</div>
         </div>
 
         <!-- Coins -->
-        <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-amber-100 shadow-sm space-y-1 text-center">
-          <div class="w-9 h-9 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-base">
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-amber-100 shadow-sm space-y-0.5 text-center">
+          <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-sm">
             <Coins class="w-4 h-4 text-amber-500" />
           </div>
-          <div class="text-[11px] font-bold text-gray-400">全站金币池</div>
-          <div class="text-2xl font-black text-amber-900 font-mono">{{ stats.totalCoins }}</div>
+          <div class="text-[10px] sm:text-[11px] font-bold text-gray-400">全站金币池</div>
+          <div class="text-xl sm:text-2xl font-black text-amber-900 font-mono">{{ stats.totalCoins }}</div>
         </div>
 
         <!-- XP -->
-        <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-purple-100 shadow-sm space-y-1 text-center">
-          <div class="w-9 h-9 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto text-base">
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 border-purple-100 shadow-sm space-y-0.5 text-center">
+          <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto text-sm">
             <Trophy class="w-4 h-4" />
           </div>
-          <div class="text-[11px] font-bold text-gray-400">总经验产出</div>
-          <div class="text-2xl font-black text-purple-900 font-mono">{{ stats.totalExp }}</div>
+          <div class="text-[10px] sm:text-[11px] font-bold text-gray-400">总经验产出</div>
+          <div class="text-xl sm:text-2xl font-black text-purple-900 font-mono">{{ stats.totalExp }}</div>
         </div>
       </div>
 
       <!-- User List Section -->
-      <div class="bg-white rounded-3xl p-5 sm:p-7 border-2 border-gray-200 shadow-sm space-y-4">
+      <div class="bg-white rounded-3xl p-4 sm:p-6 border-2 border-gray-200 shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <Users class="w-5 h-5 text-indigo-600" />
-            <h2 class="text-lg sm:text-xl font-black text-gray-900">家庭用户列表 (Registered Families)</h2>
-            <span class="text-xs font-bold text-gray-400 bg-gray-100 px-2.5 py-0.5 rounded-full">
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <Users class="w-5 h-5 text-indigo-600 flex-shrink-0" />
+            <h2 class="text-base sm:text-lg font-black text-gray-900">家庭用户管理</h2>
+            <span class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
               共 {{ filteredUsers.length }} 户
             </span>
           </div>
@@ -411,8 +410,96 @@ const formatTime = (iso?: string) => {
           </div>
         </div>
 
-        <!-- User Table -->
-        <div class="overflow-x-auto rounded-2xl border border-gray-100">
+        <!-- 📱 Mobile Friendly Cards View (移动端专属卡片式流式布局，告别被挤压截断) -->
+        <div class="lg:hidden space-y-3">
+          <div v-if="filteredUsers.length === 0" class="py-8 text-center text-gray-400 font-bold text-xs bg-gray-50 rounded-2xl">
+            没有找到匹配的用户记录
+          </div>
+
+          <div
+            v-for="u in filteredUsers"
+            :key="u.id"
+            class="bg-gradient-to-br from-white to-gray-50/50 rounded-2xl p-4 border-2 border-indigo-100 shadow-xs space-y-3 text-left"
+          >
+            <!-- Card Top: Email & Role -->
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="font-black text-sm text-gray-900 truncate">{{ u.email }}</div>
+                <div class="text-[10px] text-gray-400 font-mono">ID: {{ u.id.slice(0, 8) }}... · 注册: {{ formatTime(u.created_at) }}</div>
+              </div>
+              <span
+                class="px-2 py-0.5 rounded-full text-[10px] font-black border flex-shrink-0 flex items-center gap-1"
+                :class="u.is_admin ? 'bg-purple-100 text-purple-800 border-purple-300' : 'bg-gray-100 text-gray-600 border-gray-200'"
+              >
+                <ShieldCheck v-if="u.is_admin" class="w-3 h-3 text-purple-600" />
+                <span>{{ u.is_admin ? '管理员' : '普通用户' }}</span>
+              </span>
+            </div>
+
+            <!-- Card Middle: Children Profiles -->
+            <div class="bg-amber-50/70 p-3 rounded-xl border border-orange-200/80 space-y-1.5">
+              <div class="text-[10px] font-bold text-gray-500 flex items-center justify-between">
+                <span>关联宝贝档案：</span>
+                <span class="text-amber-800 font-black">
+                  总币: {{ (u.profiles_data || []).reduce((acc, cur) => acc + (cur.coins || 0), 0) }} · 
+                  总星: {{ (u.profiles_data || []).reduce((acc, cur) => acc + (cur.totalStars || 0), 0) }} ⭐
+                </span>
+              </div>
+
+              <div v-if="u.profiles_data && u.profiles_data.length > 0" class="flex flex-wrap gap-1.5">
+                <span
+                  v-for="c in u.profiles_data"
+                  :key="c.id"
+                  class="inline-flex items-center gap-1 bg-white border border-orange-200 px-2 py-1 rounded-lg text-xs font-bold text-gray-800 shadow-2xs"
+                >
+                  <span>{{ c.avatar }}</span>
+                  <span>{{ c.nickname }}</span>
+                  <span class="text-orange-600 font-black">⭐{{ c.totalStars || 0 }}</span>
+                  <span class="text-gray-400 text-[10px]">({{ Object.keys(c.progress || {}).length }}关)</span>
+                </span>
+              </div>
+              <div v-else class="text-gray-400 text-xs italic">尚未创建宝贝</div>
+            </div>
+
+            <!-- Card Actions Grid -->
+            <div class="grid grid-cols-4 gap-1.5 pt-1">
+              <button
+                @click="openInspect(u)"
+                class="py-2 px-1 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-black text-[11px] flex items-center justify-center gap-1 border border-sky-200 transition active:scale-95 cursor-pointer"
+              >
+                <Eye class="w-3.5 h-3.5" />
+                <span>学情</span>
+              </button>
+
+              <button
+                @click="openAdjust(u)"
+                class="py-2 px-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-black text-[11px] flex items-center justify-center gap-1 border border-amber-300 transition active:scale-95 cursor-pointer"
+              >
+                <Zap class="w-3.5 h-3.5 text-amber-600" />
+                <span>调控</span>
+              </button>
+
+              <button
+                @click="handleToggleAdmin(u)"
+                class="py-2 px-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-black text-[11px] flex items-center justify-center gap-1 border border-purple-200 transition active:scale-95 cursor-pointer"
+              >
+                <ShieldAlert class="w-3.5 h-3.5" />
+                <span>{{ u.is_admin ? '降权' : '设管理' }}</span>
+              </button>
+
+              <button
+                @click="handleDeleteUser(u)"
+                class="py-2 px-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-black text-[11px] flex items-center justify-center gap-1 border border-rose-200 transition active:scale-95 cursor-pointer"
+              >
+                <Trash2 class="w-3.5 h-3.5" />
+                <span>删除</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🖥️ Desktop Full Table View (桌面端大屏表格视图) -->
+        <div class="hidden lg:block overflow-x-auto rounded-2xl border border-gray-100">
           <table class="w-full text-left text-xs font-medium">
             <thead class="bg-gray-50 text-gray-500 text-[11px] font-black uppercase border-b border-gray-100">
               <tr>
@@ -529,42 +616,42 @@ const formatTime = (iso?: string) => {
         </div>
       </div>
 
-      <!-- System Content & Curriculum Overview Card -->
-      <div class="bg-white rounded-3xl p-5 sm:p-7 border-2 border-indigo-100 shadow-sm space-y-4">
+      <!-- System Content & Curriculum Overview Card (已修正文案重复) -->
+      <div class="bg-white rounded-3xl p-4 sm:p-6 border-2 border-indigo-100 shadow-sm space-y-3 sm:space-y-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <BookOpen class="w-5 h-5 text-orange-600" />
-            <h2 class="text-lg sm:text-xl font-black text-gray-900">系统教学题库与资产资产概览</h2>
+            <h2 class="text-base sm:text-lg font-black text-gray-900">系统教学题库与课程资产概览</h2>
           </div>
           <span class="text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
             版本 1.0.0 · 生产就绪
           </span>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-          <div class="bg-orange-50/70 p-4 rounded-2xl border border-orange-200 space-y-1">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 text-center">
+          <div class="bg-orange-50/70 p-3 sm:p-4 rounded-2xl border border-orange-200 space-y-0.5">
             <div class="text-xs font-black text-orange-900">启蒙主线课程</div>
-            <div class="text-2xl font-black text-orange-600">
+            <div class="text-xl sm:text-2xl font-black text-orange-600">
               {{ CHAPTERS_DATA.length }} 大章 / {{ CHAPTERS_DATA.reduce((a, b) => a + b.lessons.length, 0) }} 关
             </div>
             <div class="text-[10px] text-gray-500 font-bold">全分支阶梯题库已校准</div>
           </div>
 
-          <div class="bg-rose-50/70 p-4 rounded-2xl border border-rose-200 space-y-1">
+          <div class="bg-rose-50/70 p-3 sm:p-4 rounded-2xl border border-rose-200 space-y-0.5">
             <div class="text-xs font-black text-rose-900">经典死活题库</div>
-            <div class="text-2xl font-black text-rose-600">{{ TSUMEGO_PUZZLES.length }} 题</div>
+            <div class="text-xl sm:text-2xl font-black text-rose-600">{{ TSUMEGO_PUZZLES.length }} 题</div>
             <div class="text-[10px] text-gray-500 font-bold">含吃子、做眼、死活急所</div>
           </div>
 
-          <div class="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 space-y-1">
+          <div class="bg-amber-50/70 p-3 sm:p-4 rounded-2xl border border-amber-200 space-y-0.5">
             <div class="text-xs font-black text-amber-900">成就勋章体系</div>
-            <div class="text-2xl font-black text-amber-600">{{ BADGES_DATA.length }} 枚</div>
+            <div class="text-xl sm:text-2xl font-black text-amber-600">{{ BADGES_DATA.length }} 枚</div>
             <div class="text-[10px] text-gray-500 font-bold">普通 / 稀有 / 史诗 / 传说</div>
           </div>
 
-          <div class="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-200 space-y-1">
+          <div class="bg-indigo-50/70 p-3 sm:p-4 rounded-2xl border border-indigo-200 space-y-0.5">
             <div class="text-xs font-black text-indigo-900">棋盘装扮皮肤</div>
-            <div class="text-2xl font-black text-indigo-600">{{ SHOP_THEMES.length }} 款</div>
+            <div class="text-xl sm:text-2xl font-black text-indigo-600">{{ SHOP_THEMES.length }} 款</div>
             <div class="text-[10px] text-gray-500 font-bold">原木、星空、翡翠、糖果等</div>
           </div>
         </div>
@@ -579,11 +666,11 @@ const formatTime = (iso?: string) => {
         class="fixed inset-0 z-[10000] overflow-hidden bg-black/60 backdrop-blur-md flex items-center justify-center p-4 modal-overlay select-none"
         @click.self="showInspectModal = false"
       >
-        <div class="bg-white rounded-3xl p-6 max-w-lg w-full border-4 border-indigo-300 shadow-2xl space-y-4 max-h-[88vh] overflow-y-auto modal-card text-left">
+        <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-lg w-full border-4 border-indigo-300 shadow-2xl space-y-4 max-h-[88vh] overflow-y-auto modal-card text-left">
           <div class="flex items-center justify-between border-b border-gray-100 pb-3">
             <div>
               <div class="text-[10px] font-black text-indigo-600 uppercase">家长账号档案学情</div>
-              <h3 class="text-base sm:text-lg font-black text-gray-900">{{ inspectingUser.email }}</h3>
+              <h3 class="text-base sm:text-lg font-black text-gray-900 truncate max-w-[260px]">{{ inspectingUser.email }}</h3>
             </div>
             <button @click="showInspectModal = false" class="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 cursor-pointer">
               <X class="w-5 h-5" />
@@ -641,11 +728,11 @@ const formatTime = (iso?: string) => {
         class="fixed inset-0 z-[10000] overflow-hidden bg-black/60 backdrop-blur-md flex items-center justify-center p-4 modal-overlay select-none"
         @click.self="showAdjustModal = false"
       >
-        <div class="bg-white rounded-3xl p-6 max-w-lg w-full border-4 border-amber-300 shadow-2xl space-y-4 modal-card text-left">
+        <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-md w-full border-4 border-amber-300 shadow-2xl space-y-4 modal-card text-left">
           <div class="flex items-center justify-between border-b border-gray-100 pb-3">
             <div>
               <div class="text-[10px] font-black text-amber-600 uppercase">宝贝进度与奖励调控</div>
-              <h3 class="text-base font-black text-gray-900">{{ adjustingUser.email }}</h3>
+              <h3 class="text-base font-black text-gray-900 truncate max-w-[260px]">{{ adjustingUser.email }}</h3>
             </div>
             <button @click="showAdjustModal = false" class="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 cursor-pointer">
               <X class="w-5 h-5" />
