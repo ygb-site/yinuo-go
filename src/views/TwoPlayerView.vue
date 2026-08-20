@@ -26,11 +26,15 @@ import {
   Layers,
   Scale,
   Sparkles,
-  ArrowLeft
+  ArrowLeft,
+  Maximize2,
+  Minimize2
 } from 'lucide-vue-next';
 
 const router = useRouter();
 const userStore = useUserStore();
+
+const isZenMode = ref(false);
 
 const goBack = async () => {
   if (!isGameOver.value && game.value.history.length > 0) {
@@ -132,8 +136,6 @@ const restoreMatchState = (): boolean => {
     return false;
   }
 };
-
-
 
 const initGame = (isFresh = false) => {
   if (!isFresh && restoreMatchState()) {
@@ -334,237 +336,86 @@ const changeSize = (size: BoardSize) => {
   boardSize.value = size;
   initGame(true);
 };
+
+const toggleZenMode = () => {
+  isZenMode.value = !isZenMode.value;
+  playButtonSound();
+};
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-3 sm:py-8 px-2.5 sm:px-6 lg:px-8 select-none">
-    <div class="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+  <div
+    class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] select-none transition-all"
+    :class="isZenMode ? 'p-1 sm:p-3 bg-[#F8F5EE]' : 'py-3 sm:py-8 px-2.5 sm:px-6 lg:px-8'"
+  >
+    <div class="max-w-6xl mx-auto space-y-3 sm:space-y-4">
 
-      <!-- Header Banner -->
-      <div class="bg-white rounded-3xl p-4 sm:p-7 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
-        <div class="space-y-1 text-center md:text-left">
-          <div class="flex items-center gap-2 flex-wrap justify-center md:justify-start">
-            <button
-              @click="goBack"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-black transition active:scale-95 cursor-pointer border border-orange-200 shadow-2xs"
-              title="返回对弈竞技"
-            >
-              <ArrowLeft class="w-3.5 h-3.5" />
-              <span>返回对弈竞技</span>
-            </button>
-            <div class="inline-flex items-center gap-2 bg-purple-100 text-purple-900 px-3 py-1 rounded-full text-xs font-black">
-              <Users class="w-3.5 h-3.5 text-purple-700" />
-              <span>亲子面对面对弈 (防误触 · 刷新自动恢复)</span>
-            </div>
-          </div>
-          <h1 class="text-xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
-            双人同屏对战棋盘
-          </h1>
-          <p class="text-xs sm:text-sm text-gray-600 font-medium max-w-xl">
-            支持 5x5 到 13x13 棋盘、双人计时钟、断线与防误刷自动恢复、终局自动点目数子！
-          </p>
-        </div>
-
-        <!-- Size Switchers -->
-        <div class="flex items-center bg-amber-50 p-1 sm:p-1.5 rounded-2xl border border-orange-200 shadow-inner gap-1">
+      <!-- =========================================================
+           MODE 1: 🧘 ZEN / ZONE 纯净沉浸模式 (极简紧凑 · 专为手机优化)
+           ========================================================= -->
+      <div v-if="isZenMode" class="space-y-2 max-w-lg mx-auto animate-fade-in">
+        
+        <!-- Top Sleek VS Status HUD Bar -->
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border-2 border-orange-200 shadow-sm flex items-center justify-between gap-2">
+          <!-- Back & Return -->
           <button
-            v-for="s in [5, 7, 9, 13]"
-            :key="s"
-            @click="changeSize(s as BoardSize)"
-            class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
-            :class="boardSize === s ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm' : 'text-gray-600 hover:text-orange-600'"
+            @click="goBack"
+            class="p-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 transition active:scale-95 cursor-pointer flex-shrink-0"
+            title="返回对弈竞技"
           >
-            {{ s }}x{{ s }} 盘
+            <ArrowLeft class="w-4 h-4" />
+          </button>
+
+          <!-- White Info -->
+          <div
+            class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all flex-1 min-w-0"
+            :class="currentTurn === 'W' && !isGameOver ? 'bg-indigo-50 border-indigo-400 ring-2 ring-indigo-300' : 'bg-gray-50 border-gray-200'"
+          >
+            <span class="w-3.5 h-3.5 rounded-full bg-white border border-gray-400 flex-shrink-0 shadow-2xs"></span>
+            <div class="min-w-0 flex-1 leading-tight">
+              <div class="text-xs font-black text-gray-900 truncate">{{ whiteName }}</div>
+              <div class="text-[10px] text-gray-500 font-bold">提:{{ whiteCaptures }} · {{ formatTime(whiteSeconds) }}</div>
+            </div>
+            <span v-if="currentTurn === 'W' && !isGameOver" class="w-2 h-2 rounded-full bg-indigo-500 animate-ping flex-shrink-0"></span>
+          </div>
+
+          <!-- VS Badge -->
+          <div class="text-[11px] font-black text-orange-600 px-1 font-mono flex-shrink-0">
+            VS
+          </div>
+
+          <!-- Black Info -->
+          <div
+            class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all flex-1 min-w-0"
+            :class="currentTurn === 'B' && !isGameOver ? 'bg-amber-50 border-orange-400 ring-2 ring-orange-300' : 'bg-gray-50 border-gray-200'"
+          >
+            <span class="w-3.5 h-3.5 rounded-full bg-gray-900 flex-shrink-0 shadow-2xs"></span>
+            <div class="min-w-0 flex-1 leading-tight">
+              <div class="text-xs font-black text-gray-900 truncate">{{ blackName }}</div>
+              <div class="text-[10px] text-gray-500 font-bold">提:{{ blackCaptures }} · {{ formatTime(blackSeconds) }}</div>
+            </div>
+            <span v-if="currentTurn === 'B' && !isGameOver" class="w-2 h-2 rounded-full bg-orange-500 animate-ping flex-shrink-0"></span>
+          </div>
+
+          <!-- Exit Zen Mode Button -->
+          <button
+            @click="toggleZenMode"
+            class="p-2 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-900 font-black transition active:scale-95 cursor-pointer flex-shrink-0 shadow-2xs"
+            title="退出专注模式"
+          >
+            <Minimize2 class="w-4 h-4" />
           </button>
         </div>
-      </div>
 
-      <!-- Main Play Layout -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
-        
-        <!-- Left: Match Control & Players Info (4 cols) -->
-        <div class="lg:col-span-4 space-y-3.5 sm:space-y-4">
-          
-          <!-- White Player Card (Player 2) -->
-          <div
-            class="rounded-3xl p-4 sm:p-5 border-2 transition-all"
-            :class="
-              isGameOver && scoreResult?.winner === 'W'
-                ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-300'
-                : currentTurn === 'W' && !isGameOver
-                ? 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-400 shadow-md ring-2 ring-indigo-300'
-                : 'bg-white border-gray-100'
-            "
-          >
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center gap-2">
-                <span class="w-5 h-5 rounded-full bg-white border-2 border-gray-400 inline-block shadow-inner flex-shrink-0"></span>
-                <input
-                  v-model="whiteName"
-                  class="font-black text-xs sm:text-sm text-gray-900 bg-transparent border-b border-dashed border-gray-300 focus:border-indigo-500 focus:outline-none max-w-[130px]"
-                  title="点击修改白方昵称"
-                />
-              </div>
-              <span
-                v-if="isGameOver && scoreResult?.winner === 'W'"
-                class="text-[10px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-full animate-bounce"
-              >
-                🏆 获胜者
-              </span>
-              <span
-                v-else-if="currentTurn === 'W' && !isGameOver"
-                class="text-[10px] font-black bg-indigo-500 text-white px-2 py-0.5 rounded-full animate-pulse"
-              >
-                当前走棋
-              </span>
-            </div>
-
-            <div class="flex items-center justify-between text-xs font-bold pt-2 border-t border-gray-100">
-              <span class="text-gray-500">已提黑子：{{ whiteCaptures }}</span>
-              <span class="font-mono text-indigo-900 bg-white px-2.5 py-1 rounded-xl border border-indigo-100 shadow-2xs">
-                ⏱️ {{ formatTime(whiteSeconds) }}
-              </span>
-            </div>
-
-            <div v-if="!isGameOver" class="mt-2.5 pt-2 border-t border-gray-100 flex justify-end">
-              <button
-                @click="handleResign('W')"
-                class="text-[11px] font-black text-gray-400 hover:text-rose-600 transition cursor-pointer"
-              >
-                白方认输
-              </button>
-            </div>
+        <!-- Center: Maximized Board -->
+        <div class="bg-white rounded-3xl p-2.5 sm:p-4 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center relative">
+          <!-- Live auto pass / game notice -->
+          <div v-if="autoPassNotice" class="absolute top-3 z-30 animate-bounce-subtle">
+            <span class="text-xs font-black bg-amber-500 text-white px-3 py-1 rounded-full shadow-md">
+              📢 {{ autoPassNotice }}
+            </span>
           </div>
 
-          <!-- Black Player Card (Player 1) -->
-          <div
-            class="rounded-3xl p-4 sm:p-5 border-2 transition-all"
-            :class="
-              isGameOver && scoreResult?.winner === 'B'
-                ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-300'
-                : currentTurn === 'B' && !isGameOver
-                ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-orange-400 shadow-md ring-2 ring-orange-300'
-                : 'bg-white border-gray-100'
-            "
-          >
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center gap-2">
-                <span class="w-5 h-5 rounded-full bg-gray-900 inline-block shadow-sm flex-shrink-0"></span>
-                <input
-                  v-model="blackName"
-                  class="font-black text-xs sm:text-sm text-gray-900 bg-transparent border-b border-dashed border-gray-300 focus:border-orange-500 focus:outline-none max-w-[130px]"
-                  title="点击修改黑方昵称"
-                />
-              </div>
-              <span
-                v-if="isGameOver && scoreResult?.winner === 'B'"
-                class="text-[10px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-full animate-bounce"
-              >
-                🏆 获胜者
-              </span>
-              <span
-                v-else-if="currentTurn === 'B' && !isGameOver"
-                class="text-[10px] font-black bg-orange-500 text-white px-2 py-0.5 rounded-full animate-pulse"
-              >
-                当前走棋
-              </span>
-            </div>
-
-            <div class="flex items-center justify-between text-xs font-bold pt-2 border-t border-gray-100">
-              <span class="text-gray-500">已提白子：{{ blackCaptures }}</span>
-              <span class="font-mono text-orange-950 bg-white px-2.5 py-1 rounded-xl border border-orange-100 shadow-2xs">
-                ⏱️ {{ formatTime(blackSeconds) }}
-              </span>
-            </div>
-
-            <div v-if="!isGameOver" class="mt-2.5 pt-2 border-t border-gray-100 flex justify-end">
-              <button
-                @click="handleResign('B')"
-                class="text-[11px] font-black text-gray-400 hover:text-rose-600 transition cursor-pointer"
-              >
-                黑方认输
-              </button>
-            </div>
-          </div>
-
-          <!-- Controls Box -->
-          <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-orange-100 shadow-sm space-y-3">
-            <div class="text-xs font-black text-gray-500 uppercase tracking-wide flex items-center justify-between">
-              <span>对局操作与辅助</span>
-              <span class="text-orange-600 font-bold">贴 {{ komi }} 目</span>
-            </div>
-
-            <div class="grid grid-cols-3 gap-1.5 sm:gap-2">
-              <button
-                @click="showBreathingTubes = !showBreathingTubes"
-                class="py-2 px-1.5 rounded-2xl border text-[11px] font-black flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer"
-                :class="showBreathingTubes ? 'bg-emerald-100 border-emerald-300 text-emerald-950' : 'bg-gray-50 border-gray-200 text-gray-600'"
-              >
-                <Wind class="w-3.5 h-3.5 text-emerald-600" />
-                <span>呼吸管</span>
-              </button>
-
-              <button
-                @click="showLiberties = !showLiberties"
-                class="py-2 px-1.5 rounded-2xl border text-[11px] font-black flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer"
-                :class="showLiberties ? 'bg-amber-100 border-amber-300 text-amber-950' : 'bg-gray-50 border-gray-200 text-gray-600'"
-              >
-                <Eye class="w-3.5 h-3.5" />
-                <span>数气</span>
-              </button>
-
-              <button
-                @click="showAtari = !showAtari"
-                class="py-2 px-1.5 rounded-2xl border text-[11px] font-black flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer"
-                :class="showAtari ? 'bg-rose-100 border-rose-300 text-rose-950' : 'bg-gray-50 border-gray-200 text-gray-600'"
-              >
-                <AlertTriangle class="w-3.5 h-3.5" />
-                <span>叫吃预警</span>
-              </button>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <button
-                @click="handleUndo"
-                :disabled="isGameOver"
-                class="py-2.5 px-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-xs transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
-              >
-                <RotateCcw class="w-3.5 h-3.5" />
-                <span>悔棋一手</span>
-              </button>
-
-              <button
-                @click="handlePass"
-                :disabled="isGameOver"
-                class="py-2.5 px-3 rounded-2xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-black text-xs transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
-              >
-                <Flag class="w-3.5 h-3.5" />
-                <span>停一手 Pass</span>
-              </button>
-            </div>
-
-            <!-- Automated Scoring / Referee Decision Button -->
-            <button
-              @click="handleManualCountScore"
-              class="w-full py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white font-black text-xs shadow-md shadow-orange-500/25 transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Scale class="w-4 h-4" />
-              <span>裁判点目 · 判定输赢</span>
-            </button>
-
-            <button
-              @click="() => initGame(true)"
-              class="w-full py-2.5 rounded-2xl bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold text-xs transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-gray-200"
-            >
-              <RotateCcw class="w-3.5 h-3.5" />
-              <span>清盘重新开局</span>
-            </button>
-          </div>
-
-        </div>
-
-        <!-- Right: Interactive GoBoard (8 cols) -->
-        <div class="lg:col-span-8 bg-white rounded-3xl p-4 sm:p-6 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-4">
           <GoBoard
             :game="game"
             :manualMove="true"
@@ -576,35 +427,348 @@ const changeSize = (size: BoardSize) => {
             :theme="userStore.theme"
             :highlightPoints="highlightPoints"
             :lastMove="lastMove"
-            :sizePx="520"
+            :sizePx="460"
             @move="handleMove"
           />
+        </div>
 
-          <!-- Territory Shading Toggle & Game State Hint -->
-          <div class="w-full flex items-center justify-between pt-2 border-t border-gray-100 text-xs font-bold text-gray-500">
-            <div class="flex items-center gap-2">
-              <button
-                @click="showTerritory = !showTerritory"
-                class="px-3 py-1.5 rounded-xl border transition flex items-center gap-1 text-xs font-black cursor-pointer active:scale-95"
-                :class="showTerritory ? 'bg-indigo-100 border-indigo-300 text-indigo-900' : 'bg-gray-50 border-gray-200 text-gray-600'"
-              >
-                <Layers class="w-3.5 h-3.5" />
-                <span>领地热力图</span>
-              </button>
-            </div>
+        <!-- Bottom: Ultra-compact 1-Row Action Toolbar -->
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl p-2 border-2 border-orange-100 shadow-sm flex items-center justify-between gap-1 sm:gap-1.5">
+          <button
+            @click="handleUndo"
+            :disabled="isGameOver || game.history.length === 0"
+            class="flex-1 py-2 px-1 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-black text-xs transition active:scale-95 flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
+          >
+            <RotateCcw class="w-3.5 h-3.5" />
+            <span>悔棋</span>
+          </button>
 
-            <div class="flex items-center gap-2">
-              <span v-if="autoPassNotice" class="text-xs font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200 animate-pulse">
-                📢 {{ autoPassNotice }}
-              </span>
-              <span class="text-[11px] text-gray-400 font-medium">
-                {{ isGameOver ? '对局已终局判定' : '提示：防误刷新已启用 · 双方停一手或无处可下自动判输赢' }}
-              </span>
-            </div>
-          </div>
+          <button
+            @click="handlePass"
+            :disabled="isGameOver"
+            class="flex-1 py-2 px-1 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-black text-xs transition active:scale-95 flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40"
+          >
+            <Flag class="w-3.5 h-3.5" />
+            <span>停一手</span>
+          </button>
+
+          <button
+            @click="showLiberties = !showLiberties"
+            class="py-2 px-2 rounded-xl border text-xs font-black transition active:scale-95 cursor-pointer flex items-center justify-center gap-0.5"
+            :class="showLiberties ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-gray-50 border-gray-200 text-gray-500'"
+            title="开关数气"
+          >
+            <Eye class="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            @click="showAtari = !showAtari"
+            class="py-2 px-2 rounded-xl border text-xs font-black transition active:scale-95 cursor-pointer flex items-center justify-center gap-0.5"
+            :class="showAtari ? 'bg-rose-100 border-rose-300 text-rose-900' : 'bg-gray-50 border-gray-200 text-gray-500'"
+            title="开关叫吃预警"
+          >
+            <AlertTriangle class="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            @click="handleManualCountScore"
+            class="flex-1 py-2 px-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white font-black text-xs transition active:scale-95 flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+          >
+            <Scale class="w-3.5 h-3.5" />
+            <span>点目数子</span>
+          </button>
+
+          <button
+            @click="() => initGame(true)"
+            class="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 font-black text-xs transition active:scale-95 cursor-pointer"
+            title="清盘重开"
+          >
+            <RotateCcw class="w-3.5 h-3.5" />
+          </button>
         </div>
 
       </div>
+
+      <!-- =========================================================
+           MODE 2: 🖥️ FULL DESKTOP LAYOUT (完整模式)
+           ========================================================= -->
+      <template v-else>
+        <!-- Header Banner -->
+        <div class="bg-white rounded-3xl p-4 sm:p-7 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
+          <div class="space-y-1 text-center md:text-left">
+            <div class="flex items-center gap-2 flex-wrap justify-center md:justify-start">
+              <button
+                @click="goBack"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-black transition active:scale-95 cursor-pointer border border-orange-200 shadow-2xs"
+                title="返回对弈竞技"
+              >
+                <ArrowLeft class="w-3.5 h-3.5" />
+                <span>返回对弈竞技</span>
+              </button>
+
+              <button
+                @click="toggleZenMode"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-black transition active:scale-95 cursor-pointer shadow-2xs hover:from-amber-600"
+                title="切换到纯净专注下棋模式"
+              >
+                <Maximize2 class="w-3.5 h-3.5" />
+                <span>🧘 专注模式 (Zone)</span>
+              </button>
+
+              <div class="inline-flex items-center gap-2 bg-purple-100 text-purple-900 px-3 py-1 rounded-full text-xs font-black">
+                <Users class="w-3.5 h-3.5 text-purple-700" />
+                <span>亲子面对面对弈</span>
+              </div>
+            </div>
+            <h1 class="text-xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
+              双人同屏对战棋盘
+            </h1>
+            <p class="text-xs sm:text-sm text-gray-600 font-medium max-w-xl">
+              支持 5x5 到 13x13 棋盘、双人计时钟、断线与防误刷自动恢复、终局自动点目数子！
+            </p>
+          </div>
+
+          <!-- Size Switchers -->
+          <div class="flex items-center bg-amber-50 p-1 sm:p-1.5 rounded-2xl border border-orange-200 shadow-inner gap-1">
+            <button
+              v-for="s in [5, 7, 9, 13]"
+              :key="s"
+              @click="changeSize(s as BoardSize)"
+              class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
+              :class="boardSize === s ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm' : 'text-gray-600 hover:text-orange-600'"
+            >
+              {{ s }}x{{ s }} 盘
+            </button>
+          </div>
+        </div>
+
+        <!-- Main Play Layout: On mobile, board is prioritized at top (order-1) -->
+        <div class="flex flex-col lg:grid lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+          
+          <!-- Right / Top: Interactive GoBoard (order-1 on mobile, 8 cols on desktop) -->
+          <div class="order-1 lg:order-2 lg:col-span-8 bg-white rounded-3xl p-4 sm:p-6 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-4 w-full">
+            <GoBoard
+              :game="game"
+              :manualMove="true"
+              :readonly="isGameOver"
+              :showLiberties="showLiberties"
+              :showAtari="showAtari"
+              :showBreathingTubes="showBreathingTubes"
+              :showTerritory="showTerritory"
+              :theme="userStore.theme"
+              :highlightPoints="highlightPoints"
+              :lastMove="lastMove"
+              :sizePx="520"
+              @move="handleMove"
+            />
+
+            <!-- Territory Shading Toggle & Game State Hint -->
+            <div class="w-full flex items-center justify-between pt-2 border-t border-gray-100 text-xs font-bold text-gray-500">
+              <div class="flex items-center gap-2">
+                <button
+                  @click="showTerritory = !showTerritory"
+                  class="px-3 py-1.5 rounded-xl border transition flex items-center gap-1 text-xs font-black cursor-pointer active:scale-95"
+                  :class="showTerritory ? 'bg-indigo-100 border-indigo-300 text-indigo-900' : 'bg-gray-50 border-gray-200 text-gray-600'"
+                >
+                  <Layers class="w-3.5 h-3.5" />
+                  <span>领地热力图</span>
+                </button>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <span v-if="autoPassNotice" class="text-xs font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200 animate-pulse">
+                  📢 {{ autoPassNotice }}
+                </span>
+                <span class="text-[11px] text-gray-400 font-medium">
+                  {{ isGameOver ? '对局已终局判定' : '提示：防误刷新已启用 · 双方停一手或无处可下自动判输赢' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Left / Bottom: Match Control & Players Info (order-2 on mobile, 4 cols on desktop) -->
+          <div class="order-2 lg:order-1 lg:col-span-4 space-y-3.5 sm:space-y-4 w-full">
+            
+            <!-- White Player Card (Player 2) -->
+            <div
+              class="rounded-3xl p-4 sm:p-5 border-2 transition-all"
+              :class="
+                isGameOver && scoreResult?.winner === 'W'
+                  ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-300'
+                  : currentTurn === 'W' && !isGameOver
+                  ? 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-400 shadow-md ring-2 ring-indigo-300'
+                  : 'bg-white border-gray-100'
+              "
+            >
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-white border-2 border-gray-400 inline-block shadow-inner flex-shrink-0"></span>
+                  <input
+                    v-model="whiteName"
+                    class="font-black text-xs sm:text-sm text-gray-900 bg-transparent border-b border-dashed border-gray-300 focus:border-indigo-500 focus:outline-none max-w-[130px]"
+                    title="点击修改白方昵称"
+                  />
+                </div>
+                <span
+                  v-if="isGameOver && scoreResult?.winner === 'W'"
+                  class="text-[10px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-full animate-bounce"
+                >
+                  🏆 获胜者
+                </span>
+                <span
+                  v-else-if="currentTurn === 'W' && !isGameOver"
+                  class="text-[10px] font-black bg-indigo-500 text-white px-2 py-0.5 rounded-full animate-pulse"
+                >
+                  当前走棋
+                </span>
+              </div>
+
+              <div class="flex items-center justify-between text-xs font-bold pt-2 border-t border-gray-100">
+                <span class="text-gray-500">已提黑子：{{ whiteCaptures }}</span>
+                <span class="font-mono text-indigo-900 bg-white px-2.5 py-1 rounded-xl border border-indigo-100 shadow-2xs">
+                  ⏱️ {{ formatTime(whiteSeconds) }}
+                </span>
+              </div>
+
+              <div v-if="!isGameOver" class="mt-2.5 pt-2 border-t border-gray-100 flex justify-end">
+                <button
+                  @click="handleResign('W')"
+                  class="text-[11px] font-black text-gray-400 hover:text-rose-600 transition cursor-pointer"
+                >
+                  白方认输
+                </button>
+              </div>
+            </div>
+
+            <!-- Black Player Card (Player 1) -->
+            <div
+              class="rounded-3xl p-4 sm:p-5 border-2 transition-all"
+              :class="
+                isGameOver && scoreResult?.winner === 'B'
+                  ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-300'
+                  : currentTurn === 'B' && !isGameOver
+                  ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-orange-400 shadow-md ring-2 ring-orange-300'
+                  : 'bg-white border-gray-100'
+              "
+            >
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-gray-900 inline-block shadow-sm flex-shrink-0"></span>
+                  <input
+                    v-model="blackName"
+                    class="font-black text-xs sm:text-sm text-gray-900 bg-transparent border-b border-dashed border-gray-300 focus:border-orange-500 focus:outline-none max-w-[130px]"
+                    title="点击修改黑方昵称"
+                  />
+                </div>
+                <span
+                  v-if="isGameOver && scoreResult?.winner === 'B'"
+                  class="text-[10px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-full animate-bounce"
+                >
+                  🏆 获胜者
+                </span>
+                <span
+                  v-else-if="currentTurn === 'B' && !isGameOver"
+                  class="text-[10px] font-black bg-orange-500 text-white px-2 py-0.5 rounded-full animate-pulse"
+                >
+                  当前走棋
+                </span>
+              </div>
+
+              <div class="flex items-center justify-between text-xs font-bold pt-2 border-t border-gray-100">
+                <span class="text-gray-500">已提白子：{{ blackCaptures }}</span>
+                <span class="font-mono text-orange-950 bg-white px-2.5 py-1 rounded-xl border border-orange-100 shadow-2xs">
+                  ⏱️ {{ formatTime(blackSeconds) }}
+                </span>
+              </div>
+
+              <div v-if="!isGameOver" class="mt-2.5 pt-2 border-t border-gray-100 flex justify-end">
+                <button
+                  @click="handleResign('B')"
+                  class="text-[11px] font-black text-gray-400 hover:text-rose-600 transition cursor-pointer"
+                >
+                  黑方认输
+                </button>
+              </div>
+            </div>
+
+            <!-- Controls Box -->
+            <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-orange-100 shadow-sm space-y-3">
+              <div class="text-xs font-black text-gray-500 uppercase tracking-wide flex items-center justify-between">
+                <span>对局操作与辅助</span>
+                <span class="text-orange-600 font-bold">贴 {{ komi }} 目</span>
+              </div>
+
+              <div class="grid grid-cols-3 gap-1.5 sm:gap-2">
+                <button
+                  @click="showBreathingTubes = !showBreathingTubes"
+                  class="py-2 px-1.5 rounded-2xl border text-[11px] font-black flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer"
+                  :class="showBreathingTubes ? 'bg-emerald-100 border-emerald-300 text-emerald-950' : 'bg-gray-50 border-gray-200 text-gray-600'"
+                >
+                  <Wind class="w-3.5 h-3.5 text-emerald-600" />
+                  <span>呼吸管</span>
+                </button>
+
+                <button
+                  @click="showLiberties = !showLiberties"
+                  class="py-2 px-1.5 rounded-2xl border text-[11px] font-black flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer"
+                  :class="showLiberties ? 'bg-amber-100 border-amber-300 text-amber-950' : 'bg-gray-50 border-gray-200 text-gray-600'"
+                >
+                  <Eye class="w-3.5 h-3.5" />
+                  <span>数气</span>
+                </button>
+
+                <button
+                  @click="showAtari = !showAtari"
+                  class="py-2 px-1.5 rounded-2xl border text-[11px] font-black flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer"
+                  :class="showAtari ? 'bg-rose-100 border-rose-300 text-rose-950' : 'bg-gray-50 border-gray-200 text-gray-600'"
+                >
+                  <AlertTriangle class="w-3.5 h-3.5" />
+                  <span>叫吃预警</span>
+                </button>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  @click="handleUndo"
+                  :disabled="isGameOver"
+                  class="py-2.5 px-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-xs transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
+                >
+                  <RotateCcw class="w-3.5 h-3.5" />
+                  <span>悔棋一手</span>
+                </button>
+
+                <button
+                  @click="handlePass"
+                  :disabled="isGameOver"
+                  class="py-2.5 px-3 rounded-2xl bg-orange-50 hover:bg-orange-100 text-orange-800 font-black text-xs transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40"
+                >
+                  <Flag class="w-3.5 h-3.5" />
+                  <span>停一手 Pass</span>
+                </button>
+              </div>
+
+              <!-- Automated Scoring Button -->
+              <button
+                @click="handleManualCountScore"
+                class="w-full py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white font-black text-xs shadow-md shadow-orange-500/25 transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Scale class="w-4 h-4" />
+                <span>裁判点目 · 判定输赢</span>
+              </button>
+
+              <button
+                @click="() => initGame(true)"
+                class="w-full py-2.5 rounded-2xl bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold text-xs transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-gray-200"
+              >
+                <RotateCcw class="w-3.5 h-3.5" />
+                <span>清盘重新开局</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </template>
 
     </div>
 
