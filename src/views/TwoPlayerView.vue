@@ -230,8 +230,10 @@ const handleMove = (point: Point) => {
     game.value.pass(nextColor);
     saveMatchState();
 
-    if (game.value.isGameFinished()) {
-      triggerScoringSettlement('一方无处落子自动停一手后双方均已无棋可下，自动终局数子判定胜负！');
+    const nextStones = game.value.getStoneCount(nextColor);
+    if (game.value.isGameFinished() || nextStones === 0) {
+      triggerScoringSettlement('一方棋子已无处可落且被完全包围，自动终局数子判定胜负！');
+      return;
     } else {
       const nextName = nextColor === 'B' ? blackName.value : whiteName.value;
       autoPassNotice.value = nextName + ' 当前已无合法落子点，已自动停一手 (Pass)';

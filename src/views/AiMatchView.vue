@@ -200,9 +200,23 @@ const handlePlay = (point: Point) => {
 
 const triggerBotMove = () => {
   const botColor = board.value.getOpponentColor(userColor.value);
+  const legalMoves = GoAI.getLegalMoves(board.value, botColor);
+  const botStonesCount = board.value.getStoneCount(botColor);
+
+  // 1. 如果 AI 全盘无任何合法落子点 (全部为禁着点) 或已被完全包围吃光：AI 认输判定玩家获胜！
+  if (legalMoves.length === 0 || (botStonesCount === 0 && board.value.history.length >= 6)) {
+    isBotThinking.value = false;
+    mascotMood.value = "surprised";
+    mascotMessage.value = "【" + activeBotInfo.value.name + "】：“哇！我的棋子已经全被包围、无处可下了，我认输啦！你太厉害了！🎉”";
+    setTimeout(() => {
+      endGame();
+    }, 500);
+    return;
+  }
+
   isBotThinking.value = true;
-  mascotMood.value = 'thinking';
-  mascotMessage.value = `${activeBotInfo.value.name} 正在认真思考中...`;
+  mascotMood.value = "thinking";
+  mascotMessage.value = activeBotInfo.value.name + " 正在认真思考中...";
 
   const thinkTime = 400 + Math.random() * 400;
 
@@ -212,21 +226,16 @@ const triggerBotMove = () => {
     const movePoint = GoAI.selectMove(board.value, selectedBot.value, botColor);
 
     if (!movePoint) {
-      const ends = board.value.pass(botColor);
+      board.value.pass(botColor);
       sound.playButtonSound();
       saveAiMatchState();
-      mascotMood.value = 'happy';
-      mascotMessage.value = `${activeBotInfo.value.name} 选择了虚手 (Pass)！`;
-      if (ends || board.value.isGameFinished()) {
+      isBotThinking.value = false;
+      mascotMood.value = "happy";
+      mascotMessage.value = "【" + activeBotInfo.value.name + "】：“棋盘格局已定，我选择停一手（Pass），进入自动点目结算！”";
+      setTimeout(() => {
         endGame();
-        return;
-      }
-      if (!board.value.hasLegalMoves(userColor.value)) {
-        board.value.pass(userColor.value);
-        saveAiMatchState();
-        endGame();
-        return;
-      }
+      }, 500);
+      return;
     } else {
       const result = board.value.playMove(movePoint.r, movePoint.c, botColor);
       sound.playStoneSound();
@@ -235,11 +244,11 @@ const triggerBotMove = () => {
 
       if (result.capturedStones.length > 0) {
         sound.playCaptureSound();
-        mascotMood.value = 'excited';
-        mascotMessage.value = `${activeBotInfo.value.name} 发动进攻，吃掉了你的棋子！小心防守哦！`;
+        mascotMood.value = "excited";
+        mascotMessage.value = activeBotInfo.value.name + " 发动进攻，吃掉了你的棋子！小心防守哦！";
       } else {
-        mascotMood.value = 'happy';
-        mascotMessage.value = `${activeBotInfo.value.name} 落子在 (${movePoint.r + 1}, ${movePoint.c + 1})。轮到你啦！`;
+        mascotMood.value = "happy";
+        mascotMessage.value = activeBotInfo.value.name + " 落子在 (" + (movePoint.r + 1) + ", " + (movePoint.c + 1) + ")。轮到你啦！";
       }
 
       if (board.value.isGameFinished()) {
@@ -250,14 +259,11 @@ const triggerBotMove = () => {
       if (!board.value.hasLegalMoves(userColor.value)) {
         board.value.pass(userColor.value);
         saveAiMatchState();
-        mascotMessage.value = '你当前已无合法落子点，已自动停一手 (Pass)！';
-        if (board.value.isGameFinished() || !board.value.hasLegalMoves(botColor)) {
+        mascotMessage.value = "你当前已无合法落子点，已自动停一手 (Pass)！";
+        setTimeout(() => {
           endGame();
-          return;
-        } else {
-          triggerBotMove();
-          return;
-        }
+        }, 500);
+        return;
       }
     }
 
@@ -273,13 +279,21 @@ const handlePass = () => {
   if (isGameOver.value || isBotThinking.value) return;
 
   sound.playButtonSound();
-  const ends = board.value.pass(userColor.value);
+  board.value.pass(userColor.value);
   saveAiMatchState();
-  mascotMood.value = 'happy';
-  mascotMessage.value = '你选择了虚手 (Pass)。';
+  mascotMood.value = "happy";
+  mascotMessage.value = "你选择了虚手 (Pass)。";
 
-  if (ends || board.value.isGameFinished()) {
-    endGame();
+  const botColor = board.value.getOpponentColor(userColor.value);
+  const botMove = GoAI.selectMove(board.value, selectedBot.value, botColor);
+
+  if (!botMove || !board.value.hasLegalMoves(botColor)) {
+    board.value.pass(botColor);
+    mascotMood.value = "happy";
+    mascotMessage.value = activeBotInfo.value.name + " 也选择了停一手，进入自动点目数子！";
+    setTimeout(() => {
+      endGame();
+    }, 400);
   } else {
     triggerBotMove();
   }

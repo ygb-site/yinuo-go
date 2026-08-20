@@ -727,6 +727,21 @@ export class GoGame {
   /**
    * 判断指定颜色或当前回合方是否还有合法落子点 (Has Legal Moves)
    */
+  /**
+   * 统计盘面上指定颜色存活棋子数量 (Get Live Stone Count)
+   */
+  public getStoneCount(color: StoneColor): number {
+    let count = 0;
+    for (let r = 0; r < this.size; r++) {
+      for (let c = 0; c < this.size; c++) {
+        if (this.grid[r][c] === color) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
   public hasLegalMoves(color: StoneColor = this.turn): boolean {
     for (let r = 0; r < this.size; r++) {
       for (let c = 0; c < this.size; c++) {
@@ -749,6 +764,10 @@ export class GoGame {
     if (this.consecutivePasses >= 2) return true;
     if (this.isBoardFull()) return true;
     if (!this.hasLegalMoves("B") && !this.hasLegalMoves("W")) return true;
+    if (this.history.length >= 6) {
+      if (!this.hasLegalMoves("B") && this.getStoneCount("B") === 0) return true;
+      if (!this.hasLegalMoves("W") && this.getStoneCount("W") === 0) return true;
+    }
     return false;
   }
 
