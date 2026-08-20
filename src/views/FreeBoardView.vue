@@ -67,6 +67,10 @@ const handlePlay = (point: Point) => {
     return;
   }
   lastMove.value = point;
+
+  if (mode.value === 'play' && board.value.isGameFinished()) {
+    calculateScore();
+  }
 };
 
 const handlePass = () => {

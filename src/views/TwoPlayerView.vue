@@ -217,8 +217,8 @@ const handleMove = (point: Point) => {
     let reason = '双方双双停一手（Pass），棋局定型自动数子判定输赢！';
     if (game.value.isBoardFull()) {
       reason = '全盘交叉点已全部下满，自动进入终局点目结算！';
-    } else if (!game.value.hasLegalMoves('B') && !game.value.hasLegalMoves('W')) {
-      reason = '全盘已无任何有效着法，自动终局数子结算！';
+    } else if (!game.value.hasLegalMoves('B') || !game.value.hasLegalMoves('W')) {
+      reason = '一方已无任何合法着法（被完全包围），自动终局数子判定胜负！';
     }
     triggerScoringSettlement(reason);
     return;
