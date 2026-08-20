@@ -100,11 +100,11 @@ const handleLogin = async () => {
 
   if (!res.success) {
     if (res.error && res.error.includes('Email not confirmed')) {
-      errorMessage.value = '该邮箱未验证。请在 Supabase 控制台的 Authentication -> Providers -> Email 中关闭【Confirm email】开关即可直接登录！';
-    } else if (res.error === 'Invalid login credentials') {
-      errorMessage.value = '邮箱或密码错误，请仔细检查';
+      errorMessage.value = '该账号尚未激活或验证，请检查邮箱与密码';
+    } else if (res.error === 'Invalid login credentials' || (res.error && res.error.includes('Invalid login credentials'))) {
+      errorMessage.value = '邮箱或密码错误，请重新输入';
     } else {
-      errorMessage.value = res.error || '登录失败，请稍后重试';
+      errorMessage.value = '登录失败，请检查网络或稍后重试';
     }
     playErrorSound();
     return;
@@ -152,7 +152,11 @@ const handleRegister = async () => {
   isLoading.value = false;
 
   if (!res.success) {
-    errorMessage.value = res.error || '注册失败，请稍后重试';
+    if (res.error && (res.error.includes('already registered') || res.error.includes('already been registered'))) {
+      errorMessage.value = '该邮箱已被注册，请直接切换到【账号登录】';
+    } else {
+      errorMessage.value = '注册失败，请检查邮箱格式或稍后重试';
+    }
     playErrorSound();
     return;
   }
