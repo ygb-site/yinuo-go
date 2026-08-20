@@ -38,7 +38,7 @@ import {
   Key,
   Globe,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -103,7 +103,7 @@ const handleLogin = async () => {
 
   if (!isConfigured.value) {
     activeTab.value = 'config';
-    errorMessage.value = '请先配置 Supabase 云数据库 URL 与 Anon Key 密钥哦！';
+    errorMessage.value = '云服务尚未配置，请先填入连接信息';
     playErrorSound();
     return;
   }
@@ -177,7 +177,7 @@ const handleRegister = async () => {
 
   if (!isConfigured.value) {
     activeTab.value = 'config';
-    errorMessage.value = '请先配置 Supabase 云数据库 URL 与 Anon Key 密钥哦！';
+    errorMessage.value = '云服务尚未配置，请先填入连接信息';
     playErrorSound();
     return;
   }
@@ -268,7 +268,6 @@ const handleSaveConfig = async () => {
 
   try {
     const { error } = await client.from('user_profiles').select('id').limit(1);
-    // Even if empty or RLS returns error, if network connects it is fine
     if (error && error.code !== 'PGRST116' && !error.message.includes('permission') && !error.message.includes('policy') && error.message.includes('fetch')) {
       configStatus.value = { ok: false, msg: '连接失败：' + error.message };
       playErrorSound();
@@ -319,16 +318,16 @@ const formatTime = (ts: number | null) => {
 
         <!-- Title & Subtitle -->
         <div class="space-y-1">
-          <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black" :class="userStore.isCloudLoggedIn ? 'bg-emerald-100 text-emerald-800' : isConfigured ? 'bg-sky-100 text-sky-800' : 'bg-amber-100 text-amber-900'">
-            <span class="w-2 h-2 rounded-full" :class="userStore.isCloudLoggedIn ? 'bg-emerald-500 animate-pulse' : isConfigured ? 'bg-sky-500' : 'bg-amber-500'"></span>
-            <span>{{ userStore.isCloudLoggedIn ? '云端已连接 · 多端实时同步' : isConfigured ? 'Supabase 云端服务就绪' : '提示：需配置 Supabase 凭证' }}</span>
+          <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black" :class="userStore.isCloudLoggedIn ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'">
+            <span class="w-2 h-2 rounded-full" :class="userStore.isCloudLoggedIn ? 'bg-emerald-500 animate-pulse' : 'bg-sky-500'"></span>
+            <span>{{ userStore.isCloudLoggedIn ? '云端已连接 · 多端实时同步' : '☁️ 支持手机/iPad/电脑多端自动同步' }}</span>
           </div>
 
           <h2 class="text-xl sm:text-2xl font-cartoon font-bold text-gray-900">
-            {{ userStore.isCloudLoggedIn ? '家长云端账号与同步中心' : '一诺弈学 · 多端云存档登录' }}
+            {{ userStore.isCloudLoggedIn ? '家长云端账号与同步中心' : '一诺弈学 · 家长云端账号' }}
           </h2>
           <p class="text-xs text-gray-500 font-medium max-w-sm mx-auto">
-            随时随地在手机、iPad 和电脑上用同一账号登录，宝贝关卡星星与勋章自动同步！
+            随时随地用同一个账号登录，宝贝的关卡星星、金币与勋章永久保存！
           </p>
         </div>
 
@@ -336,7 +335,7 @@ const formatTime = (ts: number | null) => {
         <div v-if="!userStore.isCloudLoggedIn" class="flex items-center bg-gray-100 p-1 rounded-2xl gap-1">
           <button
             @click="switchTab('login')"
-            class="flex-1 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1"
+            class="flex-1 py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1"
             :class="activeTab === 'login' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
           >
             <LogIn class="w-3.5 h-3.5" />
@@ -345,21 +344,11 @@ const formatTime = (ts: number | null) => {
 
           <button
             @click="switchTab('register')"
-            class="flex-1 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1"
+            class="flex-1 py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1"
             :class="activeTab === 'register' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
           >
             <UserPlus class="w-3.5 h-3.5" />
             <span>免费注册</span>
-          </button>
-
-          <button
-            @click="switchTab('config')"
-            class="py-2 px-3 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1"
-            :class="activeTab === 'config' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'"
-            title="配置 Supabase URL 与 Anon Key"
-          >
-            <Settings class="w-3.5 h-3.5" />
-            <span>配置</span>
           </button>
         </div>
 
@@ -378,10 +367,10 @@ const formatTime = (ts: number | null) => {
         <div v-if="userStore.isCloudLoggedIn" class="space-y-3.5 text-left">
           <div class="bg-gradient-to-br from-sky-50 to-indigo-50 rounded-2xl p-4 border border-sky-200 space-y-2.5">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-black text-gray-500 uppercase tracking-wide">当前云账号</span>
+              <span class="text-xs font-black text-gray-500 uppercase tracking-wide">当前登录家长</span>
               <span class="text-[11px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <CheckCircle2 class="w-3 h-3 text-emerald-600" />
-                <span>已同步</span>
+                <span>实时同步中</span>
               </span>
             </div>
 
@@ -417,40 +406,29 @@ const formatTime = (ts: number | null) => {
               <span>{{ userStore.isSyncingToCloud ? '正在同步中...' : '立即同步到云端 🚀' }}</span>
             </button>
 
-            <div class="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                @click="switchTab('config')"
-                class="py-2.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Settings class="w-3.5 h-3.5" />
-                <span>查看配置</span>
-              </button>
-
-              <button
-                type="button"
-                @click="handleLogout"
-                :disabled="isLoading"
-                class="py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-black text-xs rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-rose-200"
-              >
-                <LogOut class="w-3.5 h-3.5" />
-                <span>退出登录</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              @click="handleLogout"
+              :disabled="isLoading"
+              class="w-full py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-black text-xs rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer border border-rose-200"
+            >
+              <LogOut class="w-3.5 h-3.5" />
+              <span>退出当前账号</span>
+            </button>
           </div>
         </div>
 
         <!-- TAB 2: Sign In Form -->
         <form v-else-if="activeTab === 'login'" @submit.prevent="handleLogin" class="space-y-3.5 text-left">
-          <div class="space-y-2">
+          <div class="space-y-2.5">
             <div>
-              <label class="text-xs font-black text-gray-600 block mb-1">家长登录邮箱</label>
+              <label class="text-xs font-black text-gray-600 block mb-1">家长邮箱</label>
               <div class="relative">
                 <input
                   v-model="email"
                   type="email"
                   required
-                  placeholder="例如：parent@example.com"
+                  placeholder="请输入您的常用邮箱 (例如: name@qq.com)"
                   class="w-full pl-9 pr-3 py-3 rounded-2xl border border-gray-200 text-xs font-bold text-gray-800 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none transition"
                 />
                 <Mail class="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
@@ -464,7 +442,7 @@ const formatTime = (ts: number | null) => {
                   v-model="password"
                   :type="showPassword ? 'text' : 'password'"
                   required
-                  placeholder="请输入至少 6 位密码"
+                  placeholder="请输入密码"
                   class="w-full pl-9 pr-10 py-3 rounded-2xl border border-gray-200 text-xs font-bold text-gray-800 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none transition"
                 />
                 <Lock class="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
@@ -500,7 +478,7 @@ const formatTime = (ts: number | null) => {
                   v-model="email"
                   type="email"
                   required
-                  placeholder="例如：parent@example.com"
+                  placeholder="请输入您的邮箱"
                   class="w-full pl-9 pr-3 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold text-gray-800 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none transition"
                 />
                 <Mail class="w-4 h-4 text-gray-400 absolute left-3 top-3" />
@@ -559,11 +537,10 @@ const formatTime = (ts: number | null) => {
           <div class="bg-amber-50 rounded-2xl p-3.5 border border-amber-200 text-xs space-y-1.5">
             <div class="font-black text-amber-950 flex items-center gap-1.5">
               <Sparkles class="w-3.5 h-3.5 text-amber-600" />
-              <span>如何获取免费 Supabase 凭据？</span>
+              <span>开发者 / 自建云端配置</span>
             </div>
             <p class="text-[11px] text-gray-600 leading-relaxed font-medium">
-              1. 访问 <a href="https://supabase.com" target="_blank" class="text-orange-600 font-bold underline">supabase.com</a> 免费创建项目。<br />
-              2. 在 Project Settings → API 中复制 <strong class="text-gray-900">Project URL</strong> 与 <strong class="text-gray-900">anon public key</strong> 粘贴到下方即可！
+              默认项目已预设云端数据库。如果你需要连接自己的 Supabase 实例，可在下方自定义覆盖。
             </p>
           </div>
 
@@ -622,7 +599,15 @@ const formatTime = (ts: number | null) => {
 
         <!-- Bottom Footer Hint -->
         <div class="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400 font-bold">
-          <span>🛡️ 采用安全加密存储</span>
+          <button
+            type="button"
+            @click="switchTab('config')"
+            class="text-gray-400 hover:text-gray-600 flex items-center gap-1 cursor-pointer"
+            title="高级开发者配置"
+          >
+            <Settings class="w-3 h-3" />
+            <span>云端配置</span>
+          </button>
           <button
             type="button"
             @click="handleClose"
