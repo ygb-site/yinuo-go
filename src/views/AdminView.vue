@@ -218,9 +218,34 @@ const handleApplyRewards = async () => {
   }
 
   const child = profiles[adjustChildIndex.value] || profiles[0];
-  child.coins = (child.coins || 0) + Number(addCoinsAmount.value);
-  child.totalStars = (child.totalStars || 0) + Number(addStarsAmount.value);
+  const addCoins = Number(addCoinsAmount.value);
+  const addStars = Number(addStarsAmount.value);
+  child.coins = (child.coins || 0) + addCoins;
+  child.totalStars = (child.totalStars || 0) + addStars;
   child.exp = (child.exp || 0) + Number(addExpAmount.value);
+  if (!child.coinLog) child.coinLog = [];
+  if (!child.starLog) child.starLog = [];
+  const now = Date.now();
+  if (addCoins) {
+    child.coinLog.unshift({
+      id: 'c_' + now,
+      at: now,
+      amount: addCoins,
+      balance: child.coins,
+      reason: '管理员发放金币',
+      icon: '🎁'
+    });
+  }
+  if (addStars) {
+    child.starLog.unshift({
+      id: 's_' + now,
+      at: now,
+      amount: addStars,
+      balance: child.totalStars,
+      reason: '管理员发放星星',
+      icon: '🌟'
+    });
+  }
 
   const res = await updateUserByAdmin(u.id, { profiles_data: profiles });
   if (res.success) {

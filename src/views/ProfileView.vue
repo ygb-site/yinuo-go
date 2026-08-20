@@ -41,6 +41,15 @@ const isEditingName = ref(false);
 const newNickname = ref(userStore.nickname);
 const showCertModal = ref(false);
 
+const formatLogTime = (at: number) => {
+  const d = new Date(at);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return mm + '-' + dd + ' ' + hh + ':' + mi;
+};
+
 // 5-Dimension Radar Chart Calculation (Mathematically Symmetrical Regular Pentagon)
 const RADAR_CX = 100;
 const RADAR_CY = 105;
@@ -407,6 +416,91 @@ const confirmReset = async () => {
                 >
                   <span>荣誉证书 📜</span>
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 金币与星星流水：有档案才展示 -->
+      <div
+        v-if="userStore.hasProfile"
+        class="bg-white rounded-3xl p-5 sm:p-6 border-2 border-orange-100 shadow-sm"
+      >
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
+            <span>📜</span>
+            <span>金币与星星记录</span>
+          </h2>
+          <span class="text-[10px] font-bold text-gray-400">最近 40 条</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="rounded-2xl border border-amber-100 bg-amber-50/40 p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-black text-amber-900 flex items-center gap-1.5">
+                <Coins class="w-3.5 h-3.5 text-amber-500" />
+                金币流水
+              </span>
+              <span class="text-[11px] font-black text-amber-800">余额 {{ userStore.coins }}</span>
+            </div>
+            <div v-if="userStore.coinLog.length === 0" class="text-[11px] font-bold text-amber-800/70 py-6 text-center">
+              还没有明细。通关、打卡或对弈赢到金币后，就会出现在这里。
+            </div>
+            <div v-else class="space-y-1.5 max-h-64 overflow-y-auto pr-0.5">
+              <div
+                v-for="item in userStore.coinLog"
+                :key="item.id"
+                class="flex items-center justify-between gap-2 bg-white/80 rounded-xl px-2.5 py-2 border border-amber-100"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="text-base flex-shrink-0">{{ item.icon }}</span>
+                  <div class="min-w-0">
+                    <div class="text-[11px] font-black text-gray-800 truncate">{{ item.reason }}</div>
+                    <div class="text-[10px] font-bold text-gray-400">{{ formatLogTime(item.at) }}</div>
+                  </div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <div
+                    class="text-xs font-black"
+                    :class="item.amount >= 0 ? 'text-emerald-600' : 'text-rose-500'"
+                  >
+                    {{ item.amount >= 0 ? '+' : '' }}{{ item.amount }}
+                  </div>
+                  <div class="text-[10px] font-bold text-gray-400">余 {{ item.balance }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-rose-100 bg-rose-50/40 p-3.5 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-black text-rose-900 flex items-center gap-1.5">
+                <Star class="w-3.5 h-3.5 text-rose-500 fill-current" />
+                星星流水
+              </span>
+              <span class="text-[11px] font-black text-rose-800">累计 {{ userStore.totalStars }}</span>
+            </div>
+            <div v-if="userStore.starLog.length === 0" class="text-[11px] font-bold text-rose-800/70 py-6 text-center">
+              还没有明细。闯关拿到新星星后，就会出现在这里。
+            </div>
+            <div v-else class="space-y-1.5 max-h-64 overflow-y-auto pr-0.5">
+              <div
+                v-for="item in userStore.starLog"
+                :key="item.id"
+                class="flex items-center justify-between gap-2 bg-white/80 rounded-xl px-2.5 py-2 border border-rose-100"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="text-base flex-shrink-0">{{ item.icon }}</span>
+                  <div class="min-w-0">
+                    <div class="text-[11px] font-black text-gray-800 truncate">{{ item.reason }}</div>
+                    <div class="text-[10px] font-bold text-gray-400">{{ formatLogTime(item.at) }}</div>
+                  </div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <div class="text-xs font-black text-rose-600">+{{ item.amount }}</div>
+                  <div class="text-[10px] font-bold text-gray-400">共 {{ item.balance }}</div>
+                </div>
               </div>
             </div>
           </div>

@@ -192,13 +192,13 @@ const handleDelete = async (profile: ChildProfile) => {
                   </div>
                 </div>
 
-                <!-- Delete button -->
-                <button
-                  v-if="userStore.profiles.length > 1"
-                  @click.stop="handleDelete(profile)"
-                  class="p-2 text-gray-300 hover:text-rose-500 rounded-xl hover:bg-rose-50 transition opacity-80 hover:opacity-100 cursor-pointer"
-                  title="删除此档案"
-                >
+               <!-- Delete button -->
+               <button
+                  v-if="true"
+                 @click.stop="handleDelete(profile)"
+                 class="p-2 text-gray-300 hover:text-rose-500 rounded-xl hover:bg-rose-50 transition opacity-80 hover:opacity-100 cursor-pointer"
+                 title="删除此档案"
+               >
                   <Trash2 class="w-4 h-4" />
                 </button>
               </div>
@@ -287,4 +287,3 @@ const handleDelete = async (profile: ChildProfile) => {
     </div>
   </Teleport>
 </template>
-

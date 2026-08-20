@@ -306,8 +306,8 @@ const isNavActive = (itemPath: string) => {
             </div>
           </div>
 
-          <!-- Stars & Coins (Visible only when logged in with profile) -->
-          <div v-if="userStore.hasProfile" class="hidden sm:flex items-center gap-1.5 flex-shrink-0">
+          <!-- Stars & Coins (Visible once a child profile exists) -->
+          <div v-if="userStore.hasProfile" class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
             <div class="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-2xl text-xs font-black text-amber-900 shadow-2xs whitespace-nowrap" title="已收集星星">
               <Star class="w-3.5 h-3.5 text-amber-500 fill-current flex-shrink-0" />
               <span>{{ userStore.totalStars }}</span>

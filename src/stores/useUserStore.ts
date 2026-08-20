@@ -12,6 +12,15 @@ import { isSupabaseConfigured, getSupabaseClient } from '../lib/supabase';
 /**
  * 独立儿童用户档案 (Child Profile Data Structure)
  */
+export interface CoinLogEntry {
+  id: string;
+  at: number;
+  amount: number;
+  balance: number;
+  reason: string;
+  icon: string;
+}
+
 export interface ChildProfile {
   id: string;
   nickname: string;
@@ -38,6 +47,8 @@ export interface ChildProfile {
   };
   exp: number;
   coins: number;
+  coinLog?: CoinLogEntry[];
+  starLog?: CoinLogEntry[];
   stats: {
     gamesPlayed: number;
     gamesWon: number;
@@ -174,6 +185,8 @@ export const useUserStore = defineStore('userStore', {
         }
       }
       found.totalStars = Math.max(computedStars, found.totalStars || 0);
+      if (!found.coinLog) found.coinLog = [];
+      if (!found.starLog) found.starLog = [];
       return found;
     },
 
@@ -199,6 +212,14 @@ export const useUserStore = defineStore('userStore', {
 
     totalStars(): number {
       return this.currentProfile.totalStars || 0;
+    },
+
+    coinLog(): CoinLogEntry[] {
+      return this.currentProfile.coinLog || [];
+    },
+
+    starLog(): CoinLogEntry[] {
+      return this.currentProfile.starLog || [];
     },
 
     familyTotalStars(state): number {
@@ -506,6 +527,8 @@ export const useUserStore = defineStore('userStore', {
         },
         exp: 0,
         coins: 0,
+        coinLog: [],
+        starLog: [],
         stats: {
           gamesPlayed: 0,
           gamesWon: 0,
@@ -572,10 +595,11 @@ export const useUserStore = defineStore('userStore', {
 
       if (starsGained > 0) {
         prof.totalStars = (prof.totalStars || 0) + starsGained;
+        this.appendRewardLog(prof, 'starLog', starsGained, '闯关获得星星', '⭐');
       }
 
       if (rewards.exp) this.addExp(rewards.exp);
-      if (rewards.coins) this.addCoins(rewards.coins);
+      if (rewards.coins) this.addCoins(rewards.coins, '闯关金币奖励', '🎯');
 
       this.unlockBadge('first_move');
       if (lessonId === 'lesson_1_3' || lessonId === 'c1_l4') {
@@ -601,18 +625,42 @@ export const useUserStore = defineStore('userStore', {
       }
     },
 
-    addCoins(amount: number) {
-      if (!this.hasProfile) return;
-      this.currentProfile.coins = (this.currentProfile.coins || 0) + amount;
+    appendRewardLog(
+      prof: ChildProfile,
+      key: 'coinLog' | 'starLog',
+      amount: number,
+      reason: string,
+      icon: string
+    ) {
+      if (!prof[key]) prof[key] = [];
+      const list = prof[key] as CoinLogEntry[];
+      const balance = key === 'coinLog' ? prof.coins || 0 : prof.totalStars || 0;
+      list.unshift({
+        id: key[0] + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        at: Date.now(),
+        amount,
+        balance,
+        reason,
+        icon
+      });
+      if (list.length > 40) list.length = 40;
+    },
+
+    addCoins(amount: number, reason = '获得金币', icon = '🪙') {
+      if (!this.hasProfile || !amount) return;
+      const prof = this.currentProfile;
+      prof.coins = (prof.coins || 0) + amount;
+      this.appendRewardLog(prof, 'coinLog', amount, reason, icon);
       this.touchSave();
       sound.playCoinSound();
     },
 
-    spendCoins(amount: number): boolean {
+    spendCoins(amount: number, reason = '消费金币', icon = '🛒'): boolean {
       if (!this.hasProfile) return false;
       const prof = this.currentProfile;
       if ((prof.coins || 0) >= amount) {
         prof.coins = (prof.coins || 0) - amount;
+        this.appendRewardLog(prof, 'coinLog', -amount, reason, icon);
         this.touchSave();
         return true;
       }
@@ -629,7 +677,7 @@ export const useUserStore = defineStore('userStore', {
         const badge = BADGES_DATA.find(b => b.id === badgeId);
         if (badge) {
           this.addExp(badge.expReward);
-          this.addCoins(badge.coinReward);
+          this.addCoins(badge.coinReward, '解锁勋章奖励', '🏅');
           sound.fireCelebrationConfetti();
         }
       }
@@ -686,7 +734,7 @@ export const useUserStore = defineStore('userStore', {
       if (!prof.solvedMistakes) prof.solvedMistakes = [];
       if (!prof.solvedMistakes.includes(puzzleId)) {
         prof.solvedMistakes.push(puzzleId);
-        this.addCoins(10);
+        this.addCoins(10, '消灭错题奖励', '💪');
         this.addExp(20);
         this.touchSave();
       }
@@ -700,7 +748,7 @@ export const useUserStore = defineStore('userStore', {
         this.setTheme(themeId);
         return true;
       }
-      if (this.spendCoins(price)) {
+      if (this.spendCoins(price, '兑换棋盘皮肤', '🎨')) {
         prof.unlockedThemes.push(themeId);
         this.setTheme(themeId);
         this.touchSave();
@@ -722,7 +770,7 @@ export const useUserStore = defineStore('userStore', {
         sound.playButtonSound();
         return true;
       }
-      if (this.spendCoins(price)) {
+      if (this.spendCoins(price, '兑换头像', '😊')) {
         prof.unlockedAvatars.push(avatar);
         prof.avatar = avatar;
         this.touchSave();
@@ -747,7 +795,7 @@ export const useUserStore = defineStore('userStore', {
       if (score > (prof.arcadeHighScores[gameType] || 0)) {
         prof.arcadeHighScores[gameType] = score;
       }
-      if (coinsEarned > 0) this.addCoins(coinsEarned);
+      if (coinsEarned > 0) this.addCoins(coinsEarned, '趣味闯关奖励', '🎮');
       this.addExp(Math.round(score * 2));
       this.touchSave();
     },
@@ -760,7 +808,7 @@ export const useUserStore = defineStore('userStore', {
       }
       prof.captureGoStats.matches++;
       prof.captureGoStats.wins++;
-      this.addCoins(coinsEarned);
+      this.addCoins(coinsEarned, '吃子游戏获胜', '🦁');
       this.addExp(expEarned);
       this.touchSave();
     },
@@ -781,6 +829,8 @@ export const useUserStore = defineStore('userStore', {
       prof.exp = 0;
       prof.coins = 0;
       prof.totalStars = 0;
+      prof.coinLog = [];
+      prof.starLog = [];
       prof.progress = {};
       prof.badges = [];
       prof.solvedPuzzles = [];
@@ -846,7 +896,7 @@ export const useUserStore = defineStore('userStore', {
       prof.lastCheckInDate = today;
       prof.checkInStreak = newStreak;
       const coinsGained = newStreak === 7 ? 50 : 15;
-      this.addCoins(coinsGained);
+      this.addCoins(coinsGained, newStreak === 7 ? '连续打卡满7天大奖' : '每日打卡奖励', '📅');
       this.touchSave();
 
       return {
