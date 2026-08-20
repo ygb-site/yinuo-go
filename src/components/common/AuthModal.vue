@@ -10,9 +10,7 @@ import {
 import {
   signInWithEmail,
   signUpWithEmail,
-  signOutCloud,
-  fetchCloudUserData,
-  smartMergeProfiles
+  signOutCloud
 } from '../../services/cloudSyncService';
 import {
   playButtonSound,
@@ -22,12 +20,10 @@ import {
 } from '../../lib/audio';
 import { showAlert } from '../../utils/alert';
 import {
-  Cloud,
-  CloudCheck,
+  User,
   Lock,
   Mail,
   X,
-  Sparkles,
   Settings,
   LogIn,
   UserPlus,
@@ -39,6 +35,7 @@ import {
   Globe,
   CheckCircle2,
   AlertCircle,
+  ShieldCheck
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -74,7 +71,7 @@ onMounted(() => {
   const cfg = getSupabaseConfig();
   supabaseUrl.value = cfg.url;
   supabaseAnonKey.value = cfg.anonKey;
-  if (userStore.isCloudLoggedIn) {
+  if (userStore.isLoggedIn) {
     activeTab.value = 'account';
   } else if (!isConfigured.value) {
     activeTab.value = 'config';
@@ -103,7 +100,7 @@ const handleLogin = async () => {
 
   if (!isConfigured.value) {
     activeTab.value = 'config';
-    errorMessage.value = '云服务尚未配置，请先填入连接信息';
+    errorMessage.value = '云端服务尚未配置，请先填入连接信息';
     playErrorSound();
     return;
   }
@@ -123,37 +120,17 @@ const handleLogin = async () => {
     return;
   }
 
-  userStore.setCloudUser(res.user?.id || '', res.user?.email || email.value.trim());
   playWinSound();
   triggerConfetti();
-  successMessage.value = '🎉 登录成功！正在同步云端存档...';
+  successMessage.value = '🎉 登录成功！正在加载您的宝贝数据...';
 
-  // Fetch and merge cloud data
-  isLoading.value = true;
-  const cloudData = await fetchCloudUserData();
-  if (cloudData && cloudData.profiles_data && cloudData.profiles_data.length > 0) {
-    const { profiles, activeId } = smartMergeProfiles(
-      userStore.profiles,
-      cloudData.profiles_data,
-      userStore.currentProfileId,
-      cloudData.active_profile_id
-    );
-    userStore.profiles = profiles;
-    userStore.currentProfileId = activeId;
-    if (cloudData.settings_data) {
-      if (cloudData.settings_data.theme) userStore.theme = cloudData.settings_data.theme;
-      if (typeof cloudData.settings_data.soundEnabled === 'boolean') userStore.soundEnabled = cloudData.settings_data.soundEnabled;
-    }
-  }
-
-  // Push back merged progress to cloud
-  await userStore.syncToCloudNow();
-  isLoading.value = false;
+  // Load user data into store
+  await userStore.setCloudUser(res.user?.id || '', res.user?.email || email.value.trim());
   activeTab.value = 'account';
 
   setTimeout(() => {
     handleClose();
-  }, 1200);
+  }, 1000);
 };
 
 const handleRegister = async () => {
@@ -177,7 +154,7 @@ const handleRegister = async () => {
 
   if (!isConfigured.value) {
     activeTab.value = 'config';
-    errorMessage.value = '云服务尚未配置，请先填入连接信息';
+    errorMessage.value = '云端服务尚未配置，请先填入连接信息';
     playErrorSound();
     return;
   }
@@ -195,18 +172,17 @@ const handleRegister = async () => {
     return;
   }
 
-  userStore.setCloudUser(res.user?.id || '', res.user?.email || email.value.trim());
   playWinSound();
   triggerConfetti();
-  successMessage.value = '🎉 注册成功！当前宝贝进度已自动备份至云端！';
+  successMessage.value = '🎉 注册成功！欢迎加入一诺弈学！';
 
-  // Upload initial local profiles to cloud
-  await userStore.syncToCloudNow();
+  // Load user data into store
+  await userStore.setCloudUser(res.user?.id || '', res.user?.email || email.value.trim());
   activeTab.value = 'account';
 
   setTimeout(() => {
     handleClose();
-  }, 1500);
+  }, 1200);
 };
 
 const handleLogout = async () => {
@@ -217,14 +193,14 @@ const handleLogout = async () => {
   playButtonSound();
   activeTab.value = 'login';
   showAlert({
-    title: '已退出云端账号',
-    message: '云端账号已安全退出。本地保存的宝贝进度不受影响，随时可再次登录同步！',
+    title: '已退出登录',
+    message: '账号已安全退出，随时可再次登录继续学棋！',
     type: 'info'
   });
 };
 
 const handleManualSync = async () => {
-  if (!userStore.isCloudLoggedIn) return;
+  if (!userStore.isLoggedIn) return;
   isLoading.value = true;
   playButtonSound();
   const ok = await userStore.syncToCloudNow();
@@ -311,31 +287,31 @@ const formatTime = (ts: number | null) => {
         </button>
 
         <!-- Top Header Icon -->
-        <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-sky-400 via-indigo-500 to-purple-500 mx-auto p-1.5 shadow-md flex items-center justify-center text-3xl text-white border-2 border-white animate-bounce-subtle">
-          <CloudCheck v-if="userStore.isCloudLoggedIn" class="w-8 h-8" />
-          <Cloud v-else class="w-8 h-8" />
+        <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-400 via-orange-500 to-rose-500 mx-auto p-1.5 shadow-md flex items-center justify-center text-3xl text-white border-2 border-white animate-bounce-subtle">
+          <ShieldCheck v-if="userStore.isLoggedIn" class="w-8 h-8" />
+          <User v-else class="w-8 h-8" />
         </div>
 
         <!-- Title & Subtitle -->
         <div class="space-y-1">
-          <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black" :class="userStore.isCloudLoggedIn ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'">
-            <span class="w-2 h-2 rounded-full" :class="userStore.isCloudLoggedIn ? 'bg-emerald-500 animate-pulse' : 'bg-sky-500'"></span>
-            <span>{{ userStore.isCloudLoggedIn ? '云端已连接 · 多端实时同步' : '☁️ 支持手机/iPad/电脑多端自动同步' }}</span>
+          <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black" :class="userStore.isLoggedIn ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'">
+            <span class="w-2 h-2 rounded-full" :class="userStore.isLoggedIn ? 'bg-emerald-500 animate-pulse' : 'bg-orange-500'"></span>
+            <span>{{ userStore.isLoggedIn ? '账号已登录 · 进度实时保存' : '少儿围棋成长档案' }}</span>
           </div>
 
           <h2 class="text-xl sm:text-2xl font-cartoon font-bold text-gray-900">
-            {{ userStore.isCloudLoggedIn ? '家长云端账号与同步中心' : '一诺弈学 · 家长云端账号' }}
+            {{ userStore.isLoggedIn ? '家长账号中心' : '登录一诺弈学账号' }}
           </h2>
           <p class="text-xs text-gray-500 font-medium max-w-sm mx-auto">
-            随时随地用同一个账号登录，宝贝的关卡星星、金币与勋章永久保存！
+            {{ userStore.isLoggedIn ? '支持在手机、平板与电脑多端无缝同步学习数据' : '登录后即可创建宝贝档案、开启启蒙闯关并永久保存星星与勋章！' }}
           </p>
         </div>
 
         <!-- Segmented Tabs (When not logged in) -->
-        <div v-if="!userStore.isCloudLoggedIn" class="flex items-center bg-gray-100 p-1 rounded-2xl gap-1">
+        <div v-if="!userStore.isLoggedIn" class="flex items-center bg-gray-100 p-1 rounded-2xl gap-1">
           <button
             @click="switchTab('login')"
-            class="flex-1 py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1"
+            class="flex-1 py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5"
             :class="activeTab === 'login' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
           >
             <LogIn class="w-3.5 h-3.5" />
@@ -344,7 +320,7 @@ const formatTime = (ts: number | null) => {
 
           <button
             @click="switchTab('register')"
-            class="flex-1 py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1"
+            class="flex-1 py-2.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5"
             :class="activeTab === 'register' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
           >
             <UserPlus class="w-3.5 h-3.5" />
@@ -364,10 +340,10 @@ const formatTime = (ts: number | null) => {
         </div>
 
         <!-- TAB 1: Logged In Account Dashboard -->
-        <div v-if="userStore.isCloudLoggedIn" class="space-y-3.5 text-left">
-          <div class="bg-gradient-to-br from-sky-50 to-indigo-50 rounded-2xl p-4 border border-sky-200 space-y-2.5">
+        <div v-if="userStore.isLoggedIn" class="space-y-3.5 text-left">
+          <div class="bg-gradient-to-br from-amber-50 to-orange-50/50 rounded-2xl p-4 border border-orange-200 space-y-2.5">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-black text-gray-500 uppercase tracking-wide">当前登录家长</span>
+              <span class="text-xs font-black text-gray-500 uppercase tracking-wide">当前登录家长账号</span>
               <span class="text-[11px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <CheckCircle2 class="w-3 h-3 text-emerald-600" />
                 <span>实时同步中</span>
@@ -375,7 +351,7 @@ const formatTime = (ts: number | null) => {
             </div>
 
             <div class="flex items-center gap-2.5">
-              <div class="w-10 h-10 rounded-2xl bg-white border border-sky-200 flex items-center justify-center text-lg shadow-2xs">
+              <div class="w-10 h-10 rounded-2xl bg-white border border-orange-200 flex items-center justify-center text-lg shadow-2xs">
                 👤
               </div>
               <div class="min-w-0 flex-1">
@@ -383,12 +359,12 @@ const formatTime = (ts: number | null) => {
                   {{ userStore.currentUserEmail }}
                 </div>
                 <div class="text-[11px] text-gray-500 font-medium">
-                  最后同步：{{ formatTime(userStore.lastCloudSyncedAt) }}
+                  最后同步：{{ formatTime(userStore.lastSavedAt) }}
                 </div>
               </div>
             </div>
 
-            <div class="pt-2 border-t border-sky-200/60 flex items-center justify-between text-xs font-bold text-gray-600">
+            <div class="pt-2 border-t border-orange-200/60 flex items-center justify-between text-xs font-bold text-gray-600">
               <span>已绑定宝贝档案：{{ userStore.profiles.length }} 位</span>
               <span>累积总星星：{{ userStore.totalStars }} 颗 ⭐</span>
             </div>
@@ -399,11 +375,11 @@ const formatTime = (ts: number | null) => {
             <button
               type="button"
               @click="handleManualSync"
-              :disabled="isLoading || userStore.isSyncingToCloud"
-              class="w-full py-3.5 px-4 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white rounded-2xl font-black text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              :disabled="isLoading || userStore.isSyncing"
+              class="w-full py-3.5 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl font-black text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': isLoading || userStore.isSyncingToCloud }" />
-              <span>{{ userStore.isSyncingToCloud ? '正在同步中...' : '立即同步到云端 🚀' }}</span>
+              <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': isLoading || userStore.isSyncing }" />
+              <span>{{ userStore.isSyncing ? '正在同步中...' : '立即同步数据 🚀' }}</span>
             </button>
 
             <button
@@ -428,7 +404,7 @@ const formatTime = (ts: number | null) => {
                   v-model="email"
                   type="email"
                   required
-                  placeholder="请输入您的常用邮箱 (例如: name@qq.com)"
+                  placeholder="请输入您的登录邮箱 (例如: name@example.com)"
                   class="w-full pl-9 pr-3 py-3 rounded-2xl border border-gray-200 text-xs font-bold text-gray-800 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none transition"
                 />
                 <Mail class="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
@@ -449,7 +425,7 @@ const formatTime = (ts: number | null) => {
                 <button
                   type="button"
                   @click="showPassword = !showPassword"
-                  class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
+                  class="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                   <EyeOff v-if="showPassword" class="w-4 h-4" />
                   <Eye v-else class="w-4 h-4" />
@@ -464,7 +440,7 @@ const formatTime = (ts: number | null) => {
             class="w-full py-3.5 px-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl font-black text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <LogIn class="w-4 h-4" />
-            <span>{{ isLoading ? '正在登录中...' : '登录并同步存档 🚀' }}</span>
+            <span>{{ isLoading ? '正在登录中...' : '登录账号 🚀' }}</span>
           </button>
         </form>
 
@@ -499,7 +475,7 @@ const formatTime = (ts: number | null) => {
                 <button
                   type="button"
                   @click="showPassword = !showPassword"
-                  class="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                  class="absolute right-3 top-3 text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                   <EyeOff v-if="showPassword" class="w-4 h-4" />
                   <Eye v-else class="w-4 h-4" />
@@ -528,19 +504,18 @@ const formatTime = (ts: number | null) => {
             class="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-2xl font-black text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <UserPlus class="w-4 h-4" />
-            <span>{{ isLoading ? '正在创建账号...' : '立即注册并云备份 ✨' }}</span>
+            <span>{{ isLoading ? '正在创建账号...' : '立即免费注册 ✨' }}</span>
           </button>
         </form>
 
-        <!-- TAB 4: Supabase Config Settings (Zero Config & Custom Config) -->
+        <!-- TAB 4: Supabase Config Settings (Developer Custom Override) -->
         <div v-else-if="activeTab === 'config'" class="space-y-3.5 text-left">
           <div class="bg-amber-50 rounded-2xl p-3.5 border border-amber-200 text-xs space-y-1.5">
             <div class="font-black text-amber-950 flex items-center gap-1.5">
-              <Sparkles class="w-3.5 h-3.5 text-amber-600" />
-              <span>开发者 / 自建云端配置</span>
+              <span>🛠️ 开发者 / 自建云端配置</span>
             </div>
             <p class="text-[11px] text-gray-600 leading-relaxed font-medium">
-              默认项目已预设云端数据库。如果你需要连接自己的 Supabase 实例，可在下方自定义覆盖。
+              默认项目已预设云端数据库。如果你需要连接自建的 Supabase 实例，可在下方自定义覆盖。
             </p>
           </div>
 
@@ -589,7 +564,7 @@ const formatTime = (ts: number | null) => {
 
             <button
               type="button"
-              @click="switchTab(userStore.isCloudLoggedIn ? 'account' : 'login')"
+              @click="switchTab(userStore.isLoggedIn ? 'account' : 'login')"
               class="py-2.5 px-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition active:scale-95 cursor-pointer"
             >
               返回
@@ -597,8 +572,9 @@ const formatTime = (ts: number | null) => {
           </div>
         </div>
 
-        <!-- Bottom Footer Hint -->
+        <!-- Bottom Footer -->
         <div class="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400 font-bold">
+          <span>🛡️ 采用安全加密存储</span>
           <button
             type="button"
             @click="switchTab('config')"
@@ -606,14 +582,7 @@ const formatTime = (ts: number | null) => {
             title="高级开发者配置"
           >
             <Settings class="w-3 h-3" />
-            <span>云端配置</span>
-          </button>
-          <button
-            type="button"
-            @click="handleClose"
-            class="text-orange-600 hover:underline cursor-pointer"
-          >
-            仅在本地离线游玩 →
+            <span>自建配置</span>
           </button>
         </div>
       </div>

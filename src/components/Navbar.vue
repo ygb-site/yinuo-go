@@ -22,8 +22,10 @@ import {
   ChevronDown,
   UserPlus,
   Lock,
-  Cloud,
-  CloudCheck
+  LogIn,
+  ShieldAlert,
+  LogOut,
+  User
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -34,11 +36,16 @@ const unlockStore = useUnlockStore();
 const showThemeDropdown = ref(false);
 const themeDropdownRef = ref<HTMLElement | null>(null);
 
+const showUserMenu = ref(false);
+const userMenuRef = ref<HTMLElement | null>(null);
+
 const handleGlobalClick = (event: Event) => {
-  if (showThemeDropdown.value && themeDropdownRef.value) {
-    if (!themeDropdownRef.value.contains(event.target as Node)) {
-      showThemeDropdown.value = false;
-    }
+  const target = event.target as Node;
+  if (showThemeDropdown.value && themeDropdownRef.value && !themeDropdownRef.value.contains(target)) {
+    showThemeDropdown.value = false;
+  }
+  if (showUserMenu.value && userMenuRef.value && !userMenuRef.value.contains(target)) {
+    showUserMenu.value = false;
   }
 };
 
@@ -105,7 +112,13 @@ const goToShop = () => {
 const navigateTo = (path: string) => {
   playButtonSound();
   showThemeDropdown.value = false;
+  showUserMenu.value = false;
   router.push(path);
+};
+
+const handleLogout = () => {
+  showUserMenu.value = false;
+  userStore.openAuthModal();
 };
 
 const isNavActive = (itemPath: string) => {
@@ -195,52 +208,114 @@ const isNavActive = (itemPath: string) => {
           </button>
         </nav>
 
-        <!-- Right: Cloud Sync, Kid Profile Switcher, Stars, Coins & Actions -->
+        <!-- Right: Admin Badge, User Profile / Login, Stars, Coins & Actions -->
         <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           
-          <!-- Cloud Sync Pill -->
+          <!-- 👑 Admin Portal Badge Button (Visible only to Admin) -->
           <button
-            @click="userStore.openAuthModal()"
-            class="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-2xl border text-xs font-black transition active:scale-95 cursor-pointer shadow-2xs flex-shrink-0"
-            :class="userStore.isCloudLoggedIn ? 'bg-sky-50 border-sky-300 text-sky-900 hover:bg-sky-100' : 'bg-amber-50/90 border-amber-300 text-amber-900 hover:bg-amber-100'"
-            :title="userStore.isCloudLoggedIn ? '云端账号已登录（点击管理同步）' : '点击登录云端账号，随时随地跨设备同步'"
+            v-if="userStore.isLoggedIn && userStore.isAdmin"
+            @click="navigateTo('/admin')"
+            class="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl text-[11px] sm:text-xs font-black shadow-sm transition active:scale-95 cursor-pointer border border-purple-400"
+            title="点击进入全站后台管理系统"
           >
-            <CloudCheck v-if="userStore.isCloudLoggedIn" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0" />
-            <Cloud v-else class="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-            <span class="hidden sm:inline whitespace-nowrap text-[11px] sm:text-xs">
-              {{ userStore.isCloudLoggedIn ? '云端已同步' : '云端登录' }}
-            </span>
+            <ShieldAlert class="w-3.5 h-3.5 text-yellow-300 flex-shrink-0" />
+            <span class="whitespace-nowrap">管理后台</span>
           </button>
 
-          <!-- Kid Profile Switcher Button -->
-          <div
-            v-if="userStore.hasProfile"
-            @click="userStore.openProfileModal()"
-            class="flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-orange-300/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl cursor-pointer shadow-2xs transition transform active:scale-95 flex-shrink-0"
-            title="点击切换当前宝贝档案"
+          <!-- CASE 1: Not Logged In -> Show Primary Login / Register Button -->
+          <button
+            v-if="!userStore.isLoggedIn"
+            @click="userStore.openAuthModal()"
+            class="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white border border-amber-300 px-3 sm:px-4 py-1.5 rounded-2xl cursor-pointer shadow-md transition transform active:scale-95 text-xs font-black"
+            title="登录或注册账号开启学棋"
           >
-            <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white flex items-center justify-center text-xs sm:text-sm shadow-inner border border-orange-200 flex-shrink-0">
-              {{ userStore.avatar }}
-            </div>
-            <div class="flex items-center gap-1 whitespace-nowrap">
-              <span class="text-xs sm:text-sm font-black text-gray-800 whitespace-nowrap max-w-[50px] sm:max-w-[100px] truncate">
-                {{ userStore.nickname }}
-              </span>
-              <ChevronDown class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-500 flex-shrink-0" />
+            <LogIn class="w-3.5 h-3.5 flex-shrink-0" />
+            <span>登录 / 注册</span>
+          </button>
+
+          <!-- CASE 2: Logged In but No Child Profile Yet -> Show Create Profile Button -->
+          <button
+            v-else-if="!userStore.hasProfile"
+            @click="userStore.openProfileModal()"
+            class="flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border border-emerald-300 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl cursor-pointer shadow-sm transition transform active:scale-95 text-xs font-black"
+            title="创建第一个宝贝档案"
+          >
+            <UserPlus class="w-3.5 h-3.5 flex-shrink-0" />
+            <span class="whitespace-nowrap">创建宝贝</span>
+          </button>
+
+          <!-- CASE 3: Logged In & Has Profile -> Show Child Avatar Switcher Dropdown -->
+          <div v-else ref="userMenuRef" class="relative">
+            <button
+              @click="showUserMenu = !showUserMenu"
+              class="flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-orange-300/80 px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl cursor-pointer shadow-2xs transition transform active:scale-95 flex-shrink-0"
+              title="点击切换宝贝或查看账号"
+            >
+              <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white flex items-center justify-center text-xs sm:text-sm shadow-inner border border-orange-200 flex-shrink-0">
+                {{ userStore.avatar }}
+              </div>
+              <div class="flex items-center gap-1 whitespace-nowrap">
+                <span class="text-xs sm:text-sm font-black text-gray-800 whitespace-nowrap max-w-[50px] sm:max-w-[90px] truncate">
+                  {{ userStore.nickname }}
+                </span>
+                <ChevronDown class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-500 flex-shrink-0" />
+              </div>
+            </button>
+
+            <!-- User Menu Dropdown -->
+            <div
+              v-if="showUserMenu"
+              class="absolute right-0 mt-2 w-52 bg-white rounded-3xl shadow-xl border-2 border-orange-100 p-2 z-50 animate-pop-in space-y-1"
+            >
+              <div class="px-3 py-2 border-b border-gray-100">
+                <div class="text-[10px] font-black text-gray-400 uppercase tracking-wider">已登录家长</div>
+                <div class="text-xs font-black text-gray-900 truncate">{{ userStore.currentUserEmail }}</div>
+              </div>
+
+              <button
+                @click="showUserMenu = false; userStore.openProfileModal()"
+                class="w-full text-left px-3 py-2 rounded-xl text-xs font-black text-gray-700 hover:bg-orange-50 hover:text-orange-600 flex items-center justify-between transition cursor-pointer"
+              >
+                <div class="flex items-center gap-2">
+                  <span>👶</span>
+                  <span>切换 / 管理宝贝 ({{ userStore.profiles.length }})</span>
+                </div>
+              </button>
+
+              <button
+                @click="navigateTo('/profile')"
+                class="w-full text-left px-3 py-2 rounded-xl text-xs font-black text-gray-700 hover:bg-orange-50 hover:text-orange-600 flex items-center justify-between transition cursor-pointer"
+              >
+                <div class="flex items-center gap-2">
+                  <User class="w-3.5 h-3.5 text-orange-500" />
+                  <span>成长中心与学情</span>
+                </div>
+              </button>
+
+              <button
+                v-if="userStore.isAdmin"
+                @click="navigateTo('/admin')"
+                class="w-full text-left px-3 py-2 rounded-xl text-xs font-black text-purple-700 bg-purple-50 hover:bg-purple-100 flex items-center justify-between transition cursor-pointer"
+              >
+                <div class="flex items-center gap-2">
+                  <ShieldAlert class="w-3.5 h-3.5 text-purple-600" />
+                  <span>管理后台系统 👑</span>
+                </div>
+              </button>
+
+              <div class="pt-1 mt-1 border-t border-gray-100">
+                <button
+                  @click="handleLogout"
+                  class="w-full text-left px-3 py-1.5 rounded-xl text-xs font-black text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition cursor-pointer"
+                >
+                  <LogOut class="w-3.5 h-3.5" />
+                  <span>账号设置 / 退出登录</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <button
-            v-else
-            @click="userStore.openProfileModal()"
-            class="flex items-center gap-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white border border-amber-300 px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl cursor-pointer shadow-sm transition transform active:scale-95 flex-shrink-0 text-[11px] sm:text-xs font-black"
-            title="点击创建宝贝档案"
-          >
-            <UserPlus class="w-3.5 h-3.5 flex-shrink-0" />
-            <span class="whitespace-nowrap">创建档案</span>
-          </button>
-
-          <!-- Stars & Coins -->
+          <!-- Stars & Coins (Visible only when logged in with profile) -->
           <div v-if="userStore.hasProfile" class="hidden sm:flex items-center gap-1.5 flex-shrink-0">
             <div class="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-2xl text-xs font-black text-amber-900 shadow-2xs whitespace-nowrap" title="已收集星星">
               <Star class="w-3.5 h-3.5 text-amber-500 fill-current flex-shrink-0" />

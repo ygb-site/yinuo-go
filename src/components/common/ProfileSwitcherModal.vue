@@ -9,9 +9,8 @@ import {
   CheckCircle2,
   X,
   Star,
-  RotateCcw,
   Sparkles,
-  Database
+  CloudCheck
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -65,6 +64,12 @@ const handleSwitch = (id: string) => {
 };
 
 const handleCreate = () => {
+  if (!userStore.isLoggedIn) {
+    emit('close');
+    userStore.openAuthModal();
+    return;
+  }
+
   const trimmed = newName.value.trim();
   if (!trimmed) {
     showAlert({ message: '请先输入宝贝的名字或可爱昵称哦！', type: 'warning' });
@@ -101,19 +106,6 @@ const handleDelete = async (profile: ChildProfile) => {
     userStore.deleteProfile(profile.id);
   }
 };
-
-const handleClearAll = async () => {
-  const ok = await showConfirm({
-    title: '重置所有档案',
-    message: '确定要清空所有档案并重新开始吗？所有宝贝的闯关进度与星星都将被清除！',
-    type: 'delete',
-    confirmText: '确定重置'
-  });
-  if (ok) {
-    userStore.clearAllProfiles();
-    isCreating.value = true;
-  }
-};
 </script>
 
 <template>
@@ -128,10 +120,10 @@ const handleClearAll = async () => {
         <div
           class="relative w-full max-w-md transform rounded-3xl bg-white p-6 sm:p-7 text-left shadow-2xl border-4 border-amber-300 transition-all my-8 animate-pop-in flex flex-col z-[10000]"
         >
-          <!-- Close Button (Always available so user is never trapped) -->
+          <!-- Close Button -->
           <button
             @click="handleClose"
-            class="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition"
+            class="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition cursor-pointer"
             title="关闭弹窗"
           >
             <X class="w-5 h-5" />
@@ -150,7 +142,7 @@ const handleClearAll = async () => {
             <p class="text-xs text-gray-500 font-bold mt-1">
               {{
                 isCreating || hasNoProfiles
-                  ? '输入宝贝昵称并挑选可爱萌宠，开启围棋智慧大冒险！'
+                  ? '输入宝贝昵称并挑选可爱卡通头像，开启围棋智慧大冒险！'
                   : '每个孩子拥有完全独立隔离的闯关进度与星星成就！'
               }}
             </p>
@@ -205,7 +197,7 @@ const handleClearAll = async () => {
                 <button
                   v-if="userStore.profiles.length > 1"
                   @click.stop="handleDelete(profile)"
-                  class="p-2 text-gray-300 hover:text-rose-500 rounded-xl hover:bg-rose-50 transition opacity-80 hover:opacity-100"
+                  class="p-2 text-gray-300 hover:text-rose-500 rounded-xl hover:bg-rose-50 transition opacity-80 hover:opacity-100 cursor-pointer"
                   title="删除此档案"
                 >
                   <Trash2 class="w-4 h-4" />
@@ -216,25 +208,18 @@ const handleClearAll = async () => {
             <!-- Add Profile Button -->
             <button
               @click="isCreating = true"
-              class="w-full py-3 rounded-2xl border-2 border-dashed border-orange-300 hover:border-orange-500 hover:bg-orange-50/50 text-orange-600 font-extrabold text-sm flex items-center justify-center gap-2 transition active:scale-95"
+              class="w-full py-3 rounded-2xl border-2 border-dashed border-orange-300 hover:border-orange-500 hover:bg-orange-50/50 text-orange-600 font-extrabold text-sm flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer"
             >
               <Plus class="w-4 h-4" />
               <span>添加新宝贝档案</span>
             </button>
 
-            <!-- Reset / Clear All (Bottom Action) -->
-            <div class="pt-2 flex items-center justify-between border-t border-gray-100">
+            <!-- Sync indicator -->
+            <div class="pt-2 flex items-center justify-center border-t border-gray-100">
               <span class="text-[11px] font-bold text-gray-400 flex items-center gap-1">
-                <Database class="w-3 h-3 text-emerald-500" />
-                <span>数据仅存在本地</span>
+                <CloudCheck class="w-3.5 h-3.5 text-sky-500" />
+                <span>数据实时保存至家长云端账号</span>
               </span>
-              <button
-                @click="handleClearAll"
-                class="text-[11px] font-bold text-rose-500 hover:text-rose-700 flex items-center gap-1 hover:underline"
-              >
-                <RotateCcw class="w-3 h-3" />
-                <span>清空所有重置</span>
-              </button>
             </div>
           </div>
 
@@ -269,7 +254,7 @@ const handleClearAll = async () => {
                   :key="av"
                   type="button"
                   @click="selectedAvatar = av"
-                  class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl border-2 text-2xl flex items-center justify-center transition transform hover:scale-110 active:scale-95"
+                  class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl border-2 text-2xl flex items-center justify-center transition transform hover:scale-110 active:scale-95 cursor-pointer"
                   :class="
                     selectedAvatar === av
                       ? 'bg-orange-100 border-orange-500 shadow-md ring-2 ring-orange-300'
@@ -287,22 +272,14 @@ const handleClearAll = async () => {
                 v-if="!hasNoProfiles"
                 type="button"
                 @click="isCreating = false"
-                class="flex-1 py-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-sm transition active:scale-95"
+                class="flex-1 py-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-sm transition active:scale-95 cursor-pointer"
               >
                 返回列表
               </button>
               <button
-                v-else
-                type="button"
-                @click="handleClose"
-                class="flex-1 py-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-sm transition active:scale-95"
-              >
-                先随便逛逛
-              </button>
-              <button
                 type="button"
                 @click="handleCreate"
-                class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-1.5"
+                class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Sparkles class="w-4 h-4" />
                 <span>开启学棋之旅 🚀</span>
@@ -310,8 +287,9 @@ const handleClearAll = async () => {
             </div>
 
             <!-- Privacy Note -->
-            <p class="text-[11px] text-gray-400 text-center font-bold">
-              🔒 数据仅存在本地
+            <p class="text-[11px] text-gray-400 text-center font-bold flex items-center justify-center gap-1">
+              <CloudCheck class="w-3.5 h-3.5 text-sky-500" />
+              <span>数据实时保存至家长云端账号</span>
             </p>
           </div>
 
@@ -320,3 +298,4 @@ const handleClearAll = async () => {
     </div>
   </Teleport>
 </template>
+

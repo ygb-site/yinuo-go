@@ -4,9 +4,8 @@ import { sound } from '../utils/sound';
 import type { ThemeType } from '../engine/types';
 import {
   saveUserDataToCloud,
-  fetchCloudUserData,
-  smartMergeProfiles,
-  getCurrentCloudUser
+  fetchUserProfile,
+  getCurrentCloudUser,
 } from '../services/cloudSyncService';
 import { isSupabaseConfigured, getSupabaseClient } from '../lib/supabase';
 
@@ -48,7 +47,7 @@ export interface ChildProfile {
 
 const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
   id: '',
-  nickname: '未创建宝贝',
+  nickname: '未登录',
   avatar: '👶',
   createdAt: 0,
   progress: {},
@@ -79,13 +78,23 @@ const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
   }
 };
 
-let cloudSyncTimer: ReturnType<typeof setTimeout> | null = null;
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useUserStore = defineStore('userStore', {
   state: () => ({
+    // 🔐 纯云端登录与权限状态 (Cloud Auth & Role State)
+    isLoggedIn: false as boolean,
+    currentUserEmail: null as string | null,
+    currentUserId: null as string | null,
+    isAdmin: false as boolean,
+
+    // 👶 关联的宝贝档案列表 (仅在登录后从云端加载)
     profiles: [] as ChildProfile[],
     currentProfileId: '' as string,
     isProfileModalOpen: false as boolean,
+    showAuthModal: false as boolean,
+
+    // ⚙️ 游戏设置与个性化
     theme: 'wood' as ThemeType,
     soundEnabled: true as boolean,
     volume: 0.8 as number,
@@ -93,25 +102,37 @@ export const useUserStore = defineStore('userStore', {
     showAtariAlerts: true as boolean,
     showTerritoryHeatmap: false as boolean,
     touchConfirmEnabled: false as boolean,
-    lastSavedAt: Date.now() as number,
 
-    // Cloud Sync & Auth State
-    isCloudLoggedIn: false as boolean,
-    currentUserEmail: null as string | null,
-    currentUserId: null as string | null,
-    isSyncingToCloud: false as boolean,
-    lastCloudSyncedAt: null as number | null,
-    cloudSyncError: null as string | null,
-    showAuthModal: false as boolean
+    // ⚡ 实时云同步状态
+    isSyncing: false as boolean,
+    lastSavedAt: null as number | null,
+    syncError: null as string | null
   }),
 
   getters: {
+    // 是否为已登录且拥有至少一个宝贝档案的就绪状态
     hasProfile(state): boolean {
-      return state.profiles.length > 0 && !!state.currentProfileId;
+      return state.isLoggedIn && state.profiles.length > 0 && Boolean(state.currentProfileId);
+    },
+
+    isCloudLoggedIn(state): boolean {
+      return state.isLoggedIn;
+    },
+
+    isSyncingToCloud(state): boolean {
+      return state.isSyncing;
+    },
+
+    lastCloudSyncedAt(state): number | null {
+      return state.lastSavedAt;
+    },
+
+    cloudSyncError(state): string | null {
+      return state.syncError;
     },
 
     currentProfile(state): ChildProfile {
-      if (state.profiles.length === 0) {
+      if (!state.isLoggedIn || state.profiles.length === 0) {
         return EMPTY_PLACEHOLDER_PROFILE;
       }
       let found = state.profiles.find(p => p.id === state.currentProfileId);
@@ -247,6 +268,10 @@ export const useUserStore = defineStore('userStore', {
 
   actions: {
     openProfileModal() {
+      if (!this.isLoggedIn) {
+        this.openAuthModal();
+        return;
+      }
       this.isProfileModalOpen = true;
     },
 
@@ -262,23 +287,67 @@ export const useUserStore = defineStore('userStore', {
       this.showAuthModal = false;
     },
 
-    setCloudUser(userId: string, email: string) {
-      this.isCloudLoggedIn = true;
-      this.currentUserId = userId;
-      this.currentUserEmail = email;
-      this.touchSave();
-    },
-
-    clearCloudUser() {
-      this.isCloudLoggedIn = false;
-      this.currentUserId = null;
-      this.currentUserEmail = null;
-      this.lastCloudSyncedAt = null;
-      this.touchSave();
+    /**
+     * 统一鉴权拦截器 (Auth Guard Helper)
+     * 未登录弹出登录弹窗，已登录无宝贝档案弹出创建宝贝弹窗
+     */
+    requireAuth(): boolean {
+      if (!this.isLoggedIn) {
+        this.openAuthModal();
+        return false;
+      }
+      if (this.profiles.length === 0) {
+        this.isProfileModalOpen = true;
+        return false;
+      }
+      return true;
     },
 
     /**
-     * 应用启动时自动恢复 Supabase 登录状态并静默同步云端进度
+     * 设置已登录用户信息并加载云端进度
+     */
+    async setCloudUser(userId: string, email: string) {
+      this.isLoggedIn = true;
+      this.currentUserId = userId;
+      this.currentUserEmail = email;
+
+      // Fetch cloud data directly
+      const row = await fetchUserProfile(userId);
+      if (row) {
+        this.isAdmin = Boolean(row.is_admin);
+        this.profiles = row.profiles_data || [];
+        this.currentProfileId = row.active_profile_id || (this.profiles[0]?.id || '');
+        if (row.settings_data) {
+          if (row.settings_data.theme) this.theme = row.settings_data.theme;
+          if (typeof row.settings_data.soundEnabled === 'boolean') this.soundEnabled = row.settings_data.soundEnabled;
+          if (typeof row.settings_data.volume === 'number') this.volume = row.settings_data.volume;
+        }
+      }
+
+      // If user has no child profiles yet, prompt to create one!
+      if (this.profiles.length === 0) {
+        this.isProfileModalOpen = true;
+      }
+
+      this.lastSavedAt = Date.now();
+    },
+
+    /**
+     * 清除登录状态与本地内存缓存
+     */
+    clearCloudUser() {
+      this.isLoggedIn = false;
+      this.currentUserId = null;
+      this.currentUserEmail = null;
+      this.isAdmin = false;
+      this.profiles = [];
+      this.currentProfileId = '';
+      this.lastSavedAt = null;
+      this.syncError = null;
+    },
+
+    /**
+     * 应用启动时自动恢复 Supabase 登录会话
      */
     async initCloudSession() {
       if (!isSupabaseConfigured()) return;
@@ -288,56 +357,34 @@ export const useUserStore = defineStore('userStore', {
       try {
         const user = await getCurrentCloudUser();
         if (user) {
-          this.isCloudLoggedIn = true;
-          this.currentUserId = user.id;
-          this.currentUserEmail = user.email || '';
-
-          // Fetch cloud data and merge
-          const cloudData = await fetchCloudUserData();
-          if (cloudData && cloudData.profiles_data && cloudData.profiles_data.length > 0) {
-            const { profiles, activeId } = smartMergeProfiles(
-              this.profiles,
-              cloudData.profiles_data,
-              this.currentProfileId,
-              cloudData.active_profile_id
-            );
-            this.profiles = profiles;
-            this.currentProfileId = activeId;
-            this.lastCloudSyncedAt = Date.now();
-          }
+          await this.setCloudUser(user.id, user.email || '');
         } else {
-          this.isCloudLoggedIn = false;
-          this.currentUserId = null;
-          this.currentUserEmail = null;
+          this.clearCloudUser();
         }
 
-        // Listen for auth events
+        // Listen to Supabase auth events in real-time
         client.auth.onAuthStateChange(async (event, session) => {
           if (session && session.user) {
-            this.isCloudLoggedIn = true;
-            this.currentUserId = session.user.id;
-            this.currentUserEmail = session.user.email || '';
+            await this.setCloudUser(session.user.id, session.user.email || '');
           } else if (event === 'SIGNED_OUT') {
-            this.isCloudLoggedIn = false;
-            this.currentUserId = null;
-            this.currentUserEmail = null;
+            this.clearCloudUser();
           }
         });
       } catch (err) {
-        console.warn('[Cloud Auth Init Warn]', err);
+        console.warn('[Supabase Auth Init Warn]', err);
       }
     },
 
     /**
-     * 立即将本地档案全量同步并持久化到 Supabase
+     * 实时保存当前所有档案至 Supabase 云数据库
      */
     async syncToCloudNow(): Promise<boolean> {
-      if (!this.isCloudLoggedIn || !isSupabaseConfigured()) {
+      if (!this.isLoggedIn || !isSupabaseConfigured()) {
         return false;
       }
 
-      this.isSyncingToCloud = true;
-      this.cloudSyncError = null;
+      this.isSyncing = true;
+      this.syncError = null;
 
       try {
         const res = await saveUserDataToCloud(
@@ -350,32 +397,32 @@ export const useUserStore = defineStore('userStore', {
           }
         );
 
-        this.isSyncingToCloud = false;
+        this.isSyncing = false;
 
         if (res.success) {
-          this.lastCloudSyncedAt = res.timestamp || Date.now();
+          this.lastSavedAt = res.timestamp || Date.now();
           return true;
         } else {
-          this.cloudSyncError = res.error || '同步失败';
+          this.syncError = res.error || '云端保存失败';
           return false;
         }
       } catch (err: any) {
-        this.isSyncingToCloud = false;
-        this.cloudSyncError = err?.message || '网络连接异常';
+        this.isSyncing = false;
+        this.syncError = err?.message || '网络连接异常';
         return false;
       }
     },
 
+    /**
+     * 节流实时保存 (Debounced Real-time Cloud Save)
+     */
     touchSave() {
-      this.lastSavedAt = Date.now();
+      if (!this.isLoggedIn || !isSupabaseConfigured()) return;
 
-      // Debounced auto-sync to cloud when logged in
-      if (this.isCloudLoggedIn && isSupabaseConfigured()) {
-        if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
-        cloudSyncTimer = setTimeout(() => {
-          this.syncToCloudNow();
-        }, 1500);
-      }
+      if (syncTimer) clearTimeout(syncTimer);
+      syncTimer = setTimeout(() => {
+        this.syncToCloudNow();
+      }, 400);
     },
 
     isNicknameTaken(nickname: string, excludeId?: string): boolean {
@@ -387,6 +434,11 @@ export const useUserStore = defineStore('userStore', {
     },
 
     createProfile(nickname: string, avatar: string): ChildProfile | null {
+      if (!this.isLoggedIn) {
+        this.openAuthModal();
+        return null;
+      }
+
       const trimmed = nickname.trim() || '小棋手';
       if (this.isNicknameTaken(trimmed)) {
         return null;
@@ -468,7 +520,7 @@ export const useUserStore = defineStore('userStore', {
       stars: number,
       rewards: { exp?: number; coins?: number } = {}
     ) {
-      if (this.profiles.length === 0) return;
+      if (!this.hasProfile) return;
       const prof = this.currentProfile;
       if (!prof.progress) prof.progress = {};
       const prev = prof.progress[lessonId];
@@ -500,7 +552,7 @@ export const useUserStore = defineStore('userStore', {
     },
 
     addExp(amount: number) {
-      if (this.profiles.length === 0) return;
+      if (!this.hasProfile) return;
       const prof = this.currentProfile;
       const oldRank = this.currentRank.rankLevel;
       prof.exp = (prof.exp || 0) + amount;
@@ -513,14 +565,14 @@ export const useUserStore = defineStore('userStore', {
     },
 
     addCoins(amount: number) {
-      if (this.profiles.length === 0) return;
+      if (!this.hasProfile) return;
       this.currentProfile.coins = (this.currentProfile.coins || 0) + amount;
       this.touchSave();
       sound.playCoinSound();
     },
 
     spendCoins(amount: number): boolean {
-      if (this.profiles.length === 0) return false;
+      if (!this.hasProfile) return false;
       const prof = this.currentProfile;
       if ((prof.coins || 0) >= amount) {
         prof.coins = (prof.coins || 0) - amount;
@@ -531,7 +583,7 @@ export const useUserStore = defineStore('userStore', {
     },
 
     unlockBadge(badgeId: string) {
-      if (this.profiles.length === 0) return;
+      if (!this.hasProfile) return;
       const prof = this.currentProfile;
       if (!prof.badges) prof.badges = [];
       if (!prof.badges.includes(badgeId)) {
@@ -547,7 +599,7 @@ export const useUserStore = defineStore('userStore', {
     },
 
     recordGameEnd(won: boolean, captures: number, moves: number) {
-      if (this.profiles.length === 0) return;
+      if (!this.hasProfile) return;
       const prof = this.currentProfile;
       if (!prof.stats) {
         prof.stats = { gamesPlayed: 0, gamesWon: 0, puzzlesSolved: 0, captureCount: 0, totalMoves: 0 };
@@ -565,7 +617,7 @@ export const useUserStore = defineStore('userStore', {
     },
 
     recordPuzzleSolved(puzzleId?: string) {
-      if (this.profiles.length === 0) return;
+      if (!this.hasProfile) return;
       const prof = this.currentProfile;
       if (!prof.solvedPuzzles) prof.solvedPuzzles = [];
       if (puzzleId && !prof.solvedPuzzles.includes(puzzleId)) {
@@ -582,7 +634,7 @@ export const useUserStore = defineStore('userStore', {
     },
 
     recordMistake(puzzleId: string) {
-      if (this.profiles.length === 0) return;
+      if (!this.hasProfile) return;
       const prof = this.currentProfile;
       if (!prof.mistakes) prof.mistakes = [];
       if (!prof.mistakes.includes(puzzleId)) {
@@ -592,7 +644,7 @@ export const useUserStore = defineStore('userStore', {
     },
 
     resolveMistake(puzzleId: string) {
-      if (this.profiles.length === 0) return;
+      if (!this.hasProfile) return;
       const prof = this.currentProfile;
       if (!prof.solvedMistakes) prof.solvedMistakes = [];
       if (!prof.solvedMistakes.includes(puzzleId)) {
@@ -604,7 +656,7 @@ export const useUserStore = defineStore('userStore', {
     },
 
     buyTheme(themeId: ThemeType, price: number): boolean {
-      if (this.profiles.length === 0) return false;
+      if (!this.hasProfile) return false;
       const prof = this.currentProfile;
       if (!prof.unlockedThemes) prof.unlockedThemes = ['wood'];
       if (prof.unlockedThemes.includes(themeId)) {
@@ -624,7 +676,7 @@ export const useUserStore = defineStore('userStore', {
     },
 
     buyAvatar(avatar: string, price: number): boolean {
-      if (this.profiles.length === 0) return false;
+      if (!this.hasProfile) return false;
       const prof = this.currentProfile;
       if (!prof.unlockedAvatars) prof.unlockedAvatars = ['🦁', '👶', '🐱', '🐼'];
       if (prof.unlockedAvatars.includes(avatar)) {
@@ -650,7 +702,7 @@ export const useUserStore = defineStore('userStore', {
       score: number,
       coinsEarned: number
     ) {
-      if (this.profiles.length === 0) return;
+      if (!this.hasProfile) return;
       const prof = this.currentProfile;
       if (!prof.arcadeHighScores) {
         prof.arcadeHighScores = { speedCapture: 0, countLiberties: 0, connectCut: 0 };
@@ -664,7 +716,7 @@ export const useUserStore = defineStore('userStore', {
     },
 
     recordCaptureGoWin(coinsEarned: number, expEarned: number) {
-      if (this.profiles.length === 0) return;
+      if (!this.hasProfile) return;
       const prof = this.currentProfile;
       if (!prof.captureGoStats) {
         prof.captureGoStats = { wins: 0, matches: 0 };
@@ -677,7 +729,7 @@ export const useUserStore = defineStore('userStore', {
     },
 
     recordCaptureGoMatch() {
-      if (this.profiles.length === 0) return;
+      if (!this.hasProfile) return;
       const prof = this.currentProfile;
       if (!prof.captureGoStats) {
         prof.captureGoStats = { wins: 0, matches: 0 };
@@ -687,7 +739,7 @@ export const useUserStore = defineStore('userStore', {
     },
 
     resetCurrentProfileProgress() {
-      if (this.profiles.length === 0) return;
+      if (!this.hasProfile) return;
       const prof = this.currentProfile;
       prof.exp = 0;
       prof.coins = 0;

@@ -17,6 +17,7 @@ import AiMatchView from '../views/AiMatchView.vue';
 import FreeBoardView from '../views/FreeBoardView.vue';
 import DictionaryView from '../views/DictionaryView.vue';
 import ProfileView from '../views/ProfileView.vue';
+import AdminView from '../views/AdminView.vue';
 
 // Engaging Game Modes & Features
 import ArcadeView from '../views/ArcadeView.vue';
@@ -51,6 +52,7 @@ const router = createRouter({
     { path: '/free-board', name: 'free-board', component: FreeBoardView },
     { path: '/dictionary', name: 'dictionary', component: DictionaryView },
     { path: '/profile', name: 'profile', component: ProfileView },
+    { path: '/admin', name: 'admin', component: AdminView },
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ],
   scrollBehavior() {
@@ -60,7 +62,22 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   stopSpeech();
-  // 1. Check feature unlock rules
+
+  // 1. Check Admin Route Access
+  if (to.path === '/admin') {
+    const userStore = useUserStore();
+    if (!userStore.isLoggedIn || !userStore.isAdmin) {
+      sound.playErrorSound();
+      showAlert({
+        title: '权限不足',
+        message: '管理后台仅限系统管理员账号访问！',
+        type: 'warning'
+      });
+      return '/';
+    }
+  }
+
+  // 2. Check feature unlock rules
   const matchedFeature = UNLOCK_FEATURES.find(f => f.route === to.path);
   if (matchedFeature && matchedFeature.lessonsRequired > 0) {
     const unlockStore = useUnlockStore();
@@ -75,7 +92,7 @@ router.beforeEach((to) => {
     }
   }
 
-  // 2. Check progressive lesson unlock
+  // 3. Check progressive lesson unlock
   if (to.name === 'lesson-play' || to.path.startsWith('/lesson/')) {
     const lessonId = to.params.id as string;
     if (lessonId && lessonId !== 'lesson_1_1' && lessonId !== 'c1_l1') {
@@ -103,3 +120,4 @@ router.beforeEach((to) => {
 });
 
 export default router;
+

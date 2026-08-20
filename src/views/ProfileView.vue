@@ -24,11 +24,12 @@ import {
   UserPlus,
   Heart,
   ArrowRight,
-  Cloud,
-  CloudCheck,
+  ShieldCheck,
+  ShieldAlert,
   RefreshCw,
   LogIn,
-  Settings
+  LogOut,
+  User
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -66,7 +67,7 @@ const favoritePuzzlesList = computed(() => {
 });
 
 const handleManualSync = async () => {
-  if (!userStore.isCloudLoggedIn) {
+  if (!userStore.isLoggedIn) {
     userStore.openAuthModal();
     return;
   }
@@ -77,14 +78,14 @@ const handleManualSync = async () => {
     triggerConfetti();
     showAlert({
       title: '云端同步成功',
-      message: '当前所有宝贝档案、通关星星与勋章已成功备份至云数据库！',
+      message: '所有宝贝档案、通关星星与勋章已成功保存在云端数据库！',
       type: 'info'
     });
   } else {
     playErrorSound();
     showAlert({
       title: '同步失败',
-      message: userStore.cloudSyncError || '请检查网络连接或 Supabase 配置',
+      message: userStore.cloudSyncError || '请检查网络连接',
       type: 'warning'
     });
   }
@@ -260,11 +261,11 @@ const confirmReset = async () => {
   <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-6 sm:py-10 px-4 sm:px-6 lg:px-8 select-none">
     <div class="max-w-6xl mx-auto space-y-6 sm:space-y-8">
 
-      <!-- Kid's Exclusive ID Card (宝贝专属名片) -->
-      <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm relative overflow-hidden">
+      <!-- Case A: Logged In & Has Child Profile -->
+      <div v-if="userStore.hasProfile" class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm relative overflow-hidden">
         <div class="absolute -right-12 -top-12 w-64 h-64 bg-orange-100/60 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div v-if="userStore.hasProfile" class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
           <!-- Avatar & Name -->
           <div class="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
             <div class="relative">
@@ -393,79 +394,104 @@ const confirmReset = async () => {
             </div>
           </div>
         </div>
-
-        <!-- Empty State (No Profile Yet) -->
-        <div v-else class="relative z-10 py-6 text-center space-y-4">
-          <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-amber-300 via-orange-400 to-rose-400 p-1 shadow-md flex items-center justify-center text-4xl">
-            👶
-          </div>
-          <div class="space-y-1">
-            <h2 class="text-2xl font-black text-gray-900">欢迎来到成长中心！</h2>
-            <p class="text-xs sm:text-sm text-gray-500 font-bold max-w-md mx-auto">
-              创建宝贝档案后，每一个孩子的闯关星星、成就勋章与段位棋力都将独立保存。登录云端账号即可跨设备多端实时同步！
-            </p>
-          </div>
-          <button
-            @click="userStore.openProfileModal()"
-            class="px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-sm shadow-md transition active:scale-95 inline-flex items-center gap-2 cursor-pointer"
-          >
-            <UserPlus class="w-4 h-4" />
-            <span>创建第一位宝贝档案 🚀</span>
-          </button>
-        </div>
       </div>
 
-      <!-- Cloud Account & Multi-Device Sync Card (☁️ 家长云端账号与多端同步) -->
-      <div class="bg-gradient-to-br from-sky-50 via-indigo-50/40 to-white rounded-3xl p-5 sm:p-7 border-2 border-sky-200 shadow-sm space-y-4">
+      <!-- Case B: Not Logged In or No Profile -> Action Prompt -->
+      <div v-else class="bg-white rounded-3xl p-8 sm:p-12 border-2 border-orange-100 shadow-sm text-center space-y-4">
+        <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-amber-300 via-orange-400 to-rose-400 p-1 shadow-md flex items-center justify-center text-4xl">
+          👶
+        </div>
+        <div class="space-y-1">
+          <h2 class="text-2xl font-black text-gray-900">
+            {{ userStore.isLoggedIn ? '请创建您的第一个宝贝档案' : '登录开启宝贝成长中心' }}
+          </h2>
+          <p class="text-xs sm:text-sm text-gray-500 font-bold max-w-md mx-auto">
+            {{ userStore.isLoggedIn ? '创建宝贝档案后，即可为孩子记录闯关星星、成就勋章与段位棋力！' : '登录家长账号后，孩子的所有学习进度与勋章都将安全保存在云端，多设备自动打通！' }}
+          </p>
+        </div>
+        <button
+          v-if="!userStore.isLoggedIn"
+          @click="userStore.openAuthModal()"
+          class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-sm shadow-md transition active:scale-95 inline-flex items-center gap-2 cursor-pointer"
+        >
+          <LogIn class="w-4 h-4" />
+          <span>立即登录 / 注册账号 🚀</span>
+        </button>
+        <button
+          v-else
+          @click="userStore.openProfileModal()"
+          class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-sm shadow-md transition active:scale-95 inline-flex items-center gap-2 cursor-pointer"
+        >
+          <UserPlus class="w-4 h-4" />
+          <span>创建宝贝档案 👶</span>
+        </button>
+      </div>
+
+      <!-- Parent Account Card (家长账号与多端同步中心) -->
+      <div class="bg-gradient-to-br from-amber-50/80 via-orange-50/40 to-white rounded-3xl p-5 sm:p-7 border-2 border-orange-200 shadow-sm space-y-4">
         <div class="flex items-center justify-between flex-wrap gap-3">
           <div class="flex items-center gap-3">
-            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-400 to-indigo-600 flex items-center justify-center text-white shadow-sm flex-shrink-0">
-              <CloudCheck v-if="userStore.isCloudLoggedIn" class="w-6 h-6" />
-              <Cloud v-else class="w-6 h-6" />
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+              <ShieldCheck v-if="userStore.isLoggedIn" class="w-6 h-6" />
+              <User v-else class="w-6 h-6" />
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <h2 class="text-base sm:text-xl font-black text-gray-900">家长云端账号与多端同步</h2>
+                <h2 class="text-base sm:text-xl font-black text-gray-900">家长账号与云端同步</h2>
                 <span
                   class="text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1"
-                  :class="userStore.isCloudLoggedIn ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-900 border border-amber-300'"
+                  :class="userStore.isLoggedIn ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-gray-100 text-gray-600 border border-gray-200'"
                 >
-                  <span class="w-1.5 h-1.5 rounded-full" :class="userStore.isCloudLoggedIn ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
-                  <span>{{ userStore.isCloudLoggedIn ? '已连接云端 · 自动同步' : '未登录 (本地单机模式)' }}</span>
+                  <span class="w-1.5 h-1.5 rounded-full" :class="userStore.isLoggedIn ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'"></span>
+                  <span>{{ userStore.isLoggedIn ? '已登录 · 实时自动保存' : '未登录' }}</span>
+                </span>
+                <span v-if="userStore.isAdmin" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-300 flex items-center gap-0.5">
+                  <span>👑 管理员</span>
                 </span>
               </div>
               <p class="text-xs text-gray-500 font-medium mt-0.5">
-                {{ userStore.isCloudLoggedIn ? ('当前登录：' + userStore.currentUserEmail) : '登录云端账号后，在 iPad、手机或电脑上进度完全打通，随时随地继续学棋！' }}
+                {{ userStore.isLoggedIn ? ('当前登录：' + userStore.currentUserEmail) : '登录后可在多台手机、iPad 或电脑上同步进度，随时随地学棋！' }}
               </p>
             </div>
           </div>
 
           <div class="flex items-center gap-2">
             <button
-              v-if="userStore.isCloudLoggedIn"
-              @click="handleManualSync"
-              :disabled="userStore.isSyncingToCloud"
-              class="px-4 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white rounded-2xl text-xs font-black shadow-sm transition active:scale-95 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              v-if="userStore.isLoggedIn && userStore.isAdmin"
+              @click="router.push('/admin')"
+              class="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black shadow-sm transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
             >
-              <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': userStore.isSyncingToCloud }" />
-              <span>{{ userStore.isSyncingToCloud ? '正在同步...' : '立即同步到云端 🚀' }}</span>
+              <ShieldAlert class="w-3.5 h-3.5" />
+              <span>进入管理后台 👑</span>
             </button>
 
             <button
-              v-else
+              v-if="userStore.isLoggedIn"
+              @click="handleManualSync"
+              :disabled="userStore.isSyncing"
+              class="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl text-xs font-black shadow-sm transition active:scale-95 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': userStore.isSyncing }" />
+              <span>{{ userStore.isSyncing ? '正在同步...' : '立即同步数据' }}</span>
+            </button>
+
+            <button
+              v-if="!userStore.isLoggedIn"
               @click="userStore.openAuthModal()"
               class="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl text-xs font-black shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
             >
               <LogIn class="w-3.5 h-3.5" />
-              <span>登录 / 注册云端账号 ✨</span>
+              <span>登录 / 注册 🚀</span>
             </button>
 
             <button
+              v-if="userStore.isLoggedIn"
               @click="userStore.openAuthModal()"
-              class="p-2 bg-white hover:bg-sky-50 text-gray-700 border border-sky-200 rounded-2xl transition active:scale-95 cursor-pointer shadow-2xs"
-              title="管理云端账号与配置"
+              class="px-3.5 py-2.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-2xl transition active:scale-95 cursor-pointer text-xs font-black flex items-center gap-1 shadow-2xs"
+              title="退出登录"
             >
-              <Settings class="w-4 h-4 text-sky-600" />
+              <LogOut class="w-3.5 h-3.5" />
+              <span>退出</span>
             </button>
           </div>
         </div>
@@ -492,27 +518,21 @@ const confirmReset = async () => {
           <div class="md:col-span-6 flex justify-center">
             <div class="relative w-64 h-64">
               <svg viewBox="0 0 200 200" class="w-full h-full transform">
-                <!-- Background Webs (20%, 40%, 60%, 80%, 100%) -->
                 <polygon points="100,25 171,48 144,132 56,132 29,48" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
                 <polygon points="100,40 157,59 135,126 65,126 43,59" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
                 <polygon points="100,55 143,69 127,119 73,119 57,69" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
                 <polygon points="100,70 128,79 118,113 82,113 72,79" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
                 <polygon points="100,85 114,90 109,106 91,106 86,90" fill="none" stroke="#FDE68A" stroke-width="1" stroke-dasharray="2,2" />
 
-                <!-- Axes -->
                 <line x1="100" y1="100" x2="100" y2="25" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
                 <line x1="100" y1="100" x2="171" y2="48" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
                 <line x1="100" y1="100" x2="144" y2="132" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
                 <line x1="100" y1="100" x2="56" y2="132" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
                 <line x1="100" y1="100" x2="29" y2="48" stroke="#F59E0B" stroke-width="1" opacity="0.6" />
 
-                <!-- Data Polygon -->
                 <polygon :points="radarPolygonPoints" fill="rgba(249, 115, 22, 0.25)" stroke="#EA580C" stroke-width="2.5" />
-
-                <!-- Corner Dots -->
                 <circle v-for="pt in radarStats" :key="pt.label" :cx="pt.x" :cy="pt.y" r="4" fill="#EA580C" stroke="#FFFFFF" stroke-width="1.5" />
 
-                <!-- Labels -->
                 <text x="100" y="15" text-anchor="middle" font-size="10" font-weight="900" fill="#9A3412">吃子敏锐</text>
                 <text x="180" y="52" text-anchor="start" font-size="10" font-weight="900" fill="#9A3412">数气熟练</text>
                 <text x="150" y="148" text-anchor="middle" font-size="10" font-weight="900" fill="#9A3412">死活做眼</text>
@@ -547,8 +567,8 @@ const confirmReset = async () => {
         </div>
       </div>
 
-      <!-- Favorite Puzzles Showcase (❤️ 宝贝死活题收藏本) -->
-      <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-rose-100 shadow-sm space-y-5">
+      <!-- Favorite Puzzles Showcase -->
+      <div v-if="userStore.hasProfile" class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-rose-100 shadow-sm space-y-5">
         <div class="flex items-center justify-between flex-wrap gap-3">
           <div class="flex items-center gap-2">
             <div class="w-9 h-9 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-600">
@@ -646,8 +666,8 @@ const confirmReset = async () => {
         </div>
       </div>
 
-      <!-- Badge Showcase (徽章陈列室) -->
-      <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm space-y-5">
+      <!-- Badge Showcase -->
+      <div v-if="userStore.hasProfile" class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm space-y-5">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <Trophy class="w-6 h-6 text-amber-500" />
@@ -662,7 +682,6 @@ const confirmReset = async () => {
           <div
             v-for="badge in BADGES_DATA"
             :key="badge.id"
-            @click="!userStore.hasProfile && userStore.openProfileModal()"
             class="rounded-3xl p-4 border-2 transition-all flex flex-col justify-between cursor-pointer"
             :class="
               isBadgeUnlocked(badge.id)
@@ -703,7 +722,7 @@ const confirmReset = async () => {
       </div>
 
       <!-- Theme & Profile Settings -->
-      <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm space-y-6">
+      <div v-if="userStore.hasProfile" class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm space-y-6">
         <h2 class="text-xl font-black text-gray-900">个性化设置与多档案管理</h2>
 
         <!-- Theme Selection -->
@@ -763,23 +782,17 @@ const confirmReset = async () => {
           </div>
         </div>
 
-        <!-- Data Export & Reset (Protected when no profile) -->
+        <!-- Data Export & Reset -->
         <div class="pt-4 border-t border-gray-100 flex flex-wrap gap-3">
           <button
             @click="exportData"
-            class="px-4 py-2.5 rounded-2xl border text-xs font-black flex items-center gap-2 transition active:scale-95 cursor-pointer"
-            :class="
-              userStore.hasProfile
-                ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900'
-                : 'bg-gray-50 border-gray-200 text-gray-400 hover:text-orange-600 hover:border-orange-300'
-            "
+            class="px-4 py-2.5 rounded-2xl border text-xs font-black flex items-center gap-2 transition active:scale-95 cursor-pointer bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900"
           >
             <Download class="w-4 h-4" />
             <span>导出学习档案备份 (JSON)</span>
           </button>
 
           <button
-            v-if="userStore.hasProfile"
             @click="confirmReset"
             class="px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs flex items-center gap-2 transition active:scale-95 cursor-pointer"
           >

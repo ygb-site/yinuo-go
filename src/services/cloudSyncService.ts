@@ -1,13 +1,15 @@
 import { getSupabaseClient } from '../lib/supabase';
 import type { ChildProfile } from '../stores/useUserStore';
 
-export interface CloudUserData {
+export interface UserProfileRow {
   id: string;
   email: string;
+  is_admin?: boolean;
   active_profile_id: string;
   profiles_data: ChildProfile[];
   settings_data: Record<string, any>;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface AuthResult {
@@ -19,133 +21,13 @@ export interface AuthResult {
   error?: string;
 }
 
-export interface SyncResult {
-  success: boolean;
-  mergedProfiles?: ChildProfile[];
-  activeProfileId?: string;
-  settings?: Record<string, any>;
-  error?: string;
-  timestamp?: number;
-}
-
-/**
- * 智能合并本地档案与云端档案 (Smart Merge)
- * 优先合并最高通关关卡、累加/取最大星星数、经验、金币与勋章
- */
-export function smartMergeProfiles(
-  localProfiles: ChildProfile[],
-  cloudProfiles: ChildProfile[],
-  localActiveId?: string,
-  cloudActiveId?: string
-): { profiles: ChildProfile[]; activeId: string } {
-  if (!cloudProfiles || cloudProfiles.length === 0) {
-    return { profiles: localProfiles, activeId: localActiveId || localProfiles[0]?.id || '' };
-  }
-  if (!localProfiles || localProfiles.length === 0) {
-    return { profiles: cloudProfiles, activeId: cloudActiveId || cloudProfiles[0]?.id || '' };
-  }
-
-  const mergedMap = new Map<string, ChildProfile>();
-
-  // 1. Put cloud profiles first
-  for (const cp of cloudProfiles) {
-    mergedMap.set(cp.id || cp.nickname, { ...cp });
-  }
-
-  // 2. Merge local profiles into map
-  for (const lp of localProfiles) {
-    const key = lp.id || lp.nickname;
-    const existing = mergedMap.get(key);
-
-    if (!existing) {
-      mergedMap.set(key, { ...lp });
-    } else {
-      // Merge progress (take highest stars & completed state)
-      const mergedProgress: Record<string, { completed: boolean; stars: number; highscore?: number; completedAt?: string }> = {
-        ...(existing.progress || {})
-      };
-
-      for (const [lvlId, lData] of Object.entries(lp.progress || {})) {
-        const cData = mergedProgress[lvlId];
-        if (!cData) {
-          mergedProgress[lvlId] = { ...lData };
-        } else {
-          mergedProgress[lvlId] = {
-            completed: cData.completed || lData.completed,
-            stars: Math.max(cData.stars || 0, lData.stars || 0),
-            highscore: Math.max(cData.highscore || 0, lData.highscore || 0),
-            completedAt: cData.completedAt || lData.completedAt
-          };
-        }
-      }
-
-      // Calculate total stars from progress
-      let totalStars = 0;
-      for (const p of Object.values(mergedProgress)) {
-        if (p.completed) {
-          totalStars += p.stars || 0;
-        }
-      }
-
-      // Merge badges
-      const badgeSet = new Set([...(existing.badges || []), ...(lp.badges || [])]);
-
-      // Merge solved puzzles
-      const puzzleSet = new Set([...(existing.solvedPuzzles || []), ...(lp.solvedPuzzles || [])]);
-
-      // Merge unlocked themes & avatars
-      const themeSet = new Set([...(existing.unlockedThemes || ['wood']), ...(lp.unlockedThemes || ['wood'])]);
-      const avatarSet = new Set([...(existing.unlockedAvatars || []), ...(lp.unlockedAvatars || [])]);
-
-      // Merge mistakes
-      const mistakeSet = new Set([...(existing.mistakes || []), ...(lp.mistakes || [])]);
-      const solvedMistakeSet = new Set([...(existing.solvedMistakes || []), ...(lp.solvedMistakes || [])]);
-
-      const merged: ChildProfile = {
-        id: existing.id || lp.id,
-        nickname: lp.nickname || existing.nickname,
-        avatar: lp.avatar || existing.avatar,
-        createdAt: Math.min(existing.createdAt || Date.now(), lp.createdAt || Date.now()),
-        progress: mergedProgress,
-        totalStars,
-        badges: Array.from(badgeSet),
-        solvedPuzzles: Array.from(puzzleSet),
-        unlockedThemes: Array.from(themeSet),
-        unlockedAvatars: Array.from(avatarSet),
-        mistakes: Array.from(mistakeSet),
-        solvedMistakes: Array.from(solvedMistakeSet),
-        exp: Math.max(existing.exp || 0, lp.exp || 0),
-        coins: Math.max(existing.coins || 0, lp.coins || 0),
-        arcadeHighScores: {
-          speedCapture: Math.max(existing.arcadeHighScores?.speedCapture || 0, lp.arcadeHighScores?.speedCapture || 0),
-          countLiberties: Math.max(existing.arcadeHighScores?.countLiberties || 0, lp.arcadeHighScores?.countLiberties || 0),
-          connectCut: Math.max(existing.arcadeHighScores?.connectCut || 0, lp.arcadeHighScores?.connectCut || 0)
-        },
-        captureGoStats: {
-          wins: Math.max(existing.captureGoStats?.wins || 0, lp.captureGoStats?.wins || 0),
-          matches: Math.max(existing.captureGoStats?.matches || 0, lp.captureGoStats?.matches || 0)
-        },
-        stats: {
-          gamesPlayed: Math.max(existing.stats?.gamesPlayed || 0, lp.stats?.gamesPlayed || 0),
-          gamesWon: Math.max(existing.stats?.gamesWon || 0, lp.stats?.gamesWon || 0),
-          puzzlesSolved: Math.max(existing.stats?.puzzlesSolved || 0, lp.stats?.puzzlesSolved || 0),
-          captureCount: Math.max(existing.stats?.captureCount || 0, lp.stats?.captureCount || 0),
-          totalMoves: Math.max(existing.stats?.totalMoves || 0, lp.stats?.totalMoves || 0)
-        }
-      };
-
-      mergedMap.set(key, merged);
-    }
-  }
-
-  const profiles = Array.from(mergedMap.values());
-  const activeId = localActiveId && profiles.some(p => p.id === localActiveId)
-    ? localActiveId
-    : cloudActiveId && profiles.some(p => p.id === cloudActiveId)
-    ? cloudActiveId
-    : profiles[0]?.id || '';
-
-  return { profiles, activeId };
+export interface AdminStats {
+  totalParents: number;
+  totalChildren: number;
+  totalStars: number;
+  totalGames: number;
+  totalCoins: number;
+  totalExp: number;
 }
 
 /**
@@ -154,7 +36,7 @@ export function smartMergeProfiles(
 export async function signUpWithEmail(email: string, password: string): Promise<AuthResult> {
   const client = getSupabaseClient();
   if (!client) {
-    return { success: false, error: '未配置 Supabase 云数据库连接地址或密钥' };
+    return { success: false, error: '未配置云端数据库连接' };
   }
 
   try {
@@ -165,6 +47,18 @@ export async function signUpWithEmail(email: string, password: string): Promise<
 
     if (error) {
       return { success: false, error: error.message };
+    }
+
+    // Ensure user profile record exists
+    if (data.user) {
+      await client.from('user_profiles').upsert({
+        id: data.user.id,
+        email: data.user.email,
+        is_admin: false,
+        profiles_data: [],
+        settings_data: { theme: 'wood', soundEnabled: true, volume: 0.8 },
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
     }
 
     return {
@@ -182,7 +76,7 @@ export async function signUpWithEmail(email: string, password: string): Promise<
 export async function signInWithEmail(email: string, password: string): Promise<AuthResult> {
   const client = getSupabaseClient();
   if (!client) {
-    return { success: false, error: '未配置 Supabase 云数据库连接地址或密钥' };
+    return { success: false, error: '未配置云端数据库连接' };
   }
 
   try {
@@ -205,7 +99,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
 }
 
 /**
- * 退出云端账号
+ * 退出登录
  */
 export async function signOutCloud(): Promise<{ success: boolean; error?: string }> {
   const client = getSupabaseClient();
@@ -236,36 +130,40 @@ export async function getCurrentCloudUser() {
 }
 
 /**
- * 从 Supabase 下载云端进度
+ * 从 Supabase 下载指定用户或当前登录用户的档案数据
  */
-export async function fetchCloudUserData(): Promise<CloudUserData | null> {
+export async function fetchUserProfile(targetUserId?: string): Promise<UserProfileRow | null> {
   const client = getSupabaseClient();
   if (!client) return null;
 
   try {
-    const { data: { user } } = await client.auth.getUser();
-    if (!user) return null;
+    let uid = targetUserId;
+    if (!uid) {
+      const { data: { user } } = await client.auth.getUser();
+      if (!user) return null;
+      uid = user.id;
+    }
 
     const { data, error } = await client
       .from('user_profiles')
       .select('*')
-      .eq('id', user.id)
+      .eq('id', uid)
       .maybeSingle();
 
     if (error) {
-      console.warn('[Cloud Fetch Warn]', error.message);
+      console.warn('[Fetch Profile Warn]', error.message);
       return null;
     }
 
-    return data as CloudUserData | null;
+    return data as UserProfileRow | null;
   } catch (err) {
-    console.error('[Cloud Fetch Error]', err);
+    console.error('[Fetch Profile Error]', err);
     return null;
   }
 }
 
 /**
- * 保存/上传全量进度到 Supabase
+ * 实时保存用户所有宝贝档案与设置到 Supabase 云端
  */
 export async function saveUserDataToCloud(
   profilesData: ChildProfile[],
@@ -274,13 +172,13 @@ export async function saveUserDataToCloud(
 ): Promise<{ success: boolean; error?: string; timestamp?: number }> {
   const client = getSupabaseClient();
   if (!client) {
-    return { success: false, error: '未连接 Supabase' };
+    return { success: false, error: '未连接云数据库' };
   }
 
   try {
     const { data: { user } } = await client.auth.getUser();
     if (!user) {
-      return { success: false, error: '尚未登录云端账号' };
+      return { success: false, error: '尚未登录' };
     }
 
     const payload = {
@@ -297,14 +195,130 @@ export async function saveUserDataToCloud(
       .upsert(payload, { onConflict: 'id' });
 
     if (error) {
-      console.error('[Cloud Save Error]', error);
+      console.error('[Cloud Realtime Save Error]', error);
       return { success: false, error: error.message };
     }
 
     return { success: true, timestamp: Date.now() };
   } catch (err: any) {
-    console.error('[Cloud Save Catch]', err);
-    return { success: false, error: err?.message || '保存云端失败' };
+    console.error('[Cloud Realtime Save Catch]', err);
+    return { success: false, error: err?.message || '云端保存失败' };
+  }
+}
+
+/* =========================================================
+ * 👑 管理后台专享 API (Admin Management APIs)
+ * ========================================================= */
+
+/**
+ * 管理员获取全站所有注册用户列表
+ */
+export async function fetchAdminUserList(): Promise<{ success: boolean; users: UserProfileRow[]; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client) return { success: false, users: [], error: '未连接云数据库' };
+
+  try {
+    const { data, error } = await client
+      .from('user_profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return { success: false, users: [], error: error.message };
+    }
+
+    return { success: true, users: (data || []) as UserProfileRow[] };
+  } catch (err: any) {
+    return { success: false, users: [], error: err?.message || '获取用户列表失败' };
+  }
+}
+
+/**
+ * 管理员汇总统计全站关键数据
+ */
+export async function fetchAdminStats(): Promise<{ success: boolean; stats: AdminStats; error?: string }> {
+  const listRes = await fetchAdminUserList();
+  if (!listRes.success) {
+    return {
+      success: false,
+      stats: { totalParents: 0, totalChildren: 0, totalStars: 0, totalGames: 0, totalCoins: 0, totalExp: 0 },
+      error: listRes.error
+    };
+  }
+
+  let totalChildren = 0;
+  let totalStars = 0;
+  let totalGames = 0;
+  let totalCoins = 0;
+  let totalExp = 0;
+
+  for (const u of listRes.users) {
+    const children = u.profiles_data || [];
+    totalChildren += children.length;
+    for (const c of children) {
+      totalStars += c.totalStars || 0;
+      totalCoins += c.coins || 0;
+      totalExp += c.exp || 0;
+      totalGames += (c.stats?.gamesPlayed || 0) + (c.captureGoStats?.matches || 0);
+    }
+  }
+
+  return {
+    success: true,
+    stats: {
+      totalParents: listRes.users.length,
+      totalChildren,
+      totalStars,
+      totalGames,
+      totalCoins,
+      totalExp
+    }
+  };
+}
+
+/**
+ * 管理员修改特定用户的档案、金币/星星或设置管理员角色
+ */
+export async function updateUserByAdmin(
+  targetUserId: string,
+  payload: Partial<UserProfileRow>
+): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client) return { success: false, error: '未连接云数据库' };
+
+  try {
+    const { error } = await client
+      .from('user_profiles')
+      .update({
+        ...payload,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', targetUserId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || '修改失败' };
+  }
+}
+
+/**
+ * 管理员删除指定用户
+ */
+export async function deleteUserByAdmin(targetUserId: string): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client) return { success: false, error: '未连接云数据库' };
+
+  try {
+    const { error } = await client
+      .from('user_profiles')
+      .delete()
+      .eq('id', targetUserId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || '删除失败' };
   }
 }
 
