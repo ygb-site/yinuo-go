@@ -135,14 +135,6 @@ const columnLetters = computed(() => {
   return letters.slice(0, size.value);
 });
 
-const rowNumbers = computed(() => {
-  const res: number[] = [];
-  for (let i = size.value; i >= 1; i--) {
-    res.push(i);
-  }
-  return res;
-});
-
 // Calculate liberties for all groups
 const libertiesMap = computed(() => {
   const map = new Map<string, number>();
@@ -203,7 +195,7 @@ const breathingTubes = computed<BreathingTube[]>(() => {
         const nc = st.c + d.c;
         if (nr >= 0 && nr < s && nc >= 0 && nc < s) {
           if (props.game.getCell(nr, nc) === null) {
-            const key = `${st.r},${st.c}->${nr},${nc}`;
+            const key = st.r + ',' + st.c + '->' + nr + ',' + nc;
             if (!visited.has(key)) {
               visited.add(key);
               tubes.push({
@@ -403,421 +395,433 @@ const gridLineColor = computed(() => {
   }
 });
 
-const coordTextColor = computed(() => {
+const coordSvgColor = computed(() => {
   switch (props.theme) {
     case 'candy':
-      return 'text-pink-600';
+      return '#DB2777';
     case 'neon':
-      return 'text-cyan-400';
+      return '#38BDF8';
     case 'jade':
-      return 'text-emerald-700';
+      return '#047857';
     case 'galaxy':
-      return 'text-purple-300';
+      return '#C084FC';
     case 'forest':
-      return 'text-emerald-800';
+      return '#166534';
     case 'gold':
-      return 'text-amber-800';
+      return '#92400E';
     case 'wood':
     default:
-      return 'text-[#7C4A19]';
+      return '#78350F';
   }
+});
+
+const coordFontSize = computed(() => {
+  const s = size.value;
+  if (s <= 5) return 26;
+  if (s <= 9) return 22;
+  if (s <= 13) return 18;
+  return 15;
 });
 </script>
 
 <template>
   <div
-    class="relative rounded-3xl p-3 sm:p-6 border-4 sm:border-[6px] transition-all select-none mx-auto max-w-full cursor-pointer"
+    class="relative rounded-3xl p-2 sm:p-4 border-4 sm:border-[6px] transition-all select-none mx-auto max-w-full cursor-pointer aspect-square flex items-center justify-center overflow-hidden"
     :class="[themeContainerClass, { 'animate-shake': isShaking }]"
     :style="{ width: 'min(100%, ' + sizePx + 'px)' }"
     @click.capture="handleBoardContainerClick"
   >
-
-    <!-- Top Coordinates (Letters) -->
-    <div
-      v-if="showCoordinates"
-      class="grid grid-flow-col text-center font-black text-[9px] sm:text-xs mb-1.5 px-3 sm:px-4"
-      :class="coordTextColor"
-      :style="{ gridTemplateColumns: 'repeat(' + size + ', 1fr)' }"
-    >
-      <span v-for="letter in columnLetters" :key="letter">{{ letter }}</span>
-    </div>
-
-    <!-- Main Board Area with Left/Right Row Numbers -->
-    <div class="flex items-center">
-      <!-- Left Coordinates (Numbers) -->
-      <div
-        v-if="showCoordinates"
-        class="flex flex-col justify-around h-full text-center font-black text-[9px] sm:text-xs mr-1 sm:mr-1.5 w-3 sm:w-4"
-        :class="coordTextColor"
+    <!-- SVG Board Grid & Stone Overlay (坐标完全内置于 SVG 中，与棋盘线绝对 100% 精准对齐) -->
+    <div class="relative w-full h-full cursor-pointer touch-manipulation">
+      <svg
+        class="w-full h-full overflow-visible"
+        :viewBox="'0 0 ' + (size * 100) + ' ' + (size * 100)"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        <span v-for="num in rowNumbers" :key="num">{{ num }}</span>
-      </div>
+        <!-- Defs for Stone Gradients & Shadows -->
+        <defs>
+          <!-- 3D Black Stone Radial Gradient -->
+          <radialGradient id="blackStoneGrad" cx="35%" cy="32%" r="68%">
+            <stop offset="0%" stop-color="#4A5568" />
+            <stop offset="35%" stop-color="#1A202C" />
+            <stop offset="100%" stop-color="#090D14" />
+          </radialGradient>
 
-      <!-- SVG Board Grid & Stone Overlay -->
-      <div class="relative w-full aspect-square cursor-pointer touch-manipulation">
-        <svg
-          class="w-full h-full overflow-visible"
-          :viewBox="'0 0 ' + (size * 100) + ' ' + (size * 100)"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <!-- Defs for Stone Gradients & Shadows -->
-          <defs>
-            <!-- 3D Black Stone Radial Gradient -->
-            <radialGradient id="blackStoneGrad" cx="35%" cy="32%" r="68%">
-              <stop offset="0%" stop-color="#4A5568" />
-              <stop offset="35%" stop-color="#1A202C" />
-              <stop offset="100%" stop-color="#090D14" />
-            </radialGradient>
+          <!-- 3D White Stone Radial Gradient -->
+          <radialGradient id="whiteStoneGrad" cx="32%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FFFFFF" />
+            <stop offset="65%" stop-color="#F1F5F9" />
+            <stop offset="100%" stop-color="#CBD5E1" />
+          </radialGradient>
 
-            <!-- 3D White Stone Radial Gradient -->
-            <radialGradient id="whiteStoneGrad" cx="32%" cy="30%" r="70%">
-              <stop offset="0%" stop-color="#FFFFFF" />
-              <stop offset="65%" stop-color="#F1F5F9" />
-              <stop offset="100%" stop-color="#CBD5E1" />
-            </radialGradient>
+          <!-- Tactile Stone Drop Shadow -->
+          <filter id="stoneShadow" x="-25%" y="-25%" width="155%" height="155%">
+            <feDropShadow dx="3.5" dy="5.5" stdDeviation="4.5" flood-opacity="0.45" />
+          </filter>
 
-            <!-- Tactile Stone Drop Shadow -->
-            <filter id="stoneShadow" x="-25%" y="-25%" width="155%" height="155%">
-              <feDropShadow dx="3.5" dy="5.5" stdDeviation="4.5" flood-opacity="0.45" />
-            </filter>
+          <!-- Pulsing Red Aura for Atari Stones -->
+          <filter id="atariGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="5" result="glow" />
+            <feComposite in="SourceGraphic" in2="glow" operator="over" />
+          </filter>
+        </defs>
 
-            <!-- Pulsing Red Aura for Atari Stones -->
-            <filter id="atariGlow" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="5" result="glow" />
-              <feComposite in="SourceGraphic" in2="glow" operator="over" />
-            </filter>
-          </defs>
+        <!-- Coordinate Labels: Top & Bottom Letters (A, B, C...) - 绝对对齐纵线 -->
+        <g v-if="showCoordinates" :fill="coordSvgColor" :font-size="coordFontSize" font-weight="900" font-family="'Quicksand', 'Fredoka', sans-serif" text-anchor="middle" opacity="0.85" pointer-events="none">
+          <!-- Top Letters -->
+          <text
+            v-for="(letter, cIdx) in columnLetters"
+            :key="'top-letter-' + letter"
+            :x="cIdx * 100 + 50"
+            :y="size <= 5 ? 26 : 22"
+          >
+            {{ letter }}
+          </text>
 
-          <!-- Board Grid Lines -->
-          <g :stroke="gridLineColor" stroke-width="2.5" stroke-linecap="round">
-            <!-- Horizontal Lines -->
+          <!-- Bottom Letters -->
+          <text
+            v-for="(letter, cIdx) in columnLetters"
+            :key="'bot-letter-' + letter"
+            :x="cIdx * 100 + 50"
+            :y="size * 100 - (size <= 5 ? 12 : 10)"
+          >
+            {{ letter }}
+          </text>
+        </g>
+
+        <!-- Coordinate Labels: Left & Right Numbers (5, 4, 3, 2, 1) - 绝对对齐横线 -->
+        <g v-if="showCoordinates" :fill="coordSvgColor" :font-size="coordFontSize" font-weight="900" font-family="'Quicksand', 'Fredoka', sans-serif" text-anchor="middle" opacity="0.85" pointer-events="none">
+          <!-- Left Numbers -->
+          <text
+            v-for="rIdx in size"
+            :key="'left-num-' + rIdx"
+            :x="size <= 5 ? 24 : 20"
+            :y="(rIdx - 1) * 100 + 50 + (coordFontSize * 0.35)"
+          >
+            {{ size - (rIdx - 1) }}
+          </text>
+
+          <!-- Right Numbers -->
+          <text
+            v-for="rIdx in size"
+            :key="'right-num-' + rIdx"
+            :x="size * 100 - (size <= 5 ? 24 : 20)"
+            :y="(rIdx - 1) * 100 + 50 + (coordFontSize * 0.35)"
+          >
+            {{ size - (rIdx - 1) }}
+          </text>
+        </g>
+
+        <!-- Board Grid Lines -->
+        <g :stroke="gridLineColor" stroke-width="2.5" stroke-linecap="round">
+          <!-- Horizontal Lines -->
+          <line
+            v-for="r in size"
+            :key="'h-' + r"
+            :x1="50"
+            :y1="(r - 1) * 100 + 50"
+            :x2="(size - 1) * 100 + 50"
+            :y2="(r - 1) * 100 + 50"
+          />
+          <!-- Vertical Lines -->
+          <line
+            v-for="c in size"
+            :key="'v-' + c"
+            :x1="(c - 1) * 100 + 50"
+            :y1="50"
+            :x2="(c - 1) * 100 + 50"
+            :y2="(size - 1) * 100 + 50"
+          />
+        </g>
+
+        <!-- Star Points (Hoshi) -->
+        <g :fill="gridLineColor">
+          <circle
+            v-for="sp in starPoints"
+            :key="'star-' + sp.r + '-' + sp.c"
+            :cx="sp.c * 100 + 50"
+            :cy="sp.r * 100 + 50"
+            :r="size >= 13 ? 7.5 : 6.5"
+          />
+        </g>
+
+        <!-- Tangible Breathing Oxygen Tubes Layer (具象化呼吸管道) -->
+        <g v-if="showBreathingTubes && breathingTubes.length > 0" pointer-events="none">
+          <template v-for="tube in breathingTubes" :key="'tube-' + tube.id">
+            <!-- Outer Glow Beam -->
             <line
-              v-for="r in size"
-              :key="'h-' + r"
-              :x1="50"
-              :y1="(r - 1) * 100 + 50"
-              :x2="(size - 1) * 100 + 50"
-              :y2="(r - 1) * 100 + 50"
+              :x1="tube.from.c * 100 + 50"
+              :y1="tube.from.r * 100 + 50"
+              :x2="tube.to.c * 100 + 50"
+              :y2="tube.to.r * 100 + 50"
+              :stroke="tube.isAtari ? '#EF4444' : '#10B981'"
+              :stroke-width="tube.isAtari ? 7 : 4.5"
+              stroke-linecap="round"
+              :opacity="tube.isAtari ? 0.9 : 0.65"
+              :class="tube.isAtari ? 'animate-pulse-fast' : ''"
             />
-            <!-- Vertical Lines -->
+            <!-- Inner Core Dotted Stream Line -->
             <line
-              v-for="c in size"
-              :key="'v-' + c"
-              :x1="(c - 1) * 100 + 50"
-              :y1="50"
-              :x2="(c - 1) * 100 + 50"
-              :y2="(size - 1) * 100 + 50"
+              :x1="tube.from.c * 100 + 50"
+              :y1="tube.from.r * 100 + 50"
+              :x2="tube.to.c * 100 + 50"
+              :y2="tube.to.r * 100 + 50"
+              :stroke="tube.isAtari ? '#FCA5A5' : '#D1FAE5'"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-dasharray="4,4"
+              opacity="0.9"
             />
-          </g>
-
-          <!-- Star Points (Hoshi) -->
-          <g :fill="gridLineColor">
+            <!-- Terminal Oxygen Node Indicator -->
             <circle
-              v-for="sp in starPoints"
-              :key="'star-' + sp.r + '-' + sp.c"
-              :cx="sp.c * 100 + 50"
-              :cy="sp.r * 100 + 50"
-              :r="size >= 13 ? 7.5 : 6.5"
+              :cx="tube.to.c * 100 + 50"
+              :cy="tube.to.r * 100 + 50"
+              :r="tube.isAtari ? 11 : 7.5"
+              :fill="tube.isAtari ? '#EF4444' : '#10B981'"
+              :stroke="tube.isAtari ? '#FFFFFF' : '#ECFDF5'"
+              :stroke-width="tube.isAtari ? 2.5 : 1.5"
+              :opacity="tube.isAtari ? 0.95 : 0.75"
+              :class="tube.isAtari ? 'animate-pulse-fast' : ''"
             />
-          </g>
+          </template>
+        </g>
 
-          <!-- Tangible Breathing Oxygen Tubes Layer (具象化呼吸管道) -->
-          <g v-if="showBreathingTubes && breathingTubes.length > 0" pointer-events="none">
-            <template v-for="tube in breathingTubes" :key="'tube-' + tube.id">
-              <!-- Outer Glow Beam -->
-              <line
-                :x1="tube.from.c * 100 + 50"
-                :y1="tube.from.r * 100 + 50"
-                :x2="tube.to.c * 100 + 50"
-                :y2="tube.to.r * 100 + 50"
-                :stroke="tube.isAtari ? '#EF4444' : '#10B981'"
-                :stroke-width="tube.isAtari ? 7 : 4.5"
-                stroke-linecap="round"
-                :opacity="tube.isAtari ? 0.9 : 0.65"
-                :class="tube.isAtari ? 'animate-pulse-fast' : ''"
+        <!-- Territory Shading Overlay -->
+        <g v-if="showTerritory && territoryMap">
+          <template v-for="r in size" :key="'terr-r-' + r">
+            <template v-for="c in size" :key="'terr-c-' + c">
+              <rect
+                v-if="territoryMap[r - 1] && territoryMap[r - 1][c - 1] === 'B'"
+                :x="(c - 1) * 100 + 25"
+                :y="(r - 1) * 100 + 25"
+                width="50"
+                height="50"
+                rx="10"
+                fill="#1E293B"
+                fill-opacity="0.45"
+                stroke="#000000"
+                stroke-width="1.5"
               />
-              <!-- Inner Core Dotted Stream Line -->
-              <line
-                :x1="tube.from.c * 100 + 50"
-                :y1="tube.from.r * 100 + 50"
-                :x2="tube.to.c * 100 + 50"
-                :y2="tube.to.r * 100 + 50"
-                :stroke="tube.isAtari ? '#FCA5A5' : '#D1FAE5'"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-dasharray="4,4"
-                opacity="0.9"
-              />
-              <!-- Terminal Oxygen Node Indicator -->
-              <circle
-                :cx="tube.to.c * 100 + 50"
-                :cy="tube.to.r * 100 + 50"
-                :r="tube.isAtari ? 11 : 7.5"
-                :fill="tube.isAtari ? '#EF4444' : '#10B981'"
-                :stroke="tube.isAtari ? '#FFFFFF' : '#ECFDF5'"
-                :stroke-width="tube.isAtari ? 2.5 : 1.5"
-                :opacity="tube.isAtari ? 0.95 : 0.75"
-                :class="tube.isAtari ? 'animate-pulse-fast' : ''"
+              <rect
+                v-else-if="territoryMap[r - 1] && territoryMap[r - 1][c - 1] === 'W'"
+                :x="(c - 1) * 100 + 25"
+                :y="(r - 1) * 100 + 25"
+                width="50"
+                height="50"
+                rx="10"
+                fill="#F8FAFC"
+                fill-opacity="0.75"
+                stroke="#64748B"
+                stroke-width="1.5"
               />
             </template>
-          </g>
+          </template>
+        </g>
 
-          <!-- Territory Shading Overlay -->
-          <g v-if="showTerritory && territoryMap">
-            <template v-for="r in size" :key="'terr-r-' + r">
-              <template v-for="c in size" :key="'terr-c-' + c">
-                <rect
-                  v-if="territoryMap[r - 1] && territoryMap[r - 1][c - 1] === 'B'"
-                  :x="(c - 1) * 100 + 25"
-                  :y="(r - 1) * 100 + 25"
-                  width="50"
-                  height="50"
-                  rx="10"
-                  fill="#1E293B"
-                  fill-opacity="0.45"
-                  stroke="#000000"
-                  stroke-width="1.5"
-                />
-                <rect
-                  v-else-if="territoryMap[r - 1] && territoryMap[r - 1][c - 1] === 'W'"
-                  :x="(c - 1) * 100 + 25"
-                  :y="(r - 1) * 100 + 25"
-                  width="50"
-                  height="50"
-                  rx="10"
-                  fill="#F8FAFC"
-                  fill-opacity="0.75"
-                  stroke="#64748B"
-                  stroke-width="1.5"
-                />
-              </template>
-            </template>
-          </g>
+        <!-- External Highlight / Hint Target Indicators -->
+        <g>
+          <template v-for="p in highlightPoints" :key="'hl-' + p.r + '-' + p.c">
+            <circle
+              :cx="p.c * 100 + 50"
+              :cy="p.r * 100 + 50"
+              r="38"
+              fill="#FFD43B"
+              fill-opacity="0.35"
+              stroke="#FAB005"
+              stroke-width="4"
+              stroke-dasharray="6,4"
+              class="animate-pulse-fast"
+            />
+            <circle
+              :cx="p.c * 100 + 50"
+              :cy="p.r * 100 + 50"
+              r="10"
+              fill="#F59F00"
+            />
+          </template>
+        </g>
 
-          <!-- External Highlight / Hint Target Indicators -->
-          <g>
-            <template v-for="p in highlightPoints" :key="'hl-' + p.r + '-' + p.c">
+        <!-- Selected Stone's Adjacent Active Liberties Dots -->
+        <g v-if="activeSelectedLiberties.length > 0">
+          <template v-for="lp in activeSelectedLiberties" :key="'lib-' + lp.r + '-' + lp.c">
+            <circle
+              :cx="lp.c * 100 + 50"
+              :cy="lp.r * 100 + 50"
+              r="18"
+              fill="#10B981"
+              fill-opacity="0.6"
+              stroke="#047857"
+              stroke-width="2.5"
+              class="animate-ping-once"
+            />
+            <circle
+              :cx="lp.c * 100 + 50"
+              :cy="lp.r * 100 + 50"
+              r="7"
+              fill="#FFFFFF"
+            />
+          </template>
+        </g>
+
+        <!-- Stones on Board (100% Reactive renderedStones) -->
+        <g>
+          <template v-for="stone in renderedStones" :key="'stone-' + stone.r + '-' + stone.c + '-' + stone.color + '-' + boardVersion">
+            <g
+              :transform="'translate(' + (stone.c * 100 + 50) + ', ' + (stone.r * 100 + 50) + ')'"
+              class="transition-transform duration-150"
+              pointer-events="none"
+            >
+              <!-- Atari Pulsing Danger Ring (叫吃呼吸红光) -->
               <circle
-                :cx="p.c * 100 + 50"
-                :cy="p.r * 100 + 50"
-                r="38"
-                fill="#FFD43B"
-                fill-opacity="0.35"
-                stroke="#FAB005"
-                stroke-width="4"
+                v-if="atariAlertPoints.has(stone.r + ',' + stone.c)"
+                cx="0"
+                cy="0"
+                r="49"
+                fill="none"
+                stroke="#EF4444"
+                stroke-width="4.5"
                 stroke-dasharray="6,4"
                 class="animate-pulse-fast"
               />
+
+              <!-- Selected Stone Ring Indicator -->
               <circle
-                :cx="p.c * 100 + 50"
-                :cy="p.r * 100 + 50"
-                r="10"
-                fill="#F59F00"
+                v-if="selectedStonePoint && selectedStonePoint.r === stone.r && selectedStonePoint.c === stone.c"
+                cx="0"
+                cy="0"
+                r="47"
+                fill="none"
+                stroke="#10B981"
+                stroke-width="4"
               />
-            </template>
-          </g>
 
-          <!-- Selected Stone's Adjacent Active Liberties Dots -->
-          <g v-if="activeSelectedLiberties.length > 0">
-            <template v-for="lp in activeSelectedLiberties" :key="'lib-' + lp.r + '-' + lp.c">
+              <!-- Black Stone -->
               <circle
-                :cx="lp.c * 100 + 50"
-                :cy="lp.r * 100 + 50"
-                r="18"
-                fill="#10B981"
-                fill-opacity="0.6"
-                stroke="#047857"
-                stroke-width="2.5"
-                class="animate-ping-once"
+                v-if="stone.color === 'B'"
+                cx="0"
+                cy="0"
+                r="44"
+                fill="url(#blackStoneGrad)"
+                filter="url(#stoneShadow)"
               />
+
+              <!-- White Stone -->
               <circle
-                :cx="lp.c * 100 + 50"
-                :cy="lp.r * 100 + 50"
-                r="7"
-                fill="#FFFFFF"
+                v-else-if="stone.color === 'W'"
+                cx="0"
+                cy="0"
+                r="44"
+                fill="url(#whiteStoneGrad)"
+                filter="url(#stoneShadow)"
+                stroke="#E2E8F0"
+                stroke-width="1.5"
               />
-            </template>
-          </g>
 
-          <!-- Stones on Board (100% Reactive renderedStones) -->
-          <g>
-            <template v-for="stone in renderedStones" :key="'stone-' + stone.r + '-' + stone.c + '-' + stone.color + '-' + boardVersion">
-              <g
-                :transform="'translate(' + (stone.c * 100 + 50) + ', ' + (stone.r * 100 + 50) + ')'"
-                class="transition-transform duration-150"
-                pointer-events="none"
-              >
-                <!-- Atari Pulsing Danger Ring (叫吃呼吸红光) -->
+              <!-- Last Move Marker (最后一手标记) -->
+              <g v-if="isLastMovePoint(stone.r, stone.c)">
                 <circle
-                  v-if="atariAlertPoints.has(stone.r + ',' + stone.c)"
                   cx="0"
                   cy="0"
-                  r="49"
-                  fill="none"
-                  stroke="#EF4444"
-                  stroke-width="4.5"
-                  stroke-dasharray="6,4"
-                  class="animate-pulse-fast"
+                  r="13"
+                  :fill="stone.color === 'B' ? '#FF6B6B' : '#3B82F6'"
+                  stroke="#FFFFFF"
+                  stroke-width="2.5"
                 />
-
-                <!-- Selected Stone Ring Indicator -->
                 <circle
-                  v-if="selectedStonePoint && selectedStonePoint.r === stone.r && selectedStonePoint.c === stone.c"
                   cx="0"
                   cy="0"
-                  r="47"
-                  fill="none"
-                  stroke="#10B981"
-                  stroke-width="4"
+                  r="5"
+                  fill="#FFFFFF"
                 />
+              </g>
 
-                <!-- Black Stone -->
+              <!-- Atari Danger Flame Badge -->
+              <g v-if="atariAlertPoints.has(stone.r + ',' + stone.c)">
                 <circle
-                  v-if="stone.color === 'B'"
-                  cx="0"
-                  cy="0"
-                  r="44"
-                  fill="url(#blackStoneGrad)"
-                  filter="url(#stoneShadow)"
+                  cx="25"
+                  cy="-25"
+                  r="16"
+                  fill="#DC2626"
+                  stroke="#FFFFFF"
+                  stroke-width="2.5"
+                  class="shadow"
                 />
-
-                <!-- White Stone -->
-                <circle
-                  v-else-if="stone.color === 'W'"
-                  cx="0"
-                  cy="0"
-                  r="44"
-                  fill="url(#whiteStoneGrad)"
-                  filter="url(#stoneShadow)"
-                  stroke="#E2E8F0"
-                  stroke-width="1.5"
-                />
-
-                <!-- Last Move Marker (最后一手标记) -->
-                <g v-if="isLastMovePoint(stone.r, stone.c)">
-                  <circle
-                    cx="0"
-                    cy="0"
-                    r="13"
-                    :fill="stone.color === 'B' ? '#FF6B6B' : '#3B82F6'"
-                    stroke="#FFFFFF"
-                    stroke-width="2.5"
-                  />
-                  <circle
-                    cx="0"
-                    cy="0"
-                    r="5"
-                    fill="#FFFFFF"
-                  />
-                </g>
-
-                <!-- Atari Danger Flame Badge -->
-                <g v-if="atariAlertPoints.has(stone.r + ',' + stone.c)">
-                  <circle
-                    cx="25"
-                    cy="-25"
-                    r="16"
-                    fill="#DC2626"
-                    stroke="#FFFFFF"
-                    stroke-width="2.5"
-                    class="shadow"
-                  />
-                  <text
-                    x="25"
-                    y="-20"
-                    text-anchor="middle"
-                    fill="#FFFFFF"
-                    font-size="14"
-                    font-weight="900"
-                  >
-                    !
-                  </text>
-                </g>
-
-                <!-- Liberty Count Text Badge -->
                 <text
-                  v-if="showLiberties && libertiesMap.has(stone.r + ',' + stone.c)"
-                  cx="0"
-                  cy="0"
-                  x="0"
-                  y="7"
+                  x="25"
+                  y="-20"
                   text-anchor="middle"
-                  :fill="stone.color === 'B' ? '#FFD43B' : '#1E293B'"
-                  :font-size="size >= 13 ? 24 : 22"
+                  fill="#FFFFFF"
+                  font-size="14"
                   font-weight="900"
-                  font-family="sans-serif"
-                  class="pointer-events-none"
                 >
-                  {{ libertiesMap.get(stone.r + ',' + stone.c) }}
+                  !
                 </text>
               </g>
+
+              <!-- Liberty Count Text Badge -->
+              <text
+                v-if="showLiberties && libertiesMap.has(stone.r + ',' + stone.c)"
+                cx="0"
+                cy="0"
+                x="0"
+                y="7"
+                text-anchor="middle"
+                :fill="stone.color === 'B' ? '#FFD43B' : '#1E293B'"
+                :font-size="size >= 13 ? 24 : 22"
+                font-weight="900"
+                font-family="sans-serif"
+                class="pointer-events-none"
+              >
+                {{ libertiesMap.get(stone.r + ',' + stone.c) }}
+              </text>
+            </g>
+          </template>
+        </g>
+
+        <!-- Hover Ghost Stone Preview (悬浮虚影) -->
+        <g
+          v-if="
+            !readonly &&
+            hoverPoint &&
+            game?.getCell(hoverPoint.r, hoverPoint.c) === null &&
+            game?.isLegalMove(hoverPoint.r, hoverPoint.c, game.turn).legal
+          "
+          :transform="'translate(' + (hoverPoint.c * 100 + 50) + ', ' + (hoverPoint.r * 100 + 50) + ')'"
+          opacity="0.6"
+          class="pointer-events-none"
+        >
+          <circle
+            cx="0"
+            cy="0"
+            r="43"
+            :fill="game.turn === 'B' ? '#1E293B' : '#FFFFFF'"
+            stroke="#F59E0B"
+            stroke-width="3"
+            stroke-dasharray="6,4"
+          />
+        </g>
+
+        <!-- Interactive Click Target Hitboxes -->
+        <g>
+          <template v-for="r in size" :key="'hitbox-r-' + r">
+            <template v-for="c in size" :key="'hitbox-c-' + c">
+              <rect
+                :x="(c - 1) * 100"
+                :y="(r - 1) * 100"
+                width="100"
+                height="100"
+                fill="#FFFFFF"
+                fill-opacity="0.001"
+                pointer-events="all"
+                class="cursor-pointer"
+                @click="handleCellClick(r - 1, c - 1)"
+                @mouseenter="handleCellEnter(r - 1, c - 1)"
+                @mouseleave="handleCellLeave"
+              />
             </template>
-          </g>
-
-          <!-- Hover Ghost Stone Preview (悬浮虚影) -->
-          <g
-            v-if="
-              !readonly &&
-              hoverPoint &&
-              game?.getCell(hoverPoint.r, hoverPoint.c) === null &&
-              game?.isLegalMove(hoverPoint.r, hoverPoint.c, game.turn).legal
-            "
-            :transform="'translate(' + (hoverPoint.c * 100 + 50) + ', ' + (hoverPoint.r * 100 + 50) + ')'"
-            opacity="0.6"
-            class="pointer-events-none"
-          >
-            <circle
-              cx="0"
-              cy="0"
-              r="43"
-              :fill="game.turn === 'B' ? '#1E293B' : '#FFFFFF'"
-              stroke="#F59E0B"
-              stroke-width="3"
-              stroke-dasharray="6,4"
-            />
-          </g>
-
-          <!-- Interactive Click Target Hitboxes -->
-          <g>
-            <template v-for="r in size" :key="'hitbox-r-' + r">
-              <template v-for="c in size" :key="'hitbox-c-' + c">
-                <rect
-                  :x="(c - 1) * 100"
-                  :y="(r - 1) * 100"
-                  width="100"
-                  height="100"
-                  fill="#FFFFFF"
-                  fill-opacity="0.001"
-                  pointer-events="all"
-                  class="cursor-pointer"
-                  @click="handleCellClick(r - 1, c - 1)"
-                  @mouseenter="handleCellEnter(r - 1, c - 1)"
-                  @mouseleave="handleCellLeave"
-                />
-              </template>
-            </template>
-          </g>
-        </svg>
-      </div>
-
-      <!-- Right Coordinates (Numbers) -->
-      <div
-        v-if="showCoordinates"
-        class="flex flex-col justify-around h-full text-center font-black text-[9px] sm:text-xs ml-1 sm:ml-1.5 w-3 sm:w-4"
-        :class="coordTextColor"
-      >
-        <span v-for="num in rowNumbers" :key="num">{{ num }}</span>
-      </div>
-    </div>
-
-    <!-- Bottom Coordinates (Letters) -->
-    <div
-      v-if="showCoordinates"
-      class="grid grid-flow-col text-center font-black text-[9px] sm:text-xs mt-1.5 px-3 sm:px-4"
-      :class="coordTextColor"
-      :style="{ gridTemplateColumns: 'repeat(' + size + ', 1fr)' }"
-    >
-      <span v-for="letter in columnLetters" :key="letter">{{ letter }}</span>
+          </template>
+        </g>
+      </svg>
     </div>
   </div>
 </template>
@@ -852,4 +856,3 @@ const coordTextColor = computed(() => {
   50% { opacity: 0.4; }
 }
 </style>
-

@@ -392,6 +392,9 @@ const handleHint = () => {
 const handleRedoCurrentStep = () => {
   playButtonSound();
   stopSpeech();
+  isLessonComplete.value = false;
+  isBotThinking.value = false;
+  showStarModal.value = false;
   const sub = currentSubPuzzle.value;
   stepStates.value[currentStepIndex.value] = createInitialStepState(sub);
 };
