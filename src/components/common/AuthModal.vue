@@ -99,9 +99,13 @@ const handleLogin = async () => {
   isLoading.value = false;
 
   if (!res.success) {
-    errorMessage.value = res.error === 'Invalid login credentials'
-      ? '邮箱或密码错误，请仔细检查'
-      : (res.error || '登录失败，请稍后重试');
+    if (res.error && res.error.includes('Email not confirmed')) {
+      errorMessage.value = '该邮箱未验证。请在 Supabase 控制台的 Authentication -> Providers -> Email 中关闭【Confirm email】开关即可直接登录！';
+    } else if (res.error === 'Invalid login credentials') {
+      errorMessage.value = '邮箱或密码错误，请仔细检查';
+    } else {
+      errorMessage.value = res.error || '登录失败，请稍后重试';
+    }
     playErrorSound();
     return;
   }
