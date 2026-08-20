@@ -31,7 +31,9 @@ import {
   BookOpen,
   X,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Zap,
+  Gift
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -53,13 +55,19 @@ const searchQuery = ref('');
 const inspectingUser = ref<UserProfileRow | null>(null);
 const showInspectModal = ref(false);
 
-// Reward Adjust Modal State
+// Reward & Level Adjust Modal State
 const adjustingUser = ref<UserProfileRow | null>(null);
 const showAdjustModal = ref(false);
 const adjustChildIndex = ref(0);
-const addCoinsAmount = ref(100);
-const addStarsAmount = ref(5);
-const addExpAmount = ref(200);
+const adjustActiveTab = ref<'chapter' | 'rewards'>('chapter');
+
+// Chapter Unlock Setting
+const targetChapterUnlock = ref<number>(6);
+
+// Rewards Setting
+const addCoinsAmount = ref(200);
+const addStarsAmount = ref(6);
+const addExpAmount = ref(300);
 
 const loadAdminData = async () => {
   isLoading.value = true;
@@ -116,14 +124,94 @@ const openInspect = (u: UserProfileRow) => {
 const openAdjust = (u: UserProfileRow) => {
   adjustingUser.value = u;
   adjustChildIndex.value = 0;
-  addCoinsAmount.value = 100;
-  addStarsAmount.value = 5;
-  addExpAmount.value = 200;
+  adjustActiveTab.value = 'chapter';
+  targetChapterUnlock.value = 6;
+  addCoinsAmount.value = 200;
+  addStarsAmount.value = 6;
+  addExpAmount.value = 300;
   showAdjustModal.value = true;
   playButtonSound();
 };
 
-const handleApplyAdjust = async () => {
+/**
+ * 👑 管理员核心功能：一键将指定宝贝关卡进度调控至指定章节（解锁全部对应玩法）
+ */
+const handleUnlockChapterProgress = async () => {
+  if (!adjustingUser.value) return;
+  const u = adjustingUser.value;
+  const profiles = [...(u.profiles_data || [])];
+  if (profiles.length === 0) {
+    showAlert({ message: '该家长尚未创建任何宝贝档案', type: 'warning' });
+    return;
+  }
+
+  const child = profiles[adjustChildIndex.value] || profiles[0];
+  const targetChapter = Number(targetChapterUnlock.value);
+
+  if (targetChapter === 0) {
+    // 重置进度为初始第 1 关
+    child.progress = {};
+    child.totalStars = 0;
+    child.badges = [];
+    child.exp = 0;
+  } else {
+    if (!child.progress) child.progress = {};
+    if (!child.badges) child.badges = [];
+
+    let totalStarsCount = 0;
+    for (const chapter of CHAPTERS_DATA) {
+      if (chapter.id <= targetChapter) {
+        for (const lesson of chapter.lessons) {
+          child.progress[lesson.id] = {
+            completed: true,
+            stars: 3,
+            completedAt: new Date().toISOString()
+          };
+          totalStarsCount += 3;
+        }
+      }
+    }
+
+    child.totalStars = totalStarsCount;
+    child.exp = Math.max(child.exp || 0, targetChapter * 250);
+    child.coins = Math.max(child.coins || 0, targetChapter * 150);
+
+    // 自动解锁对应章节通关勋章
+    const badgeList = ['first_move', 'first_door'];
+    if (targetChapter >= 1) badgeList.push('chapter_1_clear');
+    if (targetChapter >= 2) badgeList.push('chapter_2_clear');
+    if (targetChapter >= 3) badgeList.push('chapter_3_clear');
+    if (targetChapter >= 4) badgeList.push('chapter_4_clear');
+    if (targetChapter >= 5) badgeList.push('chapter_5_clear');
+    if (targetChapter >= 6) badgeList.push('chapter_6_clear');
+
+    child.badges = Array.from(new Set([...child.badges, ...badgeList]));
+  }
+
+  const res = await updateUserByAdmin(u.id, { profiles_data: profiles });
+  if (res.success) {
+    // 如果修改的是当前管理员自己的账号，实时更新本地内存
+    if (userStore.currentUserId === u.id) {
+      userStore.profiles = profiles;
+    }
+    playWinSound();
+    triggerConfetti();
+    showAlert({
+      title: '章节进度已更新',
+      message: targetChapter === 0
+        ? `已成功重置宝贝「${child.nickname}」的闯关进度为初始状态。`
+        : `已成功将宝贝「${child.nickname}」一键解锁通关至【第 ${targetChapter} 章】（共获 ${child.totalStars} 星星 ⭐），对应模式已全部解锁开启！`,
+      type: 'success'
+    });
+    showAdjustModal.value = false;
+    loadAdminData();
+  } else {
+    playErrorSound();
+    showAlert({ message: res.error || '修改失败', type: 'warning' });
+  }
+};
+
+const handleApplyRewards = async () => {
   if (!adjustingUser.value) return;
   const u = adjustingUser.value;
   const profiles = [...(u.profiles_data || [])];
@@ -139,6 +227,9 @@ const handleApplyAdjust = async () => {
 
   const res = await updateUserByAdmin(u.id, { profiles_data: profiles });
   if (res.success) {
+    if (userStore.currentUserId === u.id) {
+      userStore.profiles = profiles;
+    }
     playWinSound();
     triggerConfetti();
     showAlert({ message: `成功为宝贝「${child.nickname}」发放金币与经验奖励！`, type: 'info' });
@@ -224,7 +315,7 @@ const formatTime = (iso?: string) => {
             全站用户与教学数据中心
           </h1>
           <p class="text-xs sm:text-sm text-gray-500 font-medium">
-            实时查看全站注册家庭、宝贝学情成长、发放关卡金币与系统资产监控。
+            支持一键调整宝贝通关章节、解锁全功能玩法、实时查看全站家庭学情与发放金币星星。
           </p>
         </div>
 
@@ -408,10 +499,11 @@ const formatTime = (iso?: string) => {
 
                     <button
                       @click="openAdjust(u)"
-                      class="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold transition cursor-pointer"
-                      title="发放/调整金币星星"
+                      class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-black transition cursor-pointer flex items-center gap-1 text-xs border border-amber-200"
+                      title="调控章节关卡解锁与金币奖励"
                     >
-                      <Coins class="w-4 h-4" />
+                      <Zap class="w-3.5 h-3.5 text-amber-600" />
+                      <span>进度/奖励调控</span>
                     </button>
 
                     <button
@@ -542,17 +634,17 @@ const formatTime = (iso?: string) => {
       </div>
     </Teleport>
 
-    <!-- Adjust Modal (奖励发放弹窗) -->
+    <!-- Adjust Modal (👑 章节关卡极速解锁 & 奖励发放调控弹窗) -->
     <Teleport to="body">
       <div
         v-if="showAdjustModal && adjustingUser"
         class="fixed inset-0 z-[10000] overflow-hidden bg-black/60 backdrop-blur-md flex items-center justify-center p-4 modal-overlay select-none"
         @click.self="showAdjustModal = false"
       >
-        <div class="bg-white rounded-3xl p-6 max-w-md w-full border-4 border-amber-300 shadow-2xl space-y-4 modal-card text-left">
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full border-4 border-amber-300 shadow-2xl space-y-4 modal-card text-left">
           <div class="flex items-center justify-between border-b border-gray-100 pb-3">
             <div>
-              <div class="text-[10px] font-black text-amber-600 uppercase">奖励调控与发放</div>
+              <div class="text-[10px] font-black text-amber-600 uppercase">宝贝进度与奖励调控</div>
               <h3 class="text-base font-black text-gray-900">{{ adjustingUser.email }}</h3>
             </div>
             <button @click="showAdjustModal = false" class="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 cursor-pointer">
@@ -560,62 +652,125 @@ const formatTime = (iso?: string) => {
             </button>
           </div>
 
-          <div v-if="adjustingUser.profiles_data && adjustingUser.profiles_data.length > 0" class="space-y-3">
+          <div v-if="adjustingUser.profiles_data && adjustingUser.profiles_data.length > 0" class="space-y-4">
+            <!-- Select Target Child -->
             <div>
-              <label class="text-xs font-black text-gray-600 block mb-1">选择发放对象宝贝：</label>
+              <label class="text-xs font-black text-gray-700 block mb-1">选择指定宝贝：</label>
               <select
                 v-model="adjustChildIndex"
-                class="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-800 focus:outline-none"
+                class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-800 focus:outline-none bg-gray-50 focus:bg-white"
               >
                 <option
                   v-for="(c, idx) in adjustingUser.profiles_data"
                   :key="c.id"
                   :value="idx"
                 >
-                  {{ c.avatar }} {{ c.nickname }} (现有: {{ c.coins }}币 · {{ c.totalStars }}星)
+                  {{ c.avatar }} {{ c.nickname }} (现有: ⭐{{ c.totalStars || 0 }}星 · 🪙{{ c.coins }}币 · 通关{{ Object.keys(c.progress || {}).length }}关)
                 </option>
               </select>
             </div>
 
-            <div class="grid grid-cols-3 gap-2">
-              <div>
-                <label class="text-[11px] font-black text-gray-600 block mb-1">赠送金币</label>
-                <input
-                  v-model="addCoinsAmount"
-                  type="number"
-                  class="w-full px-2.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-amber-800"
-                />
-              </div>
+            <!-- Tabs: Chapter Unlock vs Rewards -->
+            <div class="flex items-center bg-gray-100 p-1 rounded-2xl gap-1">
+              <button
+                @click="adjustActiveTab = 'chapter'"
+                class="flex-1 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1"
+                :class="adjustActiveTab === 'chapter' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+              >
+                <Zap class="w-3.5 h-3.5" />
+                <span>🚀 极速章节关卡解锁</span>
+              </button>
 
-              <div>
-                <label class="text-[11px] font-black text-gray-600 block mb-1">赠送星星</label>
-                <input
-                  v-model="addStarsAmount"
-                  type="number"
-                  class="w-full px-2.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-orange-800"
-                />
-              </div>
-
-              <div>
-                <label class="text-[11px] font-black text-gray-600 block mb-1">增加经验</label>
-                <input
-                  v-model="addExpAmount"
-                  type="number"
-                  class="w-full px-2.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-indigo-800"
-                />
-              </div>
+              <button
+                @click="adjustActiveTab = 'rewards'"
+                class="flex-1 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1"
+                :class="adjustActiveTab === 'rewards' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+              >
+                <Gift class="w-3.5 h-3.5" />
+                <span>🎁 金币与星星发放</span>
+              </button>
             </div>
 
-            <button
-              @click="handleApplyAdjust"
-              class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 text-white rounded-2xl font-black text-xs shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <Sparkles class="w-4 h-4" />
-              <span>立即发放奖励 🚀</span>
-            </button>
+            <!-- TAB 1: 章节关卡一键调整 -->
+            <div v-if="adjustActiveTab === 'chapter'" class="space-y-3">
+              <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs space-y-1">
+                <div class="font-black text-amber-900 flex items-center gap-1">
+                  <Sparkles class="w-3.5 h-3.5 text-amber-600" />
+                  <span>管理员一键跳关 / 玩法全开说明：</span>
+                </div>
+                <p class="text-[11px] text-gray-600 leading-relaxed font-medium">
+                  选择想要解锁的目标章节，系统会自动将所选章节前的所有关卡置为满星（3星）通关，并自动解锁吃子棋、装扮商城、每日死活、亲子面对面与定段考等全部对应玩法！
+                </p>
+              </div>
+
+              <div>
+                <label class="text-xs font-black text-gray-700 block mb-1.5">一键解锁通关进度至：</label>
+                <select
+                  v-model="targetChapterUnlock"
+                  class="w-full px-3 py-2.5 rounded-xl border border-orange-300 text-xs font-bold text-orange-950 focus:outline-none bg-orange-50/50"
+                >
+                  <option :value="1">第 1 章：棋盘与生命之气（通关 4 关 · 解锁吃子对弈场）</option>
+                  <option :value="2">第 2 章：吃子魔法与大救援（通关 8 关 · 解锁装扮商城）</option>
+                  <option :value="3">第 3 章：做活之眼与双眼活棋（通关 13 关 · 解锁每日死活题库）</option>
+                  <option :value="4">第 4 章：经典手筋与吃子陷阱（通关 18 关 · 解锁亲子面对面对弈）</option>
+                  <option :value="5">第 5 章：地盘划定与城堡争夺（通关 23 关 · 解锁段位升级考）</option>
+                  <option :value="6">第 6 章：终局数子与棋道大成（通关全部 28 关 · 毕业大满贯 👑）</option>
+                  <option :value="0">⚠️ 重置回第 1 关初始未闯关状态</option>
+                </select>
+              </div>
+
+              <button
+                @click="handleUnlockChapterProgress"
+                class="w-full py-3.5 bg-gradient-to-r from-orange-500 via-amber-500 to-rose-500 hover:from-orange-600 text-white rounded-2xl font-black text-xs sm:text-sm shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Zap class="w-4 h-4" />
+                <span>立即应用章节解锁并保存到云端 🚀</span>
+              </button>
+            </div>
+
+            <!-- TAB 2: 金币与星星发放 -->
+            <div v-else class="space-y-3">
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="text-[11px] font-black text-gray-600 block mb-1">增加金币</label>
+                  <input
+                    v-model="addCoinsAmount"
+                    type="number"
+                    class="w-full px-2.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-amber-800"
+                  />
+                </div>
+
+                <div>
+                  <label class="text-[11px] font-black text-gray-600 block mb-1">增加星星</label>
+                  <input
+                    v-model="addStarsAmount"
+                    type="number"
+                    class="w-full px-2.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-orange-800"
+                  />
+                </div>
+
+                <div>
+                  <label class="text-[11px] font-black text-gray-600 block mb-1">增加经验</label>
+                  <input
+                    v-model="addExpAmount"
+                    type="number"
+                    class="w-full px-2.5 py-2 rounded-xl border border-gray-200 text-xs font-bold text-indigo-800"
+                  />
+                </div>
+              </div>
+
+              <button
+                @click="handleApplyRewards"
+                class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 text-white rounded-2xl font-black text-xs sm:text-sm shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Gift class="w-4 h-4" />
+                <span>立即发放金币与经验 🚀</span>
+              </button>
+            </div>
+
           </div>
           <div v-else class="py-6 text-center text-gray-400 font-bold">
-            该账号尚未创建宝贝档案，无法发放奖励
+            该账号尚未创建宝贝档案，无法调整章节与发放奖励
           </div>
         </div>
       </div>
