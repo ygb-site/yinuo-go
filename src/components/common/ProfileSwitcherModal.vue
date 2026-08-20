@@ -10,7 +10,6 @@ import {
   X,
   Star,
   Sparkles,
-  CloudCheck
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -214,13 +213,7 @@ const handleDelete = async (profile: ChildProfile) => {
               <span>添加新宝贝档案</span>
             </button>
 
-            <!-- Sync indicator -->
-            <div class="pt-2 flex items-center justify-center border-t border-gray-100">
-              <span class="text-[11px] font-bold text-gray-400 flex items-center gap-1">
-                <CloudCheck class="w-3.5 h-3.5 text-sky-500" />
-                <span>数据实时保存至家长云端账号</span>
-              </span>
-            </div>
+
           </div>
 
           <!-- Mode 2: Create Profile Form -->
@@ -286,11 +279,7 @@ const handleDelete = async (profile: ChildProfile) => {
               </button>
             </div>
 
-            <!-- Privacy Note -->
-            <p class="text-[11px] text-gray-400 text-center font-bold flex items-center justify-center gap-1">
-              <CloudCheck class="w-3.5 h-3.5 text-sky-500" />
-              <span>数据实时保存至家长云端账号</span>
-            </p>
+
           </div>
 
         </div>

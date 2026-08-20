@@ -494,10 +494,7 @@ const formatTime = (ts: number | null) => {
           </button>
         </form>
 
-        <!-- Bottom Footer -->
-        <div class="pt-2 border-t border-gray-100 flex items-center justify-center text-[11px] text-gray-400 font-bold">
-          <span>🛡️ 采用安全加密存储 · 个人数据独立隔离</span>
-        </div>
+
       </div>
     </div>
   </Teleport>
