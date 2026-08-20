@@ -3,6 +3,10 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 const STORAGE_KEY_URL = 'yinuo_supabase_url';
 const STORAGE_KEY_KEY = 'yinuo_supabase_anon_key';
 
+// 官方默认云端连接凭据 (用于全网所有访客与新设备免配置开箱即用)
+const DEFAULT_SUPABASE_URL = 'https://kzphjagsliouhmjqjoue.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_gBrKUr94Pie99SUfl2dM0g_co487tT1';
+
 let cachedClient: SupabaseClient | null = null;
 
 export interface SupabaseConfig {
@@ -19,7 +23,6 @@ export function sanitizeSupabaseUrl(rawUrl: string): string {
   if (!url) return '';
 
   try {
-    // 如果带有多余路径或结尾斜杠，自动提取标准 origin (如 https://xxx.supabase.co)
     const parsed = new URL(url);
     return parsed.origin;
   } catch {
@@ -32,7 +35,7 @@ export function sanitizeSupabaseUrl(rawUrl: string): string {
 }
 
 /**
- * 获取当前生效的 Supabase 配置 (优先 localStorage，其次环境变量，自动修正异常路径)
+ * 获取当前生效的 Supabase 配置 (优先环境变量与默认预置，自动清洗格式)
  */
 export function getSupabaseConfig(): SupabaseConfig {
   let customUrl = '';
@@ -46,11 +49,11 @@ export function getSupabaseConfig(): SupabaseConfig {
   const envUrl = (import.meta.env.VITE_SUPABASE_URL as string) || '';
   const envKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '';
 
-  const rawUrl = customUrl || envUrl || '';
+  const rawUrl = envUrl || customUrl || DEFAULT_SUPABASE_URL;
   const url = sanitizeSupabaseUrl(rawUrl);
-  const anonKey = (customKey || envKey || '').trim();
+  const anonKey = (envKey || customKey || DEFAULT_SUPABASE_ANON_KEY).trim();
 
-  // 如果 localStorage 中之前存储了带 /rest/v1/ 的脏路径，自动静默修正为干净的 origin
+  // 如果 localStorage 中之前存储了带 /rest/v1/ 的路径，静默修正为标准 origin
   if (typeof window !== 'undefined' && window.localStorage && customUrl && customUrl !== url) {
     window.localStorage.setItem(STORAGE_KEY_URL, url);
   }
@@ -58,7 +61,7 @@ export function getSupabaseConfig(): SupabaseConfig {
   return {
     url,
     anonKey,
-    isCustom: !!(customUrl && customKey)
+    isCustom: Boolean(customUrl && customKey)
   };
 }
 
