@@ -108,6 +108,12 @@ const handlePlay = (point: Point) => {
     mascotMessage.value = `好棋！提掉了对手 ${result.capturedStones.length} 颗子！`;
   }
 
+  // Check if game finished after user move
+  if (board.value.isGameFinished()) {
+    endGame();
+    return;
+  }
+
   // Trigger bot's turn
   triggerBotMove();
 };
@@ -130,7 +136,15 @@ const triggerBotMove = () => {
       sound.playButtonSound();
       mascotMood.value = 'happy';
       mascotMessage.value = `${activeBotInfo.value.name} 选择了虚手 (Pass)！`;
-      if (ends) endGame();
+      if (ends || board.value.isGameFinished()) {
+        endGame();
+        return;
+      }
+      if (!board.value.hasLegalMoves(userColor.value)) {
+        board.value.pass(userColor.value);
+        endGame();
+        return;
+      }
     } else {
       const result = board.value.playMove(movePoint.r, movePoint.c, botColor);
       sound.playStoneSound();

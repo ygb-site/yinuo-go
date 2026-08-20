@@ -81,7 +81,8 @@ export interface Chapter {
   lessons: Lesson[];
 }
 
-export const CHAPTERS_DATA: Chapter[] = [
+export const CHAPTERS_DATA: Chapter[] = 
+[
   {
     "id": 1,
     "title": "第一章：棋盘与生命之气（规则与呼吸）",
@@ -716,27 +717,62 @@ export const CHAPTERS_DATA: Chapter[] = [
             "boardSize": 5,
             "initialStones": [
               {
-                "r": 2,
+                "r": 1,
                 "c": 2,
                 "color": "W"
               },
               {
-                "r": 1,
-                "c": 2,
-                "color": "B"
-              },
-              {
                 "r": 3,
                 "c": 2,
-                "color": "B"
+                "color": "W"
               },
               {
                 "r": 2,
                 "c": 1,
+                "color": "W"
+              },
+              {
+                "r": 2,
+                "c": 3,
+                "color": "W"
+              },
+              {
+                "r": 0,
+                "c": 2,
+                "color": "B"
+              },
+              {
+                "r": 4,
+                "c": 2,
                 "color": "B"
               },
               {
                 "r": 2,
+                "c": 0,
+                "color": "B"
+              },
+              {
+                "r": 2,
+                "c": 4,
+                "color": "B"
+              },
+              {
+                "r": 1,
+                "c": 1,
+                "color": "B"
+              },
+              {
+                "r": 1,
+                "c": 3,
+                "color": "B"
+              },
+              {
+                "r": 3,
+                "c": 1,
+                "color": "B"
+              },
+              {
+                "r": 3,
                 "c": 3,
                 "color": "B"
               }
@@ -3642,7 +3678,7 @@ export const CHAPTERS_DATA: Chapter[] = [
             "stepIndex": 2,
             "title": "第 2 题：弯三拐角点杀",
             "subtitle": "拐角处为唯一急所",
-            "goalText": "在弯三拐弯处（C2）点杀！",
+            "goalText": "在弯三拐弯处（B2 / r:1, c:1）点杀！",
             "boardSize": 5,
             "initialStones": [
               {
@@ -3657,12 +3693,22 @@ export const CHAPTERS_DATA: Chapter[] = [
               },
               {
                 "r": 1,
-                "c": 2,
+                "c": 3,
                 "color": "W"
               },
               {
                 "r": 2,
+                "c": 2,
+                "color": "W"
+              },
+              {
+                "r": 3,
                 "c": 1,
+                "color": "W"
+              },
+              {
+                "r": 2,
+                "c": 0,
                 "color": "W"
               },
               {
@@ -3753,19 +3799,19 @@ export const CHAPTERS_DATA: Chapter[] = [
           }
         ],
         "playerColor": "B",
-        "goalText": "在劫争交叉点（C3 / r:2, c:2）提吃白子！",
-        "goalTextEn": "Capture the Ko stone at C3!",
+        "goalText": "在劫争交叉点（D3 / r:2, c:3）提吃白子！",
+        "goalTextEn": "Capture the Ko stone at D3!",
         "targetHighlight": [
           {
             "r": 2,
-            "c": 2
+            "c": 3
           }
         ],
         "puzzleRoot": [
           {
             "coord": {
               "r": 2,
-              "c": 2
+              "c": 3
             },
             "comment": "提劫成功！白棋不能立即反提，必须去别处找劫材，第四章圆满通关！",
             "isCorrect": true
@@ -3776,7 +3822,7 @@ export const CHAPTERS_DATA: Chapter[] = [
             "stepIndex": 1,
             "title": "第 1 题：提劫第一手",
             "subtitle": "抢先拔劫",
-            "goalText": "在中间（C3）下黑子提劫！",
+            "goalText": "在右侧劫位（D3）下黑子提劫！",
             "boardSize": 5,
             "initialStones": [
               {
@@ -3819,20 +3865,20 @@ export const CHAPTERS_DATA: Chapter[] = [
             "targetHighlight": [
               {
                 "r": 2,
-                "c": 2
+                "c": 3
               }
             ],
             "puzzleRoot": [
               {
                 "coord": {
                   "r": 2,
-                  "c": 2
+                  "c": 3
                 },
                 "comment": "提劫成功！白方不能立刻反提！",
                 "isCorrect": true
               }
             ],
-            "hint": "点击正中心 C3 点。",
+            "hint": "点击 D3 提掉白子。",
             "explanation": "打劫规则防止同形无限循环。"
           },
           {
@@ -3859,6 +3905,11 @@ export const CHAPTERS_DATA: Chapter[] = [
               },
               {
                 "r": 2,
+                "c": 3,
+                "color": "B"
+              },
+              {
+                "r": 2,
                 "c": 4,
                 "color": "W"
               },
@@ -3877,24 +3928,24 @@ export const CHAPTERS_DATA: Chapter[] = [
             "targetHighlight": [
               {
                 "r": 2,
-                "c": 3
+                "c": 2
               }
             ],
             "puzzleRoot": [
               {
                 "coord": {
                   "r": 2,
-                  "c": 3
+                  "c": 2
                 },
                 "comment": "劫争胜利！彻底消除劫争！第四章圆满大吉！",
                 "isCorrect": true
               }
             ],
-            "hint": "点击 D3 粘劫。",
+            "hint": "点击 C3 粘劫。",
             "explanation": "粘劫彻底消除劫争，巩固胜利果实。"
           }
         ],
-        "hint": "点击正中间唯一的提劫点 C3。",
+        "hint": "点击右侧提劫点 D3（r:2, c:3）。",
         "explanation": "“打劫”（Ko Rule）规定：当一方提掉一子后，对方不得在下一步立即原位反提，必须先在棋盘其他地方走一步（找劫材）。",
         "bilingualTerm": {
           "chinese": "打劫与劫争",

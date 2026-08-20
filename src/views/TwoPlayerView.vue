@@ -109,6 +109,8 @@ const formatTime = (secs: number) => {
   return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
 };
 
+const autoPassNotice = ref<string>('');
+
 const handleMove = (point: Point) => {
   if (isGameOver.value) return;
 
@@ -126,20 +128,51 @@ const handleMove = (point: Point) => {
   }
   lastMove.value = point;
 
-  // Check if consecutive passes triggered
-  if (game.value.consecutivePasses >= 2) {
-    triggerScoringSettlement('双双停一手（Pass），棋局定型进入自动点目！');
+  // 1. Check if game is immediately finished (passes, board full, neither side has moves)
+  if (game.value.isGameFinished()) {
+    let reason = '双方双双停一手（Pass），棋局定型自动数子判定输赢！';
+    if (game.value.isBoardFull()) {
+      reason = '全盘交叉点已全部下满，自动进入终局点目结算！';
+    } else if (!game.value.hasLegalMoves('B') && !game.value.hasLegalMoves('W')) {
+      reason = '全盘已无任何有效着法，自动终局数子结算！';
+    }
+    triggerScoringSettlement(reason);
+    return;
+  }
+
+  // 2. Check if the next player has any legal moves left
+  const nextColor = game.value.turn;
+  if (!game.value.hasLegalMoves(nextColor)) {
+    // Next player has no moves, automatically pass
+    game.value.pass(nextColor);
+
+    if (game.value.isGameFinished()) {
+      triggerScoringSettlement('一方无处落子自动停一手后双方均已无棋可下，自动终局数子判定胜负！');
+    } else {
+      const nextName = nextColor === 'B' ? blackName.value : whiteName.value;
+      autoPassNotice.value = nextName + ' 当前已无合法落子点，已自动停一手 (Pass)';
+      setTimeout(() => {
+        autoPassNotice.value = '';
+      }, 3000);
+    }
   }
 };
 
 const handlePass = () => {
   if (isGameOver.value) return;
 
-  game.value.pass();
+  const ends = game.value.pass();
   playButtonSound();
 
-  if (game.value.consecutivePasses >= 2) {
+  if (ends || game.value.isGameFinished()) {
     triggerScoringSettlement('双方连续停一手，棋局正式终局！裁判自动数子结算！');
+    return;
+  }
+
+  const nextColor = game.value.turn;
+  if (!game.value.hasLegalMoves(nextColor)) {
+    game.value.pass(nextColor);
+    triggerScoringSettlement('停一手后对方亦无合法落子点，自动终局数子判定胜负！');
   }
 };
 
@@ -474,9 +507,14 @@ const changeSize = (size: BoardSize) => {
               </button>
             </div>
 
-            <span class="text-[11px] text-gray-400">
-              {{ isGameOver ? '对局已终局判定' : '提示：双方连续停一手（Pass）自动判输赢' }}
-            </span>
+            <div class="flex items-center gap-2">
+              <span v-if="autoPassNotice" class="text-xs font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200 animate-pulse">
+                📢 {{ autoPassNotice }}
+              </span>
+              <span class="text-[11px] text-gray-400 font-medium">
+                {{ isGameOver ? '对局已终局判定' : '提示：双方停一手、下满棋盘或无处可下时将自动判输赢' }}
+              </span>
+            </div>
           </div>
         </div>
 

@@ -99,6 +99,12 @@ const handlePlayerMove = (point: Point) => {
     return;
   }
 
+  // Check if board full or game finished
+  if (game.value.isGameFinished() || (!game.value.hasLegalMoves('B') && !game.value.hasLegalMoves('W'))) {
+    handleWin(game.value.capturedByBlack >= game.value.capturedByWhite ? 'B' : 'W');
+    return;
+  }
+
   // Trigger AI move
   isBotThinking.value = true;
 
@@ -130,6 +136,12 @@ const runAIMove = () => {
     // Check if AI won
     if (game.value.capturedByWhite >= captureTarget.value) {
       handleWin('W');
+      return;
+    }
+
+    // Check if board full or game finished
+    if (game.value.isGameFinished() || (!game.value.hasLegalMoves('B') && !game.value.hasLegalMoves('W'))) {
+      handleWin(game.value.capturedByBlack >= game.value.capturedByWhite ? 'B' : 'W');
       return;
     }
   } else {

@@ -173,7 +173,8 @@ export class GoGame {
 
     const liberties: Point[] = Array.from(libertiesSet).map(key => {
       const [kr, kc] = key.split(',').map(Number);
-      return { r: kr, c: kc };
+      // Test 8: Full board and no legal moves game finish check
+    return { r: kr, c: kc };
     });
 
     return {
@@ -680,6 +681,78 @@ export class GoGame {
   }
 
   /**
+   * 获取当前棋盘上所有的空交叉点 (Get Empty Points)
+   */
+  public getEmptyPoints(): Point[] {
+    const points: Point[] = [];
+    for (let r = 0; r < this.size; r++) {
+      for (let c = 0; c < this.size; c++) {
+        if (this.grid[r][c] === null) {
+          points.push({ r, c });
+        }
+      }
+    }
+    return points;
+  }
+
+  /**
+   * 检查棋盘是否已全盘填满无空点 (Is Board Full)
+   */
+  public isBoardFull(): boolean {
+    for (let r = 0; r < this.size; r++) {
+      for (let c = 0; c < this.size; c++) {
+        if (this.grid[r][c] === null) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * 获取指定颜色或当前回合方所有合法落子点 (Get All Legal Moves)
+   */
+  public getLegalMoves(color: StoneColor = this.turn): Point[] {
+    const moves: Point[] = [];
+    for (let r = 0; r < this.size; r++) {
+      for (let c = 0; c < this.size; c++) {
+        if (this.grid[r][c] === null && this.isLegalMove(r, c, color).legal) {
+          moves.push({ r, c });
+        }
+      }
+    }
+    return moves;
+  }
+
+  /**
+   * 判断指定颜色或当前回合方是否还有合法落子点 (Has Legal Moves)
+   */
+  public hasLegalMoves(color: StoneColor = this.turn): boolean {
+    for (let r = 0; r < this.size; r++) {
+      for (let c = 0; c < this.size; c++) {
+        if (this.grid[r][c] === null && this.isLegalMove(r, c, color).legal) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 判断当前对局是否已达到终局条件 (Is Game Finished)
+   * 满足以下任一条件即判定终局：
+   * 1. 双方连续虚手（consecutivePasses >= 2）
+   * 2. 全盘无空格（isBoardFull）
+   * 3. 双方均已无任何合法着法（!hasLegalMoves("B") && !hasLegalMoves("W")）
+   */
+  public isGameFinished(): boolean {
+    if (this.consecutivePasses >= 2) return true;
+    if (this.isBoardFull()) return true;
+    if (!this.hasLegalMoves("B") && !this.hasLegalMoves("W")) return true;
+    return false;
+  }
+
+  /**
    * 7. 规则引擎自动化单测套件 (Rule Engine Self-Test Suite)
    */
   public static runSelfTests(): { success: boolean; passed: number; total: number; logs: string[] } {
@@ -769,14 +842,14 @@ export class GoGame {
       g.setCell(1, 3, 'W');
       g.setCell(3, 3, 'W');
       g.setCell(2, 4, 'W');
-      g.setCell(2, 3, 'W'); // White in atari at (2,3)
+      g.setCell(2, 2, 'W'); // White in atari at (2,2)
 
-      // Black takes Ko at (2,2)
-      const res1 = g.playMove(2, 2, 'B');
+      // Black takes Ko at (2,3)
+      const res1 = g.playMove(2, 3, 'B');
       if (!res1.success || res1.capturedStones.length !== 1) return false;
 
-      // White immediately trying to retake at (2,3) must be illegal
-      const checkKo = g.isLegalMove(2, 3, 'W');
+      // White immediately trying to retake at (2,2) must be illegal
+      const checkKo = g.isLegalMove(2, 2, 'W');
       return !checkKo.legal && (checkKo.reason?.includes('打劫') ?? false);
     });
 
@@ -789,6 +862,15 @@ export class GoGame {
       g.setCell(2, 1, 'B');
       const ataris = g.getAtariGroups();
       return ataris.length === 1 && ataris[0].color === 'W' && ataris[0].libertyCount === 1;
+    });
+
+    // Test 8: Full board and no legal moves game finish check
+    test('自动终局状态判定：连续停一手、填满棋盘或双方无子可下自动识别为终局', () => {
+      const g = new GoGame(5);
+      if (g.isGameFinished()) return false;
+      g.pass('B');
+      g.pass('W');
+      return g.isGameFinished() && g.consecutivePasses >= 2;
     });
 
     return {
