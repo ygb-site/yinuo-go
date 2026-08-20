@@ -8,11 +8,13 @@ import { TSUMEGO_PUZZLES } from '../data/tsumegoLibrary';
 import { BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
 import CertificateModal from '../components/common/CertificateModal.vue';
 import { showAlert, showConfirm } from '../utils/alert';
+import { VOICE_PROFILES, previewVoice } from '../utils/speech';
 import { SHOP_THEMES } from '../data/shopData';
 import { playButtonSound, playWinSound, playErrorSound, triggerConfetti } from '../lib/audio';
 import { sound } from '../utils/sound';
 import {
   Trophy,
+  Volume2,
   Star,
   Coins,
   CheckCircle2,
@@ -839,6 +841,73 @@ const confirmReset = async () => {
       <!-- Theme & Profile Settings -->
       <div v-if="userStore.hasProfile" class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm space-y-6">
         <h2 class="text-xl font-black text-gray-900">个性化设置与多档案管理</h2>
+
+        <!-- Voice Persona Selection (小诺伴读萌音声线选择) -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="text-xs font-black text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+              <span>🎙️ 小诺伴读萌音声线</span>
+              <span class="text-[10px] text-orange-600 bg-orange-100 px-1.5 py-0.2 rounded-full font-bold">可试听切换</span>
+            </div>
+            <div class="text-xs font-bold text-gray-400">
+              当前声线：{{ VOICE_PROFILES[userStore.voiceStyle]?.name || '萌宠小诺' }}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div
+              v-for="v in Object.values(VOICE_PROFILES)"
+              :key="v.id"
+              @click="userStore.setVoiceStyle(v.id)"
+              class="p-3.5 rounded-2xl border-2 transition cursor-pointer relative flex flex-col justify-between"
+              :class="
+                userStore.voiceStyle === v.id
+                  ? 'border-orange-500 ring-2 ring-orange-300 shadow-sm bg-orange-50/40 font-black'
+                  : 'border-gray-200 hover:border-orange-300 bg-white'
+              "
+            >
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-3xl">{{ v.avatar }}</div>
+                <span
+                  class="text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                  :class="userStore.voiceStyle === v.id ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'"
+                >
+                  {{ v.tag }}
+                </span>
+              </div>
+
+              <div class="space-y-1">
+                <div class="text-xs font-black text-gray-900">{{ v.name }}</div>
+                <p class="text-[10px] text-gray-500 font-medium leading-snug">{{ v.desc }}</p>
+              </div>
+
+              <div class="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between">
+                <button
+                  type="button"
+                  @click.stop="previewVoice(v.id)"
+                  class="px-2 py-1 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-800 text-[10px] font-black flex items-center gap-1 transition active:scale-90 cursor-pointer"
+                  title="点击试听声线"
+                >
+                  <Volume2 class="w-3 h-3 text-orange-600" />
+                  <span>试听</span>
+                </button>
+
+                <span
+                  v-if="userStore.voiceStyle === v.id"
+                  class="text-[10px] text-orange-600 font-black"
+                >
+                  ✓ 使用中
+                </span>
+                <span
+                  v-else
+                  class="text-[10px] text-gray-400 font-bold"
+                >
+                  点击换上
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- Theme Selection -->
         <div class="space-y-3">
