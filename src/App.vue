@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import ProfileSwitcherModal from './components/common/ProfileSwitcherModal.vue';
 import CartoonAlertModal from './components/common/CartoonAlertModal.vue';
 import UnlockCelebrationModal from './components/common/UnlockCelebrationModal.vue';
+import AuthModal from './components/common/AuthModal.vue';
 import { useUserStore } from './stores/useUserStore';
 
 const userStore = useUserStore();
 const route = useRoute();
 
 const isImmersiveView = computed(() => route.path.startsWith('/lesson/'));
+
+onMounted(() => {
+  userStore.initCloudSession();
+});
 </script>
 
 <template>
@@ -28,6 +33,12 @@ const isImmersiveView = computed(() => route.path.startsWith('/lesson/'));
     <ProfileSwitcherModal
       :isOpen="userStore.isProfileModalOpen"
       @close="userStore.closeProfileModal"
+    />
+
+    <!-- Global Parent Cloud Auth / Multi-Device Sync Modal -->
+    <AuthModal
+      :isOpen="userStore.showAuthModal"
+      @close="userStore.closeAuthModal"
     />
 
     <!-- Global Milestone / Feature Unlock Celebration Modal -->

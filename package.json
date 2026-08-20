@@ -11,6 +11,7 @@
     "deploy": "bash deploy.sh"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
     "@types/canvas-confetti": "^1.9.0",
     "@types/howler": "^2.2.13",
     "autoprefixer": "^10.5.4",

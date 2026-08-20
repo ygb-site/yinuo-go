@@ -21,7 +21,9 @@ import {
   UserCheck,
   ChevronDown,
   UserPlus,
-  Lock
+  Lock,
+  Cloud,
+  CloudCheck
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -193,9 +195,24 @@ const isNavActive = (itemPath: string) => {
           </button>
         </nav>
 
-        <!-- Right: Kid Profile Switcher, Stars, Coins & Actions -->
+        <!-- Right: Cloud Sync, Kid Profile Switcher, Stars, Coins & Actions -->
         <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           
+          <!-- Cloud Sync Pill -->
+          <button
+            @click="userStore.openAuthModal()"
+            class="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-2xl border text-xs font-black transition active:scale-95 cursor-pointer shadow-2xs flex-shrink-0"
+            :class="userStore.isCloudLoggedIn ? 'bg-sky-50 border-sky-300 text-sky-900 hover:bg-sky-100' : 'bg-amber-50/90 border-amber-300 text-amber-900 hover:bg-amber-100'"
+            :title="userStore.isCloudLoggedIn ? '云端账号已登录（点击管理同步）' : '点击登录云端账号，随时随地跨设备同步'"
+          >
+            <CloudCheck v-if="userStore.isCloudLoggedIn" class="w-3.5 h-3.5 text-sky-600 flex-shrink-0" />
+            <Cloud v-else class="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+            <span class="hidden sm:inline whitespace-nowrap text-[11px] sm:text-xs">
+              {{ userStore.isCloudLoggedIn ? '云端已同步' : '云端登录' }}
+            </span>
+          </button>
+
+          <!-- Kid Profile Switcher Button -->
           <div
             v-if="userStore.hasProfile"
             @click="userStore.openProfileModal()"
@@ -338,3 +355,4 @@ const isNavActive = (itemPath: string) => {
     </button>
   </nav>
 </template>
+

@@ -9,7 +9,7 @@ import { BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
 import CertificateModal from '../components/common/CertificateModal.vue';
 import { showAlert, showConfirm } from '../utils/alert';
 import { SHOP_THEMES } from '../data/shopData';
-import { playButtonSound } from '../lib/audio';
+import { playButtonSound, playWinSound, playErrorSound, triggerConfetti } from '../lib/audio';
 import { sound } from '../utils/sound';
 import {
   Trophy,
@@ -23,7 +23,12 @@ import {
   Edit2,
   UserPlus,
   Heart,
-  ArrowRight
+  ArrowRight,
+  Cloud,
+  CloudCheck,
+  RefreshCw,
+  LogIn,
+  Settings
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -59,6 +64,31 @@ const radarPolygonPoints = computed(() => {
 const favoritePuzzlesList = computed(() => {
   return TSUMEGO_PUZZLES.filter(p => tsumegoStore.isFavorite(p.id));
 });
+
+const handleManualSync = async () => {
+  if (!userStore.isCloudLoggedIn) {
+    userStore.openAuthModal();
+    return;
+  }
+  playButtonSound();
+  const ok = await userStore.syncToCloudNow();
+  if (ok) {
+    playWinSound();
+    triggerConfetti();
+    showAlert({
+      title: '云端同步成功',
+      message: '当前所有宝贝档案、通关星星与勋章已成功备份至云数据库！',
+      type: 'info'
+    });
+  } else {
+    playErrorSound();
+    showAlert({
+      title: '同步失败',
+      message: userStore.cloudSyncError || '请检查网络连接或 Supabase 配置',
+      type: 'warning'
+    });
+  }
+};
 
 const goToTsumego = (puzzleId?: string) => {
   const isUnlocked = unlockStore.isFeatureUnlocked('tsumego');
@@ -228,7 +258,7 @@ const confirmReset = async () => {
 
 <template>
   <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-6 sm:py-10 px-4 sm:px-6 lg:px-8 select-none">
-    <div class="max-w-6xl mx-auto space-y-8">
+    <div class="max-w-6xl mx-auto space-y-6 sm:space-y-8">
 
       <!-- Kid's Exclusive ID Card (宝贝专属名片) -->
       <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm relative overflow-hidden">
@@ -372,7 +402,7 @@ const confirmReset = async () => {
           <div class="space-y-1">
             <h2 class="text-2xl font-black text-gray-900">欢迎来到成长中心！</h2>
             <p class="text-xs sm:text-sm text-gray-500 font-bold max-w-md mx-auto">
-              创建宝贝档案后，每一个孩子的闯关星星、成就勋章与段位棋力都将独立隔离保存在本设备中。
+              创建宝贝档案后，每一个孩子的闯关星星、成就勋章与段位棋力都将独立保存。登录云端账号即可跨设备多端实时同步！
             </p>
           </div>
           <button
@@ -382,6 +412,62 @@ const confirmReset = async () => {
             <UserPlus class="w-4 h-4" />
             <span>创建第一位宝贝档案 🚀</span>
           </button>
+        </div>
+      </div>
+
+      <!-- Cloud Account & Multi-Device Sync Card (☁️ 家长云端账号与多端同步) -->
+      <div class="bg-gradient-to-br from-sky-50 via-indigo-50/40 to-white rounded-3xl p-5 sm:p-7 border-2 border-sky-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-400 to-indigo-600 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+              <CloudCheck v-if="userStore.isCloudLoggedIn" class="w-6 h-6" />
+              <Cloud v-else class="w-6 h-6" />
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-base sm:text-xl font-black text-gray-900">家长云端账号与多端同步</h2>
+                <span
+                  class="text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1"
+                  :class="userStore.isCloudLoggedIn ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-900 border border-amber-300'"
+                >
+                  <span class="w-1.5 h-1.5 rounded-full" :class="userStore.isCloudLoggedIn ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
+                  <span>{{ userStore.isCloudLoggedIn ? '已连接云端 · 自动同步' : '未登录 (本地单机模式)' }}</span>
+                </span>
+              </div>
+              <p class="text-xs text-gray-500 font-medium mt-0.5">
+                {{ userStore.isCloudLoggedIn ? ('当前登录：' + userStore.currentUserEmail) : '登录云端账号后，在 iPad、手机或电脑上进度完全打通，随时随地继续学棋！' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              v-if="userStore.isCloudLoggedIn"
+              @click="handleManualSync"
+              :disabled="userStore.isSyncingToCloud"
+              class="px-4 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white rounded-2xl text-xs font-black shadow-sm transition active:scale-95 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': userStore.isSyncingToCloud }" />
+              <span>{{ userStore.isSyncingToCloud ? '正在同步...' : '立即同步到云端 🚀' }}</span>
+            </button>
+
+            <button
+              v-else
+              @click="userStore.openAuthModal()"
+              class="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-2xl text-xs font-black shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
+            >
+              <LogIn class="w-3.5 h-3.5" />
+              <span>登录 / 注册云端账号 ✨</span>
+            </button>
+
+            <button
+              @click="userStore.openAuthModal()"
+              class="p-2 bg-white hover:bg-sky-50 text-gray-700 border border-sky-200 rounded-2xl transition active:scale-95 cursor-pointer shadow-2xs"
+              title="管理云端账号与配置"
+            >
+              <Settings class="w-4 h-4 text-sky-600" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -714,3 +800,4 @@ const confirmReset = async () => {
     />
   </div>
 </template>
+

@@ -2,6 +2,13 @@ import { defineStore } from 'pinia';
 import { USER_RANKS, type UserRank, BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
 import { sound } from '../utils/sound';
 import type { ThemeType } from '../engine/types';
+import {
+  saveUserDataToCloud,
+  fetchCloudUserData,
+  smartMergeProfiles,
+  getCurrentCloudUser
+} from '../services/cloudSyncService';
+import { isSupabaseConfigured, getSupabaseClient } from '../lib/supabase';
 
 /**
  * 独立儿童用户档案 (Child Profile Data Structure)
@@ -72,6 +79,8 @@ const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
   }
 };
 
+let cloudSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
 export const useUserStore = defineStore('userStore', {
   state: () => ({
     profiles: [] as ChildProfile[],
@@ -84,7 +93,16 @@ export const useUserStore = defineStore('userStore', {
     showAtariAlerts: true as boolean,
     showTerritoryHeatmap: false as boolean,
     touchConfirmEnabled: false as boolean,
-    lastSavedAt: Date.now() as number
+    lastSavedAt: Date.now() as number,
+
+    // Cloud Sync & Auth State
+    isCloudLoggedIn: false as boolean,
+    currentUserEmail: null as string | null,
+    currentUserId: null as string | null,
+    isSyncingToCloud: false as boolean,
+    lastCloudSyncedAt: null as number | null,
+    cloudSyncError: null as string | null,
+    showAuthModal: false as boolean
   }),
 
   getters: {
@@ -236,8 +254,128 @@ export const useUserStore = defineStore('userStore', {
       this.isProfileModalOpen = false;
     },
 
+    openAuthModal() {
+      this.showAuthModal = true;
+    },
+
+    closeAuthModal() {
+      this.showAuthModal = false;
+    },
+
+    setCloudUser(userId: string, email: string) {
+      this.isCloudLoggedIn = true;
+      this.currentUserId = userId;
+      this.currentUserEmail = email;
+      this.touchSave();
+    },
+
+    clearCloudUser() {
+      this.isCloudLoggedIn = false;
+      this.currentUserId = null;
+      this.currentUserEmail = null;
+      this.lastCloudSyncedAt = null;
+      this.touchSave();
+    },
+
+    /**
+     * 应用启动时自动恢复 Supabase 登录状态并静默同步云端进度
+     */
+    async initCloudSession() {
+      if (!isSupabaseConfigured()) return;
+      const client = getSupabaseClient();
+      if (!client) return;
+
+      try {
+        const user = await getCurrentCloudUser();
+        if (user) {
+          this.isCloudLoggedIn = true;
+          this.currentUserId = user.id;
+          this.currentUserEmail = user.email || '';
+
+          // Fetch cloud data and merge
+          const cloudData = await fetchCloudUserData();
+          if (cloudData && cloudData.profiles_data && cloudData.profiles_data.length > 0) {
+            const { profiles, activeId } = smartMergeProfiles(
+              this.profiles,
+              cloudData.profiles_data,
+              this.currentProfileId,
+              cloudData.active_profile_id
+            );
+            this.profiles = profiles;
+            this.currentProfileId = activeId;
+            this.lastCloudSyncedAt = Date.now();
+          }
+        } else {
+          this.isCloudLoggedIn = false;
+          this.currentUserId = null;
+          this.currentUserEmail = null;
+        }
+
+        // Listen for auth events
+        client.auth.onAuthStateChange(async (event, session) => {
+          if (session && session.user) {
+            this.isCloudLoggedIn = true;
+            this.currentUserId = session.user.id;
+            this.currentUserEmail = session.user.email || '';
+          } else if (event === 'SIGNED_OUT') {
+            this.isCloudLoggedIn = false;
+            this.currentUserId = null;
+            this.currentUserEmail = null;
+          }
+        });
+      } catch (err) {
+        console.warn('[Cloud Auth Init Warn]', err);
+      }
+    },
+
+    /**
+     * 立即将本地档案全量同步并持久化到 Supabase
+     */
+    async syncToCloudNow(): Promise<boolean> {
+      if (!this.isCloudLoggedIn || !isSupabaseConfigured()) {
+        return false;
+      }
+
+      this.isSyncingToCloud = true;
+      this.cloudSyncError = null;
+
+      try {
+        const res = await saveUserDataToCloud(
+          this.profiles,
+          this.currentProfileId,
+          {
+            theme: this.theme,
+            soundEnabled: this.soundEnabled,
+            volume: this.volume
+          }
+        );
+
+        this.isSyncingToCloud = false;
+
+        if (res.success) {
+          this.lastCloudSyncedAt = res.timestamp || Date.now();
+          return true;
+        } else {
+          this.cloudSyncError = res.error || '同步失败';
+          return false;
+        }
+      } catch (err: any) {
+        this.isSyncingToCloud = false;
+        this.cloudSyncError = err?.message || '网络连接异常';
+        return false;
+      }
+    },
+
     touchSave() {
       this.lastSavedAt = Date.now();
+
+      // Debounced auto-sync to cloud when logged in
+      if (this.isCloudLoggedIn && isSupabaseConfigured()) {
+        if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+        cloudSyncTimer = setTimeout(() => {
+          this.syncToCloudNow();
+        }, 1500);
+      }
     },
 
     isNicknameTaken(nickname: string, excludeId?: string): boolean {
@@ -600,3 +738,4 @@ export const useUserStore = defineStore('userStore', {
 
   persist: true
 });
+
