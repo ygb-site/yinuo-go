@@ -515,33 +515,49 @@ const handleBackToMap = () => {
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 items-start">
         
         <!-- Center/Left Column: Large Responsive Board (7 cols) -->
-        <div class="lg:col-span-7 bg-white rounded-3xl p-3 sm:p-5 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-2.5 sm:space-y-4 relative">
+        <div class="lg:col-span-7 bg-white rounded-3xl p-3 sm:p-5 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-between relative">
           
-          <!-- Solved Review Floating Badge (已做完复盘水印提示) -->
-          <div
-            v-if="isCurrentStepCompleted"
-            class="absolute top-3 left-3 sm:top-5 sm:left-5 z-20 bg-emerald-500/90 text-white text-[11px] sm:text-xs font-black px-2.5 py-1 rounded-xl shadow-md backdrop-blur-xs flex items-center gap-1.5 animate-pop-in"
-          >
-            <CheckCircle2 class="w-3.5 h-3.5" />
-            <span>第 {{ currentStepIndex + 1 }} 题已攻克（复盘展示）</span>
+          <!-- Fixed Top Status Bar Header (固定高度占位，确保棋盘永远在同一水平基准线，绝对不产生上下抖动偏移) -->
+          <div class="w-full h-8 flex items-center justify-between px-1 mb-2">
+            <div
+              v-if="isCurrentStepCompleted"
+              class="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] sm:text-xs font-black px-2.5 py-1 rounded-xl shadow-2xs animate-pop-in"
+            >
+              <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600" />
+              <span>第 {{ currentStepIndex + 1 }} 题已攻克（复盘展示）</span>
+            </div>
+            <div
+              v-else
+              class="inline-flex items-center gap-1.5 bg-orange-50 text-orange-800 border border-orange-200 text-[11px] sm:text-xs font-black px-2.5 py-1 rounded-xl shadow-2xs"
+            >
+              <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+              <span>第 {{ currentStepIndex + 1 }} 题：{{ currentSubPuzzle.subtitle || currentSubPuzzle.title }}</span>
+            </div>
+
+            <span class="text-[10px] sm:text-[11px] text-gray-400 font-bold bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-lg">
+              {{ currentSubPuzzle.boardSize }}x{{ currentSubPuzzle.boardSize }} 盘
+            </span>
           </div>
 
-          <GoBoard
-            :game="currentStepState.game"
-            :readonly="isLessonComplete || isBotThinking || isCurrentStepCompleted"
-            :showLiberties="showLiberties"
-            :showAtari="showAtari"
-            :showBreathingTubes="showBreathingTubes"
-            :theme="userStore.theme"
-            :manualMove="true"
-            :highlightPoints="currentStepState.highlightPoints"
-            :lastMove="currentStepState.lastMove"
-            :sizePx="440"
-            @move="handleMove"
-          />
+          <!-- Board Centered Area -->
+          <div class="w-full flex items-center justify-center my-auto py-1">
+            <GoBoard
+              :game="currentStepState.game"
+              :readonly="isLessonComplete || isBotThinking || isCurrentStepCompleted"
+              :showLiberties="showLiberties"
+              :showAtari="showAtari"
+              :showBreathingTubes="showBreathingTubes"
+              :theme="userStore.theme"
+              :manualMove="true"
+              :highlightPoints="currentStepState.highlightPoints"
+              :lastMove="currentStepState.lastMove"
+              :sizePx="460"
+              @move="handleMove"
+            />
+          </div>
 
           <!-- Assistant Toggles & Point Guide -->
-          <div class="w-full flex flex-wrap items-center justify-between gap-1.5 pt-2 border-t border-gray-100 text-xs font-bold text-gray-600">
+          <div class="w-full flex flex-wrap items-center justify-between gap-1.5 pt-2.5 mt-2 border-t border-gray-100 text-xs font-bold text-gray-600">
             <div class="flex flex-wrap items-center gap-1 sm:gap-1.5">
               <button
                 @click="showBreathingTubes = !showBreathingTubes"
@@ -582,9 +598,7 @@ const handleBackToMap = () => {
               </button>
             </div>
 
-            <span class="text-[10px] sm:text-[11px] text-gray-400 font-bold">
-              {{ currentSubPuzzle.boardSize }}x{{ currentSubPuzzle.boardSize }} 盘
-            </span>
+
           </div>
         </div>
 
