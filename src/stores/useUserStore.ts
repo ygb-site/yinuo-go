@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 import { USER_RANKS, type UserRank, BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
 import { sound } from '../utils/sound';
-import { SpeechCompanion, type VoiceStyle } from '../utils/speech';
 import type { ThemeType } from '../engine/types';
 import {
   saveUserDataToCloud,
@@ -110,7 +109,6 @@ export const useUserStore = defineStore('userStore', {
 
     // ⚙️ 游戏设置与个性化
     theme: 'wood' as ThemeType,
-    voiceStyle: 'cute_mascot' as VoiceStyle,
     soundEnabled: true as boolean,
     volume: 0.8 as number,
     showLibertiesOverlay: true as boolean,
@@ -384,7 +382,6 @@ export const useUserStore = defineStore('userStore', {
           if (row.settings_data.theme) this.theme = row.settings_data.theme;
           if (typeof row.settings_data.soundEnabled === 'boolean') this.soundEnabled = row.settings_data.soundEnabled;
           if (typeof row.settings_data.volume === 'number') this.volume = row.settings_data.volume;
-          if (row.settings_data.voiceStyle) { this.voiceStyle = row.settings_data.voiceStyle; SpeechCompanion.setVoiceStyle(this.voiceStyle); }
         }
       }
 
@@ -453,7 +450,6 @@ export const useUserStore = defineStore('userStore', {
           this.currentProfileId,
           {
             theme: this.theme,
-            voiceStyle: this.voiceStyle,
             soundEnabled: this.soundEnabled,
             volume: this.volume
           }
@@ -851,13 +847,6 @@ export const useUserStore = defineStore('userStore', {
         captureCount: 0,
         totalMoves: 0
       };
-      this.touchSave();
-      sound.playButtonSound();
-    },
-
-    setVoiceStyle(style: VoiceStyle) {
-      this.voiceStyle = style;
-      SpeechCompanion.setVoiceStyle(style);
       this.touchSave();
       sound.playButtonSound();
     },
