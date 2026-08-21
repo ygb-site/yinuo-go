@@ -15,7 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'pass'): void;
-  (e: 'fail', message?: string): void;
+  (e: 'fail', message?: string, detail?: any): void;
 }>();
 
 const game = ref<GoGame>(new GoGame(props.step.boardSize || 9));

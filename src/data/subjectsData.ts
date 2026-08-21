@@ -90,6 +90,13 @@ export const SUBJECTS_CONFIG: Record<SubjectId, SubjectMeta> = {
     ageRange: '小学一二年级',
     features: [
       {
+        title: '数学智能错题本',
+        desc: '做题错题自动收录，支持随时随机抽题攻克，答对自动移出',
+        icon: '📕',
+        route: '/mistakes?subject=math',
+        isReady: true
+      },
+      {
         title: '口算天天练 (100以内加减法)',
         desc: '自定义10~50题动态防重出题、智能批改、错题重练与A4打印',
         icon: '🧮',
@@ -135,6 +142,13 @@ export const SUBJECTS_CONFIG: Record<SubjectId, SubjectMeta> = {
     ageRange: '小学一二年级',
     features: [
       {
+        title: '语文智能错题本',
+        desc: '生字、拼音、成语错题自动归纳，随机抽题巩固薄弱点',
+        icon: '📕',
+        route: '/mistakes?subject=chinese',
+        isReady: true
+      },
+      {
         title: '汉语拼音魔法王国',
         desc: '单韵母、23声母、复韵母、整体认读、四声调小汽车与声韵拼读器',
         icon: '👑',
@@ -179,6 +193,13 @@ export const SUBJECTS_CONFIG: Record<SubjectId, SubjectMeta> = {
     mascotGreeting: 'Welcome to English World! 跟着诺诺一起学自然拼读、玩单词游戏吧！',
     ageRange: '小学一二年级',
     features: [
+      {
+        title: '英语智能错题本',
+        desc: '单词发音与词汇拼写错题归集，随时随机出题练',
+        icon: '📕',
+        route: '/mistakes?subject=english',
+        isReady: true
+      },
       {
         title: '自然拼读 26 字母发音板',
         desc: '26个字母Letter Sound发音规则与经典音频点读',

@@ -61,9 +61,25 @@ const handleChoose = (opt: string) => {
     userStore.addCoins(25, `攻克成语【${currentIdiom.value.word}】`);
     userStore.addExp(40);
     confetti({ particleCount: 60, spread: 50 });
+    userStore.resolveMatchingMistake(
+      'chinese',
+      '成语「' + currentIdiom.value.word.slice(0, currentIdiom.value.missingIdx) + '（？）' + currentIdiom.value.word.slice(currentIdiom.value.missingIdx + 1) + '」缺失字是？'
+    );
   } else {
     playErrorSound();
     speakText('字形不对哦，再仔细想一想！');
+    userStore.recordSubjectMistake({
+      subjectId: 'chinese',
+      topic: '成语填字与字形',
+      knowledgePointTitle: '常用成语辨析',
+      questionPrompt: '成语「' + currentIdiom.value.word.slice(0, currentIdiom.value.missingIdx) + '（？）' + currentIdiom.value.word.slice(currentIdiom.value.missingIdx + 1) + '」缺失字是？',
+      userAnswer: opt,
+      correctAnswer: correctChar,
+      errorCategory: 'spelling',
+      errorReason: '成语【' + currentIdiom.value.word + '】（' + currentIdiom.value.pinyin + '）：' + currentIdiom.value.meaning,
+      questionType: 'single_choice',
+      options: currentIdiom.value.options.map(o => ({ id: o, text: o }))
+    });
   }
 };
 

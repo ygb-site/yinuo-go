@@ -71,6 +71,10 @@ export interface ChildProfile {
   };
 }
 
+function normalizeMistakePrompt(prompt: string): string {
+  return (prompt || '').trim().toLowerCase().replace(/\s+/g, '');
+}
+
 const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
   id: '',
   nickname: '未登录',
@@ -182,6 +186,9 @@ export const useUserStore = defineStore('userStore', {
       if (!found.mistakes) found.mistakes = [];
       if (!found.solvedMistakes) found.solvedMistakes = [];
       if (!found.mistakeRecords) found.mistakeRecords = [];
+      if (found.mistakeRecords.length > 0 && found.mistakeRecords.some(m => String(m.id || '').startsWith('sample_'))) {
+        found.mistakeRecords = found.mistakeRecords.filter(m => !String(m.id || '').startsWith('sample_'));
+      }
       if (!found.knowledgeMastery) found.knowledgeMastery = {};
       if (!found.arcadeHighScores) {
         found.arcadeHighScores = { speedCapture: 0, countLiberties: 0, connectCut: 0 };
@@ -286,7 +293,8 @@ export const useUserStore = defineStore('userStore', {
     },
 
     mistakeRecords(): MistakeRecord[] {
-      return this.currentProfile.mistakeRecords || [];
+      const list = this.currentProfile.mistakeRecords || [];
+      return list.filter(m => !String(m.id || '').startsWith('sample_'));
     },
 
     knowledgeMastery(): Record<string, KnowledgeMasteryRecord> {
@@ -992,12 +1000,13 @@ export const useUserStore = defineStore('userStore', {
     },
 
     recordSubjectMistake(payload: Omit<MistakeRecord, 'id' | 'createdAt' | 'resolved'>) {
-      if (!this.hasProfile) return;
       const prof = this.currentProfile;
       if (!prof.mistakeRecords) prof.mistakeRecords = [];
       const id = 'mr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+      const cleanPrompt = normalizeMistakePrompt(payload.questionPrompt);
       const existing = prof.mistakeRecords.find(
-        m => m.subjectId === payload.subjectId && m.questionPrompt === payload.questionPrompt && !m.resolved
+        m => m.subjectId === payload.subjectId &&
+             normalizeMistakePrompt(m.questionPrompt) === cleanPrompt
       );
       if (!existing) {
         prof.mistakeRecords.unshift({
@@ -1008,10 +1017,18 @@ export const useUserStore = defineStore('userStore', {
           lastWrongAt: Date.now(),
           ...payload
         });
-        if (prof.mistakeRecords.length > 50) prof.mistakeRecords.length = 50;
+        if (prof.mistakeRecords.length > 200) prof.mistakeRecords.length = 200;
       } else {
+        existing.resolved = false;
         existing.wrongCount = (existing.wrongCount || 1) + 1;
         existing.lastWrongAt = Date.now();
+        existing.userAnswer = payload.userAnswer;
+        existing.correctAnswer = payload.correctAnswer;
+        if (payload.errorReason) existing.errorReason = payload.errorReason;
+        if (payload.options) existing.options = payload.options;
+        if (payload.template) existing.template = payload.template;
+        if (payload.latex) existing.latex = payload.latex;
+        if (payload.questionType) existing.questionType = payload.questionType;
       }
 
       if (payload.knowledgePointId) {
@@ -1021,21 +1038,80 @@ export const useUserStore = defineStore('userStore', {
       this.touchSave();
     },
 
-    resolveSubjectMistake(recordId: string) {
-      if (!this.hasProfile) return;
+    removeSubjectMistake(recordId: string) {
+      const prof = this.currentProfile;
+      if (!prof.mistakeRecords) return;
+      const idx = prof.mistakeRecords.findIndex(m => m.id === recordId);
+      if (idx >= 0) {
+        prof.mistakeRecords.splice(idx, 1);
+        this.touchSave();
+      }
+    },
+
+    resolveSubjectMistake(recordId: string, removeImmediately = true) {
       const prof = this.currentProfile;
       if (!prof.mistakeRecords) prof.mistakeRecords = [];
-      const item = prof.mistakeRecords.find(m => m.id === recordId);
-      if (item && !item.resolved) {
-        item.resolved = true;
-        item.resolvedAt = Date.now();
-        if (item.knowledgePointId) {
-          this.recordKnowledgePractice(item.knowledgePointId, true);
+      const idx = prof.mistakeRecords.findIndex(m => m.id === recordId);
+      if (idx >= 0) {
+        const item = prof.mistakeRecords[idx];
+        if (!item.resolved) {
+          if (item.knowledgePointId) {
+            this.recordKnowledgePractice(item.knowledgePointId, true);
+          }
+          this.addCoins(30, '攻克错题(双倍金币)', '💪');
+          this.addExp(40);
+        }
+        if (removeImmediately) {
+          prof.mistakeRecords.splice(idx, 1);
+        } else {
+          item.resolved = true;
+          item.resolvedAt = Date.now();
+        }
+        this.touchSave();
+      }
+    },
+
+    resolveMatchingMistake(subjectId: SubjectId, questionPrompt: string, removeImmediately = true) {
+      const prof = this.currentProfile;
+      if (!prof.mistakeRecords || prof.mistakeRecords.length === 0) return;
+      const cleanPrompt = normalizeMistakePrompt(questionPrompt);
+      const idx = prof.mistakeRecords.findIndex(
+        m => m.subjectId === subjectId &&
+             !m.resolved &&
+             normalizeMistakePrompt(m.questionPrompt) === cleanPrompt
+      );
+      if (idx >= 0) {
+        const item = prof.mistakeRecords[idx];
+        if (removeImmediately) {
+          prof.mistakeRecords.splice(idx, 1);
+        } else {
+          item.resolved = true;
+          item.resolvedAt = Date.now();
         }
         this.addCoins(30, '攻克错题(双倍金币)', '💪');
         this.addExp(40);
         this.touchSave();
       }
+    },
+
+    clearResolvedMistakes(subjectId?: SubjectId) {
+      const prof = this.currentProfile;
+      if (!prof.mistakeRecords) return;
+      if (subjectId) {
+        prof.mistakeRecords = prof.mistakeRecords.filter(m => !(m.resolved && m.subjectId === subjectId));
+      } else {
+        prof.mistakeRecords = prof.mistakeRecords.filter(m => !m.resolved);
+      }
+      this.touchSave();
+    },
+
+    purgeDemoMistakes() {
+      const prof = this.currentProfile;
+      if (!prof.mistakeRecords || prof.mistakeRecords.length === 0) return;
+      const next = prof.mistakeRecords.filter(m => !String(m.id || '').startsWith('sample_'));
+      if (next.length === prof.mistakeRecords.length) return;
+      prof.mistakeRecords = next;
+      this.touchSave();
     },
 
     resetCurrentProfileProgress() {

@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'pass'): void;
-  (e: 'fail', message?: string): void;
+  (e: 'fail', message?: string, detail?: any): void;
 }>();
 
 const selectedId = ref<string | null>(null);
@@ -42,7 +42,14 @@ const handleSelect = (option: ChoiceOption) => {
     setTimeout(() => {
       isAnswered.value = false;
       selectedId.value = null;
-      emit('fail', props.step.hint);
+      const correctOptions = props.step.options.filter(o => props.step.correctOptionIds.includes(o.id));
+      const correctText = correctOptions.map(o => o.text).join("、");
+      emit("fail", props.step.hint, {
+        userAnswer: option.text,
+        correctAnswer: correctText,
+        errorCategory: "concept",
+        errorReason: props.step.explanation || props.step.hint
+      });
     }, 1200);
   }
 };

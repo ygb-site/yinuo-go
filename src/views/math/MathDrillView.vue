@@ -375,6 +375,23 @@ const submitExam = () => {
     } else {
       q.isCorrect = false;
     }
+
+    if (!q.isCorrect) {
+      userStore.recordSubjectMistake({
+        subjectId: 'math',
+        topic: q.categoryName || '100以内加减法',
+        knowledgePointTitle: q.categoryName || '100以内进退位计算',
+        questionPrompt: q.expression + ' = ?',
+        userAnswer: q.userAnswer !== undefined && q.userAnswer !== null ? String(q.userAnswer) : '未作答',
+        correctAnswer: String(q.correctAnswer),
+        errorCategory: 'calculation',
+        errorReason: q.explanation || ('计算 ' + q.expression + ' 时发生偏差，正确答案为 ' + q.correctAnswer + '。'),
+        questionType: 'fill_blank',
+        template: q.expression + ' = [?]'
+      });
+    } else {
+      userStore.resolveMatchingMistake('math', q.expression + ' = ?');
+    }
   });
 
   currentStep.value = 'result';

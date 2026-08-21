@@ -176,11 +176,27 @@ const handleSpeechResult = (text: string) => {
     if (currentCard.value.knowledgePointId) {
       userStore.recordKnowledgePractice(currentCard.value.knowledgePointId, true);
     }
+    userStore.resolveMatchingMistake(
+      'english',
+      '英文单词「' + currentCard.value.word + '」的标准发音与释义'
+    );
   } else {
     playErrorSound();
     if (currentCard.value.knowledgePointId) {
       userStore.recordKnowledgePractice(currentCard.value.knowledgePointId, false);
     }
+    userStore.recordSubjectMistake({
+      subjectId: 'english',
+      gradeLevel: currentCard.value.grade,
+      topic: '英语高频词汇与口语',
+      knowledgePointId: currentCard.value.knowledgePointId,
+      knowledgePointTitle: '词汇【' + currentCard.value.word + '】(' + currentCard.value.meaning + ')',
+      questionPrompt: '英文单词「' + currentCard.value.word + '」的标准发音与释义',
+      userAnswer: text || '发音未达标',
+      correctAnswer: currentCard.value.word + ' ' + currentCard.value.phonetic + ' (' + currentCard.value.meaning + ')',
+      errorCategory: 'spelling',
+      errorReason: '单词发音规则：' + (currentCard.value.phonicsRule || '注意音标发音') + '，例句：' + currentCard.value.exampleEn + '（' + currentCard.value.exampleCn + '）'
+    });
   }
 };
 
@@ -192,6 +208,10 @@ const markMastered = () => {
   if (currentCard.value.knowledgePointId) {
     userStore.recordKnowledgePractice(currentCard.value.knowledgePointId, true);
   }
+  userStore.resolveMatchingMistake(
+    'english',
+    '英文单词「' + currentCard.value.word + '」的标准发音与释义'
+  );
 };
 
 const goBack = () => {

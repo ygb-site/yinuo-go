@@ -12,7 +12,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'pass'): void;
-  (e: 'fail', message?: string): void;
+  (e: 'fail', message?: string, detail?: any): void;
 }>();
 
 const filledAnswer = ref<string>('');
@@ -61,7 +61,12 @@ const checkAnswer = () => {
     setTimeout(() => {
       isSubmitting.value = false;
       filledAnswer.value = '';
-      emit('fail', props.step.hint);
+      emit("fail", props.step.hint, {
+        userAnswer: filledAnswer.value,
+        correctAnswer: props.step.correctAnswers.join(" / "),
+        errorCategory: "concept",
+        errorReason: props.step.explanation || props.step.hint
+      });
     }, 900);
   }
 };

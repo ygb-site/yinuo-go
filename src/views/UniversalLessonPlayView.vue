@@ -85,6 +85,9 @@ const handleStepPass = () => {
   if (kpId) {
     userStore.recordKnowledgePractice(kpId, true);
   }
+  if (currentStep.value) {
+    userStore.resolveMatchingMistake(subjectId.value, currentStep.value.promptText);
+  }
 
   if (isLastStep.value) {
     completeLesson();
@@ -95,7 +98,7 @@ const handleStepPass = () => {
   }
 };
 
-const handleStepFail = (msg?: string) => {
+const handleStepFail = (msg?: string, detail?: { userAnswer?: string; correctAnswer?: string; errorCategory?: string; errorReason?: string }) => {
   attemptCount.value++;
   if (attemptCount.value >= 2) {
     earnedStars.value = Math.max(1, 3 - Math.floor(attemptCount.value / 2));
@@ -106,6 +109,44 @@ const handleStepFail = (msg?: string) => {
   const kpId = currentStep.value?.knowledgePointId || currentLesson.value?.knowledgePointId;
   if (kpId) {
     userStore.recordKnowledgePractice(kpId, false);
+  }
+
+  // 📕 自动录入错题本 (Auto Record to Mistake Notebook)
+  if (currentStep.value && currentLesson.value) {
+    const step = currentStep.value;
+    let correctStr = detail?.correctAnswer || '';
+    let userStr = detail?.userAnswer || '未得出正确结果';
+
+    if (!correctStr) {
+      if (step.type === 'single_choice' || step.type === 'multi_choice') {
+        const correctOpts = (step as any).options?.filter((o: any) => (step as any).correctOptionIds?.includes(o.id));
+        correctStr = correctOpts?.map((o: any) => o.text).join('、') || '';
+      } else if (step.type === 'fill_blank') {
+        correctStr = (step as any).correctAnswers?.join(' / ') || '';
+      } else if (step.type === 'math_formula' || step.type === 'formula') {
+        correctStr = (step as any).correctAnswer || ((step as any).options?.find((o: any) => (step as any).correctOptionIds?.includes(o.id))?.text || '');
+      } else if (step.type === 'math_counter') {
+        correctStr = String((step as any).targetCount || '');
+      }
+    }
+
+    userStore.recordSubjectMistake({
+      subjectId: subjectId.value,
+      gradeLevel: currentLesson.value.gradeLevel,
+      topic: currentLesson.value.title,
+      knowledgePointId: kpId,
+      knowledgePointTitle: step.title || currentLesson.value.title,
+      questionPrompt: step.promptText,
+      userAnswer: userStr,
+      correctAnswer: correctStr || '见题目解析',
+      errorCategory: (detail?.errorCategory as any) || (subjectId.value === 'math' ? 'calculation' : subjectId.value === 'english' ? 'spelling' : 'concept'),
+      errorReason: detail?.errorReason || step.explanation || step.hint || '答题时思路稍有偏差，需对照知识点巩固复习。',
+      questionType: step.type,
+      options: (step as any).options,
+      template: (step as any).template,
+      latex: (step as any).latex,
+      visualContent: (step as any).visualContent
+    });
   }
 };
 
@@ -218,7 +259,7 @@ const goBack = () => {
           :step="currentStep"
           :subject-id="subjectId"
           @pass="handleStepPass"
-          @fail="handleStepFail"
+          @fail="(msg, detail) => handleStepFail(msg, detail)"
         />
       </template>
 

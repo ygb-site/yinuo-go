@@ -31,7 +31,9 @@ import {
   LogOut,
   User,
   Brain,
-  Sparkles
+  Sparkles,
+  BookMarked,
+  Flame
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -280,6 +282,37 @@ const exportData = () => {
   a.download = 'yinuo-go-backup-' + (userStore.nickname || 'kids') + '.json';
   a.click();
   URL.revokeObjectURL(url);
+};
+
+
+const pendingMistakes = computed(() => {
+  return (userStore.mistakeRecords || []).filter(m => !m.resolved);
+});
+
+const resolvedMistakesCount = computed(() => {
+  return (userStore.mistakeRecords || []).filter(m => m.resolved).length;
+});
+
+const mistakeMasteryPercent = computed(() => {
+  const total = (userStore.mistakeRecords || []).length;
+  if (total === 0) return 100;
+  return Math.round((resolvedMistakesCount.value / total) * 100);
+});
+
+const mistakesBySubject = computed(() => {
+  const math = pendingMistakes.value.filter(m => m.subjectId === 'math').length;
+  const chinese = pendingMistakes.value.filter(m => m.subjectId === 'chinese').length;
+  const english = pendingMistakes.value.filter(m => m.subjectId === 'english').length;
+  const go = pendingMistakes.value.filter(m => m.subjectId === 'go').length;
+  return { math, chinese, english, go };
+});
+
+const goToMistakes = (subject?: string, autoQuiz = false) => {
+  playButtonSound();
+  const query: Record<string, string> = {};
+  if (subject) query.subject = subject;
+  if (autoQuiz) query.quiz = 'true';
+  router.push({ path: '/mistakes', query });
 };
 
 const confirmReset = async () => {
@@ -561,6 +594,149 @@ const confirmReset = async () => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 📕 语数外错题攻坚大本营 (Mistake Notebook Growth Center Portal) -->
+      <div v-if="userStore.hasProfile" class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-rose-100 shadow-sm space-y-5">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 via-pink-500 to-purple-600 text-white flex items-center justify-center text-2xl shadow-md">
+              📕
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h2 class="text-xl font-cartoon font-bold text-gray-900 tracking-wide">全学科智能错题本中心</h2>
+                <span class="text-xs font-black text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+                  错题自动收录 · 随机出题 · 答对即移出
+                </span>
+              </div>
+              <p class="text-xs text-gray-500 font-medium mt-0.5">
+                做题做错自动归纳，一键随机出题练习，答对自动从错题本移出并领双倍金币！
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <button
+              @click="goToMistakes(undefined, true)"
+              :disabled="pendingMistakes.length === 0"
+              class="px-4 py-2 bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 text-slate-900 font-black rounded-2xl text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <Flame class="w-4 h-4 text-rose-600 fill-current animate-bounce" />
+              <span>🎲 错题随机出题练</span>
+            </button>
+
+            <button
+              @click="goToMistakes()"
+              class="px-4 py-2 bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-600 text-white rounded-2xl text-xs sm:text-sm font-black shadow-sm transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
+            >
+              <BookMarked class="w-4 h-4" />
+              <span>进入错题本 ({{ pendingMistakes.length }} 待消灭)</span>
+              <ArrowRight class="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Subjects Quick Filter Badges & Summary -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div
+            @click="goToMistakes('math')"
+            class="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition cursor-pointer flex items-center justify-between group"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-xl group-hover:scale-110 transition-transform">🔢</span>
+              <div>
+                <div class="text-xs font-black text-blue-900">数学错题</div>
+                <div class="text-[10px] text-blue-600 font-bold">进退位与口算</div>
+              </div>
+            </div>
+            <span class="text-base font-black text-blue-700">{{ mistakesBySubject.math }} 道</span>
+          </div>
+
+          <div
+            @click="goToMistakes('chinese')"
+            class="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-100 hover:border-amber-300 hover:bg-amber-50 transition cursor-pointer flex items-center justify-between group"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-xl group-hover:scale-110 transition-transform">🏮</span>
+              <div>
+                <div class="text-xs font-black text-amber-900">语文错题</div>
+                <div class="text-[10px] text-amber-600 font-bold">生字、拼音与成语</div>
+              </div>
+            </div>
+            <span class="text-base font-black text-amber-700">{{ mistakesBySubject.chinese }} 道</span>
+          </div>
+
+          <div
+            @click="goToMistakes('english')"
+            class="p-3.5 rounded-2xl bg-purple-50/70 border border-purple-100 hover:border-purple-300 hover:bg-purple-50 transition cursor-pointer flex items-center justify-between group"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-xl group-hover:scale-110 transition-transform">🔤</span>
+              <div>
+                <div class="text-xs font-black text-purple-900">英语错题</div>
+                <div class="text-[10px] text-purple-600 font-bold">词汇拼写与口语</div>
+              </div>
+            </div>
+            <span class="text-base font-black text-purple-700">{{ mistakesBySubject.english }} 道</span>
+          </div>
+
+          <div
+            @click="goToMistakes('go')"
+            class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-100 hover:border-emerald-300 hover:bg-emerald-50 transition cursor-pointer flex items-center justify-between group"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-xl group-hover:scale-110 transition-transform">♟️</span>
+              <div>
+                <div class="text-xs font-black text-emerald-900">围棋错题</div>
+                <div class="text-[10px] text-emerald-600 font-bold">死活与手筋弱点</div>
+              </div>
+            </div>
+            <span class="text-base font-black text-emerald-700">{{ mistakesBySubject.go }} 道</span>
+          </div>
+        </div>
+
+        <!-- Recent Pending Mistakes Preview -->
+        <div v-if="pendingMistakes.length > 0" class="space-y-2.5 pt-1">
+          <div class="text-xs font-black text-slate-500 flex items-center justify-between px-1">
+            <span>待攻坚错题预览（点击卡片可直接前往错题本攻克）：</span>
+            <span class="text-rose-600 font-bold">待消灭 {{ pendingMistakes.length }} 道 · 已攻克 {{ resolvedMistakesCount }} 道 (攻克率 {{ mistakeMasteryPercent }}%)</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div
+              v-for="m in pendingMistakes.slice(0, 4)"
+              :key="m.id"
+              @click="goToMistakes(m.subjectId)"
+              class="p-4 rounded-2xl bg-slate-50 hover:bg-rose-50/50 border border-slate-200 hover:border-rose-300 transition cursor-pointer flex flex-col justify-between space-y-2 shadow-2xs"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700">
+                  {{ m.knowledgePointTitle }}
+                </span>
+                <span class="text-[10px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <Brain class="w-3 h-3" />
+                  <span>待消灭</span>
+                </span>
+              </div>
+
+              <div class="text-sm font-black text-slate-900 line-clamp-1">
+                {{ m.questionPrompt }}
+              </div>
+
+              <div class="text-[11px] text-slate-500 font-bold flex items-center justify-between pt-1 border-t border-slate-200/60">
+                <span class="text-rose-600">❌ 错答: {{ m.userAnswer }}</span>
+                <span class="text-emerald-700 font-black">✅ 标准: {{ m.correctAnswer }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="py-6 text-center rounded-2xl bg-emerald-50/60 border border-dashed border-emerald-200 space-y-1.5">
+          <div class="text-2xl">🎉</div>
+          <div class="text-xs font-black text-emerald-800">当前没有待消灭的错题！做题弱点已全部扫清！</div>
+          <p class="text-[11px] text-slate-500 font-medium">在闯关做题做错时会自动收录，随时可来错题本随机抽题练！</p>
         </div>
       </div>
 

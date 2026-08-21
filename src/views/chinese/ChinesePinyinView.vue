@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '../../stores/useUserStore';
 import { playButtonSound, playWinSound, playErrorSound } from '../../lib/audio';
 import { speakText, stopSpeech } from '../../utils/speech';
 import {
@@ -21,6 +22,7 @@ import {
 } from 'lucide-vue-next';
 
 const router = useRouter();
+const userStore = useUserStore();
 
 // Main Mode Tabs: 'soundboard' (点读大本营) | 'tones' (四声调小汽车) | 'blender' (魔法拼读器) | 'quiz' (听音辨音大闯关)
 const activeTab = ref<'soundboard' | 'tones' | 'blender' | 'quiz'>('soundboard');
@@ -142,9 +144,25 @@ const handleQuizAnswer = (opt: string) => {
     quizScore.value += 10;
     quizFeedback.value = `太棒啦！回答完全正确！🎉 这是【${currentQuiz.value.correct}】`;
     confetti({ particleCount: 60, spread: 50 });
+    userStore.resolveMatchingMistake(
+      'chinese',
+      currentQuiz.value.voiceText + '（选择正确拼音）'
+    );
   } else {
     playErrorSound();
-    quizFeedback.value = `听错啦，正确发音是：【${currentQuiz.value.correct}】（${currentQuiz.value.hintText}）`;
+    quizFeedback.value = '听错啦，正确发音是：【' + currentQuiz.value.correct + '】（' + currentQuiz.value.hintText + '）';
+    userStore.recordSubjectMistake({
+      subjectId: 'chinese',
+      topic: '拼音听音辨音',
+      knowledgePointTitle: currentQuiz.value.category || '拼音辨析',
+      questionPrompt: currentQuiz.value.voiceText + '（选择正确拼音）',
+      userAnswer: opt,
+      correctAnswer: currentQuiz.value.correct,
+      errorCategory: 'concept',
+      errorReason: currentQuiz.value.hintText ? ('辨析要领：' + currentQuiz.value.hintText) : ('混淆了拼音【' + currentQuiz.value.correct + '】与【' + opt + '】。'),
+      questionType: 'single_choice',
+      options: currentQuiz.value.options.map(o => ({ id: o, text: o }))
+    });
   }
 };
 

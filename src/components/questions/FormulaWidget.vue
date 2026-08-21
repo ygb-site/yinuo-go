@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'pass'): void;
-  (e: 'fail', message?: string): void;
+  (e: 'fail', message?: string, detail?: any): void;
 }>();
 
 const selectedOptionId = ref<string | null>(null);
@@ -47,7 +47,12 @@ const handleOptionSelect = (option: ChoiceOption) => {
   } else {
     playErrorSound();
     feedbackMessage.value = props.step.explanation || '公式计算不太对哦，仔细看一下提示再试一次！';
-    emit('fail', feedbackMessage.value);
+    emit("fail", feedbackMessage.value, {
+      userAnswer: option.text,
+      correctAnswer: props.step.correctAnswer || (props.step.options?.find(o => props.step.correctOptionIds?.includes(o.id))?.text || ""),
+      errorCategory: "calculation",
+      errorReason: props.step.explanation || feedbackMessage.value
+    });
   }
 };
 

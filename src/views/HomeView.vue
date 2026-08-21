@@ -66,6 +66,14 @@ const navigateTo = (path: string) => {
 
 const quickPracticeHubs = [
   {
+    title: '语数外错题本',
+    subject: '全科',
+    icon: '📕',
+    tag: '随机出题攻克',
+    color: 'bg-rose-50 text-rose-700 border-rose-200',
+    route: '/mistakes'
+  },
+  {
     title: '口算天天练',
     subject: '数学',
     icon: '🧮',

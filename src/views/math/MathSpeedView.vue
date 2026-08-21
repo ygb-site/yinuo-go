@@ -130,10 +130,26 @@ const handleAnswer = (val: number) => {
     if (combo.value % 4 === 0) {
       timeLeft.value = Math.min(45, timeLeft.value + 3);
     }
+    userStore.resolveMatchingMistake(
+      'math',
+      currentProblem.value.num1 + ' ' + currentProblem.value.op + ' ' + currentProblem.value.num2 + ' = ?'
+    );
     currentProblem.value = generateProblem();
   } else {
     playErrorSound();
     combo.value = 0;
+    userStore.recordSubjectMistake({
+      subjectId: 'math',
+      topic: currentProblem.value.category,
+      knowledgePointTitle: '100以内' + currentProblem.value.category,
+      questionPrompt: currentProblem.value.num1 + ' ' + currentProblem.value.op + ' ' + currentProblem.value.num2 + ' = ?',
+      userAnswer: String(val),
+      correctAnswer: String(currentProblem.value.ans),
+      errorCategory: 'calculation',
+      errorReason: '计算 ' + currentProblem.value.num1 + ' ' + currentProblem.value.op + ' ' + currentProblem.value.num2 + ' 时选错为 ' + val + '，正确答案应为 ' + currentProblem.value.ans + '。',
+      questionType: 'single_choice',
+      options: currentProblem.value.options.map(o => ({ id: String(o), text: String(o) }))
+    });
     currentProblem.value = generateProblem();
   }
 };

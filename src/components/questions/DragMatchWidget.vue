@@ -12,7 +12,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'pass'): void;
-  (e: 'fail', message?: string): void;
+  (e: 'fail', message?: string, detail?: any): void;
 }>();
 
 interface CardItem {

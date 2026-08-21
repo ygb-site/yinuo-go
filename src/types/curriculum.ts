@@ -369,6 +369,12 @@ export interface MistakeRecord {
   hintsRevealed?: number; // 0, 1, 2, 3
   stepHints?: string[];
   aiExplanation?: string;
+  questionType?: QuestionType | string;
+  options?: ChoiceOption[] | string[];
+  template?: string;
+  latex?: string;
+  visualContent?: any;
+  audioText?: string;
   variationQuestion?: {
     prompt: string;
     options?: ChoiceOption[];

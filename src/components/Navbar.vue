@@ -20,7 +20,8 @@ import {
   ShieldAlert,
   LogOut,
   User,
-  Sparkles
+  Sparkles,
+  BookMarked
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -232,6 +233,22 @@ const isNavActive = (itemPath: string) => {
                 >
                   <User class="w-4 h-4 text-orange-500" />
                   <span>切换宝贝档案</span>
+                </button>
+
+                <button
+                  @click="navigateTo('/mistakes')"
+                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-rose-50 text-slate-700 flex items-center justify-between transition-colors"
+                >
+                  <div class="flex items-center gap-2">
+                    <BookMarked class="w-4 h-4 text-rose-500" />
+                    <span>智能错题本</span>
+                  </div>
+                  <span
+                    v-if="userStore.mistakeRecords && userStore.mistakeRecords.filter(m => !m.resolved).length > 0"
+                    class="px-1.5 py-0.2 bg-rose-500 text-white rounded-full text-[10px] font-black"
+                  >
+                    {{ userStore.mistakeRecords.filter(m => !m.resolved).length }}
+                  </span>
                 </button>
 
                 <button
