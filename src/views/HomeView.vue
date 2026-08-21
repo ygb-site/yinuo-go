@@ -3,460 +3,302 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import DailyQuestModal from '../components/common/DailyQuestModal.vue';
 import { useUserStore } from '../stores/useUserStore';
-import { useUnlockStore } from '../stores/unlockStore';
-import { CHAPTERS_DATA, type Lesson } from '../data/chapters';
-import { sound } from '../utils/sound';
-import { showConfirm } from '../utils/alert';
+import { ALL_SUBJECTS } from '../data/subjectsData';
+import { getAllLessonsBySubject } from '../data/academicCurriculum';
+import type { SubjectId, UniversalLesson } from '../types/curriculum';
+import { playButtonSound } from '../lib/audio';
 import {
   Calendar,
-  Gamepad2,
   ArrowRight,
   Sparkles,
-  Lock,
-  CheckCircle2,
-  Trophy,
-  Play
+  Star,
+  Flame
 } from 'lucide-vue-next';
 
 const router = useRouter();
-const showQuestModal = ref(false);
 const userStore = useUserStore();
-const unlockStore = useUnlockStore();
-const selectedCategory = ref<'all' | 'learn' | 'practice' | 'battle' | 'profile'>('all');
+const showQuestModal = ref(false);
 
-const categoryTabs = computed(() => [
-  { id: 'all', name: '全部', count: unlockStore.allFeatures.length },
-  { id: 'learn', name: '🧭 启蒙', count: unlockStore.featuresByCategory.learn.length },
-  { id: 'practice', name: '🔥 训练', count: unlockStore.featuresByCategory.practice.length },
-  { id: 'battle', name: '⚔️ 对弈', count: unlockStore.featuresByCategory.battle.length },
-  { id: 'profile', name: '👑 成长', count: unlockStore.featuresByCategory.profile.length }
-]);
+const subjects = computed(() => {
+  return ALL_SUBJECTS.map(s => {
+    const lessons = getAllLessonsBySubject(s.id);
+    const completed = lessons.filter((l: UniversalLesson) => !!userStore.progress[l.id]?.completed).length;
+    const stars = lessons.reduce((acc: number, l: UniversalLesson) => acc + (userStore.progress[l.id]?.stars || 0), 0);
+    const progress = lessons.length > 0 ? Math.round((completed / lessons.length) * 100) : 0;
 
-const displayedFeatures = computed(() => {
-  if (selectedCategory.value === 'all') {
-    return unlockStore.allFeatures;
-  }
-  return unlockStore.allFeatures.filter(f => f.category === selectedCategory.value);
+    return {
+      ...s,
+      totalLessons: lessons.length,
+      completedLessons: completed,
+      starsEarned: stars,
+      progressPercent: progress
+    };
+  });
 });
 
-const getCategoryMeta = (cat: string) => {
-  switch (cat) {
-    case 'learn':
-      return { label: '启蒙', tagClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-    case 'practice':
-      return { label: '训练', tagClass: 'bg-purple-50 text-purple-700 border-purple-200' };
-    case 'battle':
-      return { label: '对弈', tagClass: 'bg-orange-50 text-orange-700 border-orange-200' };
-    case 'profile':
-    default:
-      return { label: '成长', tagClass: 'bg-pink-50 text-pink-700 border-pink-200' };
+const totalGlobalLessons = computed(() => {
+  return subjects.value.reduce((acc: number, s) => acc + s.totalLessons, 0);
+});
+
+const totalGlobalCompleted = computed(() => {
+  return subjects.value.reduce((acc: number, s) => acc + s.completedLessons, 0);
+});
+
+const globalProgressPercent = computed(() => {
+  if (totalGlobalLessons.value === 0) return 0;
+  return Math.min(100, Math.round((totalGlobalCompleted.value / totalGlobalLessons.value) * 100));
+});
+
+const navigateToSubject = (subjectId: SubjectId) => {
+  playButtonSound();
+  userStore.setActiveSubject(subjectId);
+  if (subjectId === 'go') {
+    router.push('/learn');
+  } else {
+    router.push(`/subject/${subjectId}`);
   }
 };
 
-// Flatten all lessons
-const allLessons = computed<Lesson[]>(() => {
-  const list: Lesson[] = [];
-  for (const c of CHAPTERS_DATA) {
-    list.push(...c.lessons);
-  }
-  return list;
-});
-
-// Find the current active lesson the kid should continue
-const currentNextLesson = computed<Lesson>(() => {
-  const prog = userStore.progress;
-  for (const lesson of allLessons.value) {
-    if (!prog[lesson.id]?.completed) {
-      return lesson;
-    }
-  }
-  return allLessons.value[0];
-});
-
-const completedCount = computed(() => unlockStore.completedLessonsCount);
-const totalLessonsCount = computed(() => allLessons.value.length);
-const progressPercent = computed(() => {
-  if (totalLessonsCount.value === 0) return 0;
-  return Math.min(100, Math.round((completedCount.value / totalLessonsCount.value) * 100));
-});
-
-const nextLocked = computed(() => unlockStore.nextLockedFeature);
-
-const navigate = (path: string) => {
-  sound.playButtonSound();
+const navigateTo = (path: string) => {
+  playButtonSound();
   router.push(path);
 };
 
-const handleStartNextLesson = () => {
-  if (!userStore.hasProfile) {
-    userStore.openProfileModal();
-    return;
-  }
-  sound.playButtonSound();
-  router.push('/lesson/' + currentNextLesson.value.id);
-};
-
-// 4 Core Master Portals
-const corePortals = computed(() => [
+const quickPracticeHubs = [
   {
-    path: '/learn',
-    title: '启蒙闯关学堂',
-    titleEn: 'Learning Hub',
-    icon: '🧭',
-    badge: '已解锁 ' + unlockStore.featuresByCategory.learn.filter(f => unlockStore.isFeatureUnlocked(f.id)).length + ' 项',
-    badgeColor: 'bg-emerald-500',
-    desc: '趣味主线闯关、双语围棋小词典与经典棋理口诀儿歌！',
-    gradient: 'from-emerald-400 via-teal-500 to-cyan-500',
-    stats: '主线 · 词典 · 口诀'
+    title: '口算天天练',
+    subject: '数学',
+    icon: '🧮',
+    tag: '一二年级数学',
+    color: 'bg-blue-50 text-blue-700 border-blue-200',
+    route: '/subject/math/drill'
   },
   {
-    path: '/practice',
-    title: '练习训练营',
-    titleEn: 'Practice Hub',
-    icon: '⚡',
-    badge: '已解锁 ' + unlockStore.featuresByCategory.practice.filter(f => unlockStore.isFeatureUnlocked(f.id)).length + ' 项',
-    badgeColor: 'bg-purple-500',
-    desc: '极速反应乐园、46道死活题、错题突破、打印题卡与自由打谱台！',
-    gradient: 'from-purple-400 via-indigo-500 to-rose-500',
-    stats: '死活 · 反应 · 错题 · 打谱'
+    title: '生字笔顺演练',
+    subject: '语文',
+    icon: '✍️',
+    tag: '部编版语文',
+    color: 'bg-amber-50 text-amber-700 border-amber-200',
+    route: '/subject/chinese/hanzi'
   },
   {
-    path: '/battle',
-    title: '对弈竞技场',
-    titleEn: 'Battle Arena',
-    icon: '⚔️',
-    badge: '已解锁 ' + unlockStore.featuresByCategory.battle.filter(f => unlockStore.isFeatureUnlocked(f.id)).length + ' 项',
-    badgeColor: 'bg-orange-500',
-    desc: '先吃1子吃子棋、5只萌宠AI对弈大师、亲子同屏与定段升级考！',
-    gradient: 'from-orange-400 via-amber-500 to-yellow-500',
-    stats: '吃子 · AI · 双人 · 定段'
+    title: '古诗点读背诵',
+    subject: '语文',
+    icon: '📜',
+    tag: '必背古诗',
+    color: 'bg-orange-50 text-orange-700 border-orange-200',
+    route: '/subject/chinese/poetry'
   },
   {
-    path: '/profile',
-    title: '成长中心与商城',
-    titleEn: 'Profile & Shop',
-    icon: '👑',
-    badge: '装扮与成就',
-    badgeColor: 'bg-pink-500',
-    desc: '用金币兑换专属棋盘皮肤与头像，查看段位荣誉证书与棋力雷达！',
-    gradient: 'from-pink-400 via-rose-500 to-purple-500',
-    stats: '金币 ' + userStore.coins + ' · 星星 ' + userStore.totalStars
+    title: '自然拼读发音板',
+    subject: '英语',
+    icon: '🔊',
+    tag: 'Phonics',
+    color: 'bg-purple-50 text-purple-700 border-purple-200',
+    route: '/subject/english/phonics'
+  },
+  {
+    title: '死活专项训练',
+    subject: '围棋',
+    icon: '🎯',
+    tag: '围棋死活',
+    color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    route: '/tsumego'
+  },
+  {
+    title: '速算冲天竞技场',
+    subject: '数学',
+    icon: '🚀',
+    tag: '限时口算',
+    color: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    route: '/subject/math/speed'
   }
-]);
-
-const handleFeatureClick = (feat: any) => {
-  const isUnlocked = unlockStore.isFeatureUnlocked(feat.id);
-  if (!isUnlocked) {
-    sound.playErrorSound();
-    showConfirm({
-      title: '暂未解锁该玩法',
-      message: '小棋手别着急！【' + feat.name + '】需要' + feat.unlockTip + '才能开启哦！快去继续主线闯关吧！',
-      type: 'warning',
-      confirmText: '前往闯关',
-      cancelText: '知道了'
-    }).then(confirmed => {
-      if (confirmed) {
-        router.push('/learn');
-      }
-    });
-    return;
-  }
-  sound.playButtonSound();
-  router.push(feat.route);
-};
+];
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-4 sm:py-8 lg:py-10 px-3 sm:px-6 lg:px-8 select-none">
-    <div class="max-w-6xl mx-auto space-y-5 sm:space-y-8">
+  <div class="min-h-screen bg-[#FDFBF7] py-4 sm:py-8 px-3 sm:px-6 lg:px-8 select-none">
+    <div class="max-w-6xl mx-auto space-y-8">
       
-      <!-- Top Welcome Hero Banner with Focused Lesson CTA -->
-      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 p-4 sm:p-8 lg:p-9 shadow-lg border-2 sm:border-4 border-white">
-        <div class="absolute -right-8 -bottom-8 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-        <div class="absolute right-12 top-4 text-3xl sm:text-5xl opacity-20 pointer-events-none">✨</div>
+      <!-- Top Welcome Hero Banner -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 p-5 sm:p-8 lg:p-9 shadow-xl border-4 border-white">
+        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/15 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute right-8 top-4 text-4xl sm:text-6xl opacity-20 pointer-events-none">🌟</div>
 
-        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
-          <div class="space-y-2 sm:space-y-3 text-center md:text-left w-full md:w-auto">
-            <div class="inline-flex items-center gap-1.5 bg-white/30 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full text-[11px] font-black shadow-2xs">
+        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="space-y-3 text-center md:text-left w-full md:w-auto">
+            <div class="inline-flex items-center gap-1.5 bg-white/30 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-black shadow-sm">
               <Sparkles class="w-3.5 h-3.5" />
-              <span>少儿围棋启蒙世界 · 开启聪明大脑</span>
+              <span>一诺未来学堂 · 多元互动启蒙</span>
             </div>
-            
-            <h1 class="text-2xl sm:text-4xl lg:text-5xl font-cartoon font-bold text-white tracking-wider drop-shadow-md">
-              欢迎来到 一诺弈学！
-            </h1>
-            
-            <p class="text-white/95 text-xs sm:text-base font-semibold max-w-xl line-clamp-2 sm:line-clamp-none">
-              你好，{{ userStore.hasProfile ? userStore.nickname : '小棋手' }}！黑白子就像神奇的精灵，跟着小诺一步一步探索棋盘奥秘吧！
+
+            <div class="text-2xl sm:text-4xl lg:text-5xl font-cartoon font-bold text-white tracking-wider drop-shadow-md flex items-center justify-center md:justify-start gap-2">
+              <span>嗨，{{ userStore.nickname }}！</span>
+              <span class="animate-bounce inline-block">🚀</span>
+            </div>
+
+            <p class="text-sm sm:text-base text-white/95 font-bold max-w-xl leading-relaxed">
+              围棋博弈、数理思维、国学语文、趣味英语！选择你喜爱的学科馆，开启今天的智慧探险吧！
             </p>
 
-            <!-- Primary Task Big Card (Focused & Zero Confusion) -->
-            <div class="bg-white/90 backdrop-blur-md rounded-2xl p-3 sm:p-4 border-2 border-white/90 shadow-md text-left mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div class="space-y-0.5">
-                <div class="flex items-center gap-1.5 text-[11px] font-black text-orange-700">
-                  <span class="w-2 h-2 rounded-full bg-orange-500 animate-ping"></span>
-                  <span>今日推荐主线任务</span>
-                </div>
-                <div class="text-sm sm:text-base font-black text-gray-900 line-clamp-1">
-                  {{ currentNextLesson.title }}
-                </div>
-                <div class="text-[11px] text-gray-500 font-bold line-clamp-1">
-                  {{ currentNextLesson.subtitle }}
-                </div>
-              </div>
-
-              <button
-                @click="handleStartNextLesson"
-                class="px-5 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-500 hover:from-orange-600 text-white font-black text-xs sm:text-sm shadow-md shadow-orange-500/25 transform transition hover:scale-105 active:scale-95 flex items-center justify-center gap-2 cursor-pointer flex-shrink-0"
-              >
-                <Play class="w-4 h-4 fill-current" />
-                <span>{{ completedCount > 0 ? '继续闯关' : '开启第一课' }}</span>
-                <ArrowRight class="w-4 h-4" />
-              </button>
-            </div>
-
-            <!-- Quick Action Links -->
-            <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 pt-1">
+            <!-- Daily Action Pills -->
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
               <button
                 @click="showQuestModal = true"
-                class="px-3.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-black text-xs backdrop-blur-sm border border-white/40 transform transition hover:scale-105 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                class="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full text-white font-black text-xs sm:text-sm flex items-center gap-1.5 transition-all active:scale-95 shadow-sm border border-white/30"
               >
-                <Calendar class="w-3.5 h-3.5" />
-                <span>📅 每日打卡任务</span>
+                <Calendar class="w-4 h-4 text-amber-200" />
+                <span>每日任务</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
               </button>
-              <button
-                @click="navigate('/adventure')"
-                class="px-3.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-black text-xs backdrop-blur-sm border border-white/40 transform transition hover:scale-105 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Gamepad2 class="w-3.5 h-3.5" />
-                <span>🗺️ 查看完整关卡地图</span>
-              </button>
-            </div>
-          </div>
 
-          <!-- Mascot Card -->
-          <div class="hidden md:flex flex-shrink-0 justify-center">
-            <div class="bg-white/90 backdrop-blur-md rounded-3xl p-5 border-2 border-white shadow-xl max-w-xs text-center">
-              <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-gradient-to-tr from-amber-300 to-orange-400 p-1 mb-2 shadow-md flex items-center justify-center overflow-hidden border-2 border-white">
-                <img src="/logo/logo-avatar-circle-256.png" alt="导师 · 小诺" class="w-full h-full object-contain" />
-              </div>
-              <div class="font-black text-sm sm:text-base text-gray-800">导师 · 小诺</div>
-              <p class="text-xs text-orange-600 font-bold mb-3">“今天准备好学一个新吃子妙招了吗？”</p>
-
-              <div class="grid grid-cols-2 gap-2 text-center text-xs font-bold bg-orange-50/80 rounded-xl p-2 border border-orange-100">
-                <div>
-                  <div class="text-gray-500 text-[10px]">棋力段位</div>
-                  <div class="text-amber-800 font-black">{{ userStore.currentRank.title }}</div>
-                </div>
-                <div>
-                  <div class="text-gray-500 text-[10px]">金币余额</div>
-                  <div class="text-rose-600 font-black">🪙 {{ userStore.coins }}</div>
-                </div>
+              <div class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white font-black text-xs sm:text-sm flex items-center gap-1.5 border border-white/30">
+                <Flame class="w-4 h-4 text-orange-200" />
+                <span>连续打卡 {{ userStore.checkInStreak }} 天</span>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Growth Milestone Bar (Progressive Lock Indicator) -->
-      <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-orange-100 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="flex-1 w-full space-y-1.5">
-          <div class="flex items-center justify-between text-xs font-black text-gray-700">
-            <span class="flex items-center gap-1.5 text-gray-800">
-              <Trophy class="w-4 h-4 text-amber-500" />
-              <span>启蒙闯关总进度</span>
-            </span>
-            <span class="text-orange-600 font-black">
-              已完成 {{ completedCount }} / {{ totalLessonsCount }} 关 ({{ progressPercent }}%)
-            </span>
-          </div>
+          <!-- Quick Global Stats Card -->
+          <div class="bg-white/95 rounded-3xl p-5 sm:p-6 text-slate-800 min-w-[260px] shadow-xl text-center border-3 border-amber-200">
+            <div class="text-xs font-black text-amber-600 uppercase tracking-wide mb-1">
+              全科通关总进度
+            </div>
+            <div class="text-3xl font-black text-slate-900 flex items-center justify-center gap-1">
+              <span>{{ totalGlobalCompleted }}</span>
+              <span class="text-base text-slate-400 font-bold">/ {{ totalGlobalLessons }} 关</span>
+            </div>
 
-          <!-- Progress Bar -->
-          <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden p-0.5">
-            <div
-              class="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 rounded-full transition-all duration-500 shadow-xs"
-              :style="{ width: progressPercent + '%' }"
-            ></div>
-          </div>
-        </div>
+            <!-- Global Progress Bar -->
+            <div class="w-full bg-slate-100 h-3 rounded-full mt-3 overflow-hidden p-0.5 border border-slate-200">
+              <div
+                class="bg-gradient-to-r from-amber-400 to-orange-500 h-full rounded-full transition-all duration-500"
+                :style="{ width: globalProgressPercent + '%' }"
+              ></div>
+            </div>
 
-        <!-- Next Unlock Goal Pill -->
-        <div class="w-full md:w-auto flex-shrink-0">
-          <div
-            v-if="nextLocked"
-            class="bg-amber-50 border border-amber-200 rounded-2xl px-3.5 py-2 flex items-center gap-2 text-xs font-bold text-amber-900 shadow-2xs"
-          >
-            <Sparkles class="w-4 h-4 text-amber-600 flex-shrink-0 animate-spin" />
-            <div class="truncate">
-              <span class="text-[10px] text-amber-700 block">下一个解锁目标：</span>
-              <span class="font-black text-amber-950">
-                通关第 {{ nextLocked.lessonsRequired }} 关解锁【{{ nextLocked.name }}】
+            <div class="mt-3 flex items-center justify-center gap-3 text-xs font-black text-slate-600">
+              <span class="flex items-center gap-1">
+                <Star class="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                {{ userStore.totalStars }} 颗星
+              </span>
+              <span>•</span>
+              <span class="flex items-center gap-1 text-amber-600">
+                🪙 {{ userStore.coins }} 金币
               </span>
             </div>
           </div>
-          <div
-            v-else
-            class="bg-emerald-50 border border-emerald-200 rounded-2xl px-3.5 py-2 flex items-center gap-2 text-xs font-black text-emerald-900"
-          >
-            <CheckCircle2 class="w-4 h-4 text-emerald-600 flex-shrink-0" />
-            <span>🎉 太厉害啦！已解锁全部玩法！</span>
-          </div>
         </div>
       </div>
 
-      <!-- 4 Core Master Portals (学、练、战、我的) -->
-      <div class="space-y-3 sm:space-y-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-xl sm:text-2xl">🏛️</span>
-            <h2 class="text-lg sm:text-2xl font-cartoon font-bold text-gray-800 tracking-wide">四大核心天地</h2>
-          </div>
+      <!-- 4 Core Subject Academies Grid -->
+      <div>
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-lg sm:text-2xl font-cartoon font-bold text-slate-800 flex items-center gap-2.5">
+            <span>🏫</span>
+            <span>四大核心学科馆</span>
+          </h2>
+          <span class="text-xs sm:text-sm font-bold text-slate-400">
+            涵盖思维逻辑与语言素养
+          </span>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div
-            v-for="portal in corePortals"
-            :key="portal.path"
-            @click="navigate(portal.path)"
-            class="group bg-white rounded-3xl p-5 border-2 border-gray-100 shadow-xs hover:shadow-xl hover:border-orange-300 transition-all duration-200 transform hover:-translate-y-1 active:scale-95 cursor-pointer flex flex-col justify-between"
+            v-for="sub in subjects"
+            :key="sub.id"
+            @click="navigateToSubject(sub.id)"
+            class="group bg-white rounded-3xl p-6 sm:p-7 border-3 border-slate-200 hover:border-amber-400 shadow-md hover:shadow-2xl transition-all transform hover:-translate-y-1.5 cursor-pointer flex flex-col justify-between relative overflow-hidden"
           >
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <div
-                  class="w-12 h-12 rounded-2xl bg-gradient-to-tr p-2 text-white shadow-sm group-hover:rotate-6 transition-transform flex items-center justify-center text-2xl flex-shrink-0"
-                  :class="portal.gradient"
-                >
-                  <span>{{ portal.icon }}</span>
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-3xl shadow-inner group-hover:scale-110 transition-transform">
+                    {{ sub.icon }}
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-800">
+                        {{ sub.badge }}
+                      </span>
+                      <span class="text-xs text-slate-400 font-bold">{{ sub.ageRange }}</span>
+                    </div>
+                    <h3 class="text-xl sm:text-2xl font-cartoon font-bold text-slate-900 mt-1 group-hover:text-amber-600 transition-colors tracking-wide">
+                      {{ sub.title }}
+                    </h3>
+                  </div>
                 </div>
-                <span
-                  class="text-[10px] font-black text-white px-2 py-0.5 rounded-full shadow-2xs whitespace-nowrap"
-                  :class="portal.badgeColor"
-                >
-                  {{ portal.badge }}
-                </span>
               </div>
 
-              <div>
-                <h3 class="text-base font-black text-gray-900 group-hover:text-orange-600 transition-colors flex items-center justify-between">
-                  <span>{{ portal.title }}</span>
-                  <ArrowRight class="w-4 h-4 text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </h3>
-                <span class="text-[10px] font-bold text-gray-400">{{ portal.titleEn }}</span>
-              </div>
-
-              <p class="text-xs text-gray-600 font-medium leading-snug line-clamp-2">
-                {{ portal.desc }}
+              <p class="text-xs sm:text-sm font-bold text-slate-500 leading-relaxed">
+                {{ sub.slogan }}
               </p>
             </div>
 
-            <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-gray-500">
-              <span class="truncate text-[11px]">{{ portal.stats }}</span>
-              <span class="text-orange-500 font-black group-hover:underline flex-shrink-0">进入 →</span>
+            <div class="mt-6 pt-4 border-t border-slate-100">
+              <div class="flex items-center justify-between text-xs font-black text-slate-600 mb-2">
+                <span>关卡进度 ({{ sub.completedLessons }}/{{ sub.totalLessons }})</span>
+                <span class="text-amber-600">{{ sub.progressPercent }}%</span>
+              </div>
+
+              <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-4">
+                <div
+                  :class="['h-full rounded-full transition-all duration-500 bg-gradient-to-r', sub.bgGradient]"
+                  :style="{ width: sub.progressPercent + '%' }"
+                ></div>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-slate-400 flex items-center gap-1">
+                  <Star class="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                  已得 {{ sub.starsEarned }} 星
+                </span>
+
+                <button class="px-4 py-2 rounded-2xl bg-amber-400 hover:bg-amber-500 text-slate-900 font-black text-sm flex items-center gap-1.5 shadow-sm group-hover:scale-105 transition-transform">
+                  <span>进入馆区</span>
+                  <ArrowRight class="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Progressive Feature Showcase Matrix (带上锁与解锁提示，同Tab功能聚拢并标记归属) -->
-      <div class="space-y-3 sm:space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div class="flex items-center gap-2">
-            <span class="text-xl sm:text-2xl">🚀</span>
-            <div>
-              <h2 class="text-lg sm:text-2xl font-cartoon font-bold text-gray-800 tracking-wide">全功能渐进阶梯</h2>
-              <p class="text-[11px] text-gray-400 font-bold hidden sm:block">与顶部四大核心栏目联动，同栏目功能已归类聚合</p>
-            </div>
-          </div>
-
-          <!-- Category Filter Pills -->
-          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-            <button
-              v-for="tab in categoryTabs"
-              :key="tab.id"
-              @click="selectedCategory = tab.id as any"
-              class="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer flex items-center gap-1"
-              :class="
-                selectedCategory === tab.id
-                  ? 'bg-orange-500 text-white shadow-xs'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-orange-50 hover:text-orange-600'
-              "
-            >
-              <span>{{ tab.name }}</span>
-              <span
-                class="text-[10px] px-1 py-0.2 rounded-full"
-                :class="selectedCategory === tab.id ? 'bg-white/25 text-white' : 'bg-gray-100 text-gray-500'"
-              >
-                {{ tab.count }}
-              </span>
-            </button>
-          </div>
+      <!-- Quick Training Arena Hub -->
+      <div>
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-lg sm:text-2xl font-cartoon font-bold text-slate-800 flex items-center gap-2.5">
+            <span>⚡</span>
+            <span>多学科极速训练擂台</span>
+          </h2>
+          <span class="text-xs sm:text-sm font-bold text-slate-400">
+            特色专项训练与益智竞技
+          </span>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <div
-            v-for="feat in displayedFeatures"
-            :key="feat.id"
-            @click="handleFeatureClick(feat)"
-            class="relative rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border-2 transition-all duration-200 flex flex-col justify-between cursor-pointer group"
-            :class="
-              unlockStore.isFeatureUnlocked(feat.id)
-                ? 'bg-white border-gray-100 hover:border-orange-300 shadow-xs hover:shadow-md transform hover:-translate-y-0.5 active:scale-95'
-                : 'bg-gray-50/80 border-gray-200/90 shadow-2xs opacity-75'
-            "
+            v-for="hub in quickPracticeHubs"
+            :key="hub.title"
+            @click="navigateTo(hub.route)"
+            class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-slate-200 hover:border-amber-400 shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-1 active:scale-95 cursor-pointer text-center flex flex-col items-center justify-between group"
           >
-            <div class="space-y-2">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <div
-                    class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr p-1 text-white shadow-2xs flex items-center justify-center text-lg flex-shrink-0"
-                    :class="feat.gradient"
-                  >
-                    <span>{{ feat.icon }}</span>
-                  </div>
-
-                  <!-- Category Tag Badge -->
-                  <span
-                    class="text-[9px] font-black px-1.5 py-0.5 rounded-md border flex items-center gap-0.5 whitespace-nowrap shadow-2xs"
-                    :class="getCategoryMeta(feat.category).tagClass"
-                  >
-                    {{ getCategoryMeta(feat.category).label }}
-                  </span>
-                </div>
-
-                <div
-                  v-if="!unlockStore.isFeatureUnlocked(feat.id)"
-                  class="flex items-center gap-0.5 text-amber-800 text-[10px] font-black bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-300 flex-shrink-0"
-                >
-                  <Lock class="w-2.5 h-2.5" />
-                  <span>未解锁</span>
-                </div>
-                <div
-                  v-else
-                  class="flex items-center gap-0.5 text-emerald-800 text-[10px] font-black bg-emerald-100 px-1.5 py-0.5 rounded-full flex-shrink-0"
-                >
-                  <CheckCircle2 class="w-2.5 h-2.5" />
-                  <span>开启</span>
-                </div>
-              </div>
-
-              <div>
-                <h4 class="text-xs sm:text-sm font-black text-gray-900 truncate group-hover:text-orange-600 transition-colors">
-                  {{ feat.name }}
-                </h4>
-                <p class="text-[10px] text-gray-500 font-medium line-clamp-2 mt-0.5">
-                  {{ feat.desc }}
-                </p>
-              </div>
+            <div class="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition-transform">
+              {{ hub.icon }}
+            </div>
+            
+            <div>
+              <span :class="['inline-block px-2 py-0.5 rounded-full text-[10px] font-black border mb-1.5', hub.color]">
+                {{ hub.tag }}
+              </span>
+              <h4 class="text-xs sm:text-sm font-black text-slate-800 group-hover:text-amber-600 transition-colors line-clamp-1">
+                {{ hub.title }}
+              </h4>
             </div>
 
-            <div class="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-[10px] font-bold">
-              <span v-if="!unlockStore.isFeatureUnlocked(feat.id)" class="text-amber-800 font-black truncate">
-                🔒 {{ feat.unlockTip }}
-              </span>
-              <span v-else class="text-orange-500 font-black truncate flex items-center gap-0.5">
-                <span>立即前往</span>
-                <span class="group-hover:translate-x-0.5 transition-transform">→</span>
-              </span>
+            <div class="mt-3 text-[11px] font-black text-amber-600 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span>立即挑战</span>
+              <ArrowRight class="w-3 h-3" />
             </div>
           </div>
         </div>
@@ -466,8 +308,10 @@ const handleFeatureClick = (feat: any) => {
 
     <!-- Daily Quest Modal -->
     <DailyQuestModal
-      :isOpen="showQuestModal"
+      :is-open="showQuestModal"
       @close="showQuestModal = false"
     />
   </div>
 </template>
+
+

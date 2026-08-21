@@ -40,7 +40,11 @@ const mobileTab = ref<'list' | 'board'>('list');
 
 const goBack = () => {
   sound.playButtonSound();
-  router.push('/practice');
+  if (window.history.length > 1) {
+    router.back();
+  } else {
+    router.push('/learn');
+  }
 };
 
 const goToWorksheet = () => {

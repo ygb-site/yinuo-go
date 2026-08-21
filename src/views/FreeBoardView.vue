@@ -29,7 +29,11 @@ const userStore = useUserStore();
 
 const goBack = () => {
   sound.playButtonSound();
-  router.push('/practice');
+  if (window.history.length > 1) {
+    router.back();
+  } else {
+    router.push('/learn');
+  }
 };
 
 const boardSize = ref<number>(9);

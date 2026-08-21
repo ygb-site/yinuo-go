@@ -34,7 +34,11 @@ const userStore = useUserStore();
 
 const goBack = () => {
   playButtonSound();
-  router.push('/practice');
+  if (window.history.length > 1) {
+    router.back();
+  } else {
+    router.push('/learn');
+  }
 };
 
 type GameMode = 'speedCapture' | 'countLiberties' | 'connectCut';

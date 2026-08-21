@@ -8,6 +8,7 @@ import {
   Compass,
   Lock,
   ArrowRight,
+  ArrowLeft,
   CheckCircle2,
   Sparkles
 } from "lucide-vue-next";
@@ -42,6 +43,11 @@ const getActionButtonText = (feat: any) => {
   return "进入";
 };
 
+const goBack = () => {
+  sound.playButtonSound();
+  router.push('/learn');
+};
+
 const handleCardClick = (feature: any) => {
   const isUnlocked = unlockStore.isFeatureUnlocked(feature.id);
   if (!isUnlocked) {
@@ -68,6 +74,25 @@ const handleCardClick = (feature: any) => {
 <template>
   <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-4 sm:py-8 lg:py-10 px-3 sm:px-6 lg:px-8 select-none">
     <div class="max-w-6xl mx-auto space-y-5 sm:space-y-8">
+
+      <!-- Breadcrumb & Back to Go Hub -->
+      <div class="flex items-center justify-between">
+        <button
+          @click="goBack"
+          class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-100/80 hover:bg-amber-200 text-amber-900 rounded-2xl text-xs sm:text-sm font-black transition-all active:scale-95 border border-amber-300 shadow-2xs cursor-pointer"
+        >
+          <ArrowLeft class="w-4 h-4" />
+          <span>返回围棋馆</span>
+        </button>
+
+        <div class="flex items-center gap-2 text-xs font-bold text-slate-500">
+          <button @click="router.push('/')" class="hover:text-amber-600 hover:underline">学堂大厅</button>
+          <span>/</span>
+          <button @click="router.push('/learn')" class="hover:text-amber-600 hover:underline">围棋馆</button>
+          <span>/</span>
+          <span class="text-slate-800 font-black">启蒙学堂</span>
+        </div>
+      </div>
 
       <!-- Header Hero Card -->
       <div class="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-3xl p-5 sm:p-8 text-white shadow-lg relative overflow-hidden">
@@ -198,3 +223,4 @@ const handleCardClick = (feature: any) => {
     </div>
   </div>
 </template>
+

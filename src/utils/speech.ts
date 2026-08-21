@@ -9,7 +9,7 @@ const MAX_CHUNK_LEN = 80;
 /**
  * 伴读语音合成引擎
  * 采用原生 Web Speech API 结合高自然度发音人智能选择，
- * 阳光少儿男童声（云希/康康/云健，Pitch 1.15 / Rate 1.0），杜绝机械人机电音，呈现自然亲切的伴读讲解体验。
+ * 默认阳光少儿男童音（云希/康康/云健，Pitch 1.15 / Rate 1.0），自然亲切。
  */
 export class SpeechCompanion {
   private static player: HTMLAudioElement | null = null;
@@ -39,7 +39,7 @@ export class SpeechCompanion {
   public static formatSpokenText(text: string): string {
     return text
       .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
-      .replace(/【|】|📖|🎯|⭐|🐼|🦁|🚀|⚔️|🏰|⚡|🔄|❤️|🛡️|🪙|🏆|🌸|🎉|✨|🐶|🐱|🦊|🦄|👧|👦|🎓/g, '')
+      .replace(/【|】|📖|🎯|⭐|🐼|🦁|🚀|⚔️|🏰|⚡|🔄|❤️|🛡️|🪙|🏆|🌸|🎉|✨|🐶|🐱|🦊|🦄|👧|👦|🎓|🌟|🧚|🐰/g, '')
       .replace(/\([a-zA-Z\s\-']+\)/g, '')
       .replace(/([A-Ta-t])([1-9]|1[0-9])/g, '$1 $2 ')
       .replace(/！+/g, '！ ')
@@ -54,7 +54,7 @@ export class SpeechCompanion {
     if (!enabled) this.stop();
   }
 
-  /** 挑选当前设备上最自然、流畅、不机械的中文发音人 */
+  /** 优先锁定超好听的阳光少年/男童音（如微软云希、康康、云健等） */
   private static pickNaturalVoice(): SpeechSynthesisVoice | null {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
 
@@ -69,13 +69,11 @@ export class SpeechCompanion {
     const voices = this.cachedVoices;
     if (!voices || voices.length === 0) return null;
 
-    // 优先匹配各大系统/浏览器的高清自然真人语音（非机械音）
-    // 优先锁定超好听的阳光少年/男童音（如微软云希、康康、云健等）
     const naturalKeywords = [
-      'yunxi',       // 微软云希 (超好听的阳光少儿男声/正太音，自然生动)
+      'yunxi',       // 微软云希 (阳光少年男声/正太音)
       'kangkang',    // 微软康康 (阳光男童)
       'yunjian',     // 微软云健 (朝气少年)
-      'xiaoxiao',    // 微软晓晓 (自然拟真音)
+      'xiaoxiao',    // 微软晓晓 (自然声)
       'sin-ji',      // 苹果 Siri 自然音
       'tingting',    // 苹果婷婷
       'natural',     // 各种自然人声
@@ -152,7 +150,7 @@ export class SpeechCompanion {
     const chunk = chunks[index];
     const utterance = new SpeechSynthesisUtterance(chunk);
 
-    // 自然人声参数：音调 1.05（亲切温和微亮），语速 0.96（字正腔圆，不急促不机械）
+    // 阳光少年男童声参数：音调 1.15，语速 1.0
     utterance.pitch = 1.15;
     utterance.rate = 1.0;
     utterance.volume = 1.0;

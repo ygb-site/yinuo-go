@@ -42,7 +42,11 @@ const goBack = async () => {
     if (!ok) return;
   }
   sound.playButtonSound();
-  router.push('/battle');
+  if (window.history.length > 1) {
+    router.back();
+  } else {
+    router.push('/learn');
+  }
 };
 
 const STORAGE_KEY = 'yinuo_active_aimatch';

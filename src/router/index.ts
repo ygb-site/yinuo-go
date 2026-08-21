@@ -6,8 +6,15 @@ import { UNLOCK_FEATURES } from '../data/unlockRules';
 import { CHAPTERS_DATA, type Lesson } from '../data/chapters';
 import { sound } from '../utils/sound';
 import { showAlert } from '../utils/alert';
+
+// Core Global Views
 import HomeView from '../views/HomeView.vue';
-import LearnView from '../views/LearnView.vue';
+import ProfileView from '../views/ProfileView.vue';
+import AdminView from '../views/AdminView.vue';
+import ShopView from '../views/ShopView.vue';
+
+// ♟️ Go Dedicated Views
+import GoHubView from '../views/GoHubView.vue';
 import AdventureView from '../views/AdventureView.vue';
 import LessonPlayView from '../views/LessonPlayView.vue';
 import PracticeView from '../views/PracticeView.vue';
@@ -16,24 +23,43 @@ import TsumegoView from '../views/TsumegoView.vue';
 import AiMatchView from '../views/AiMatchView.vue';
 import FreeBoardView from '../views/FreeBoardView.vue';
 import DictionaryView from '../views/DictionaryView.vue';
-import ProfileView from '../views/ProfileView.vue';
-import AdminView from '../views/AdminView.vue';
-
-// Engaging Game Modes & Features
 import ArcadeView from '../views/ArcadeView.vue';
 import CaptureGoView from '../views/CaptureGoView.vue';
 import MistakesView from '../views/MistakesView.vue';
-import ShopView from '../views/ShopView.vue';
 import TwoPlayerView from '../views/TwoPlayerView.vue';
 import RhymesView from '../views/RhymesView.vue';
 import RankExamView from '../views/RankExamView.vue';
 import WorksheetView from '../views/WorksheetView.vue';
 
+// Universal Multi-Subject Views
+import SubjectHubView from '../views/SubjectHubView.vue';
+import SubjectLearnView from '../views/SubjectLearnView.vue';
+import UniversalLessonPlayView from '../views/UniversalLessonPlayView.vue';
+
+// 🔢 Math Specialized Features
+import MathDrillView from '../views/math/MathDrillView.vue';
+import MathSpeedView from '../views/math/MathSpeedView.vue';
+import TwentyFourView from '../views/math/TwentyFourView.vue';
+
+// 🏮 Chinese Specialized Features
+import ChinesePinyinView from '../views/chinese/ChinesePinyinView.vue';
+import ChineseHanziView from '../views/chinese/ChineseHanziView.vue';
+import ChinesePoetryView from '../views/chinese/ChinesePoetryView.vue';
+import ChineseIdiomView from '../views/chinese/ChineseIdiomView.vue';
+
+// 🔤 English Specialized Features
+import EnglishPhonicsView from '../views/english/EnglishPhonicsView.vue';
+import EnglishFlashcardsView from '../views/english/EnglishFlashcardsView.vue';
+
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    // 🌟 Campus Central Hub (学堂大厅)
     { path: '/', name: 'home', component: HomeView },
-    { path: '/learn', name: 'learn', component: LearnView },
+
+    // ♟️ Go Dedicated Routes
+    { path: '/learn', name: 'learn', component: GoHubView },
+    { path: '/subject/go', redirect: '/learn' },
     { path: '/adventure', name: 'adventure', component: AdventureView },
     { path: '/lesson/:id', name: 'lesson-play', component: LessonPlayView },
     { path: '/adventure/:id', redirect: to => `/lesson/${to.params.id}` },
@@ -43,7 +69,6 @@ const router = createRouter({
     { path: '/arcade', name: 'arcade', component: ArcadeView },
     { path: '/capture-go', name: 'capture-go', component: CaptureGoView },
     { path: '/mistakes', name: 'mistakes', component: MistakesView },
-    { path: '/shop', name: 'shop', component: ShopView },
     { path: '/two-player', name: 'two-player', component: TwoPlayerView },
     { path: '/rhymes', name: 'rhymes', component: RhymesView },
     { path: '/rank-exam', name: 'rank-exam', component: RankExamView },
@@ -51,8 +76,33 @@ const router = createRouter({
     { path: '/ai-match', name: 'ai-match', component: AiMatchView },
     { path: '/free-board', name: 'free-board', component: FreeBoardView },
     { path: '/dictionary', name: 'dictionary', component: DictionaryView },
+
+    // 📚 Multi-Subject Academy Portals
+    { path: '/subject/:id', name: 'subject-hub', component: SubjectHubView },
+    { path: '/subject/:subjectId/learn', name: 'subject-learn', component: SubjectLearnView },
+    { path: '/subject/:subjectId/lesson/:lessonId', name: 'universal-lesson-play', component: UniversalLessonPlayView },
+
+    // 🔢 Math Specialized Features
+    { path: '/subject/math/drill', name: 'math-drill', component: MathDrillView },
+    { path: '/subject/math/speed', name: 'math-speed', component: MathSpeedView },
+    { path: '/subject/math/twenty-four', name: 'math-twenty-four', component: TwentyFourView },
+
+    // 🏮 Chinese Specialized Features
+    { path: '/subject/chinese/pinyin', name: 'chinese-pinyin', component: ChinesePinyinView },
+    { path: '/subject/chinese/hanzi', name: 'chinese-hanzi', component: ChineseHanziView },
+    { path: '/subject/chinese/poetry', name: 'chinese-poetry', component: ChinesePoetryView },
+    { path: '/subject/chinese/idiom', name: 'chinese-idiom', component: ChineseIdiomView },
+
+    // 🔤 English Specialized Features
+    { path: '/subject/english/phonics', name: 'english-phonics', component: EnglishPhonicsView },
+    { path: '/subject/english/flashcards', name: 'english-flashcards', component: EnglishFlashcardsView },
+
+    // 👑 User Center & Management
+    { path: '/shop', name: 'shop', component: ShopView },
     { path: '/profile', name: 'profile', component: ProfileView },
     { path: '/admin', name: 'admin', component: AdminView },
+
+    // Fallback
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ],
   scrollBehavior() {
@@ -77,7 +127,7 @@ router.beforeEach((to) => {
     }
   }
 
-  // 2. Check feature unlock rules
+  // 2. Check feature unlock rules for Go features
   const matchedFeature = UNLOCK_FEATURES.find(f => f.route === to.path);
   if (matchedFeature && matchedFeature.lessonsRequired > 0) {
     const unlockStore = useUnlockStore();
@@ -92,7 +142,7 @@ router.beforeEach((to) => {
     }
   }
 
-  // 3. Check progressive lesson unlock
+  // 3. Check progressive lesson unlock for Go
   if (to.name === 'lesson-play' || to.path.startsWith('/lesson/')) {
     const lessonId = to.params.id as string;
     if (lessonId && lessonId !== 'lesson_1_1' && lessonId !== 'c1_l1') {

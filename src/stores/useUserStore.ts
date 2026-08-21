@@ -1,5 +1,13 @@
+import type {
+  SubjectId,
+  MistakeRecord,
+  KnowledgeMasteryRecord,
+  StudentLearningProfile,
+  GradeLevel
+} from '../types/curriculum';
 import { defineStore } from 'pinia';
 import { USER_RANKS, type UserRank, BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
+import { KNOWLEDGE_POINTS_REPOSITORY } from '../data/knowledgePointsData';
 import { sound } from '../utils/sound';
 import type { ThemeType } from '../engine/types';
 import {
@@ -26,6 +34,7 @@ export interface ChildProfile {
   nickname: string;
   avatar: string;
   createdAt: number;
+  gradeLevel?: GradeLevel;
   progress: Record<string, { completed: boolean; stars: number; highscore?: number; completedAt?: string }>;
   totalStars: number;
   badges: string[];
@@ -36,6 +45,8 @@ export interface ChildProfile {
   lastCheckInDate?: string;
   checkInStreak?: number;
   solvedMistakes?: string[];
+  mistakeRecords?: MistakeRecord[];
+  knowledgeMastery?: Record<string, KnowledgeMasteryRecord>;
   arcadeHighScores?: {
     speedCapture: number;
     countLiberties: number;
@@ -55,6 +66,8 @@ export interface ChildProfile {
     puzzlesSolved: number;
     captureCount: number;
     totalMoves: number;
+    totalQuestionsAnswered?: number;
+    totalStudyMinutes?: number;
   };
 }
 
@@ -63,6 +76,7 @@ const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
   nickname: '未登录',
   avatar: '👶',
   createdAt: 0,
+  gradeLevel: 'g1_t1',
   progress: {},
   totalStars: 0,
   badges: [],
@@ -71,6 +85,8 @@ const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
   unlockedAvatars: ['🦁', '👶', '🐱', '🐼'],
   mistakes: [],
   solvedMistakes: [],
+  mistakeRecords: [],
+  knowledgeMastery: {},
   arcadeHighScores: {
     speedCapture: 0,
     countLiberties: 0,
@@ -87,7 +103,9 @@ const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
     gamesWon: 0,
     puzzlesSolved: 0,
     captureCount: 0,
-    totalMoves: 0
+    totalMoves: 0,
+    totalQuestionsAnswered: 0,
+    totalStudyMinutes: 0
   }
 };
 
@@ -106,6 +124,9 @@ export const useUserStore = defineStore('userStore', {
     currentProfileId: '' as string,
     isProfileModalOpen: false as boolean,
     showAuthModal: false as boolean,
+
+    // 📚 当前选中学科 (Multi-Subject Academy Context)
+    activeSubject: 'go' as SubjectId,
 
     // ⚙️ 游戏设置与个性化
     theme: 'wood' as ThemeType,
@@ -160,6 +181,8 @@ export const useUserStore = defineStore('userStore', {
       if (!found.unlockedAvatars) found.unlockedAvatars = ['🦁', '👶', '🐱', '🐼'];
       if (!found.mistakes) found.mistakes = [];
       if (!found.solvedMistakes) found.solvedMistakes = [];
+      if (!found.mistakeRecords) found.mistakeRecords = [];
+      if (!found.knowledgeMastery) found.knowledgeMastery = {};
       if (!found.arcadeHighScores) {
         found.arcadeHighScores = { speedCapture: 0, countLiberties: 0, connectCut: 0 };
       }
@@ -172,7 +195,9 @@ export const useUserStore = defineStore('userStore', {
           gamesWon: 0,
           puzzlesSolved: 0,
           captureCount: 0,
-          totalMoves: 0
+          totalMoves: 0,
+          totalQuestionsAnswered: 0,
+          totalStudyMinutes: 0
         };
       }
       // Ensure totalStars is synced from progress
@@ -260,6 +285,101 @@ export const useUserStore = defineStore('userStore', {
       return this.currentProfile.solvedMistakes || [];
     },
 
+    mistakeRecords(): MistakeRecord[] {
+      return this.currentProfile.mistakeRecords || [];
+    },
+
+    knowledgeMastery(): Record<string, KnowledgeMasteryRecord> {
+      return this.currentProfile.knowledgeMastery || {};
+    },
+
+    studentLearningProfile(): StudentLearningProfile {
+      const prof = this.currentProfile;
+      const mastery = prof.knowledgeMastery || {};
+      const mistakes = prof.mistakeRecords || [];
+
+      let masteryQ = 0;
+      let totalCorrect = 0;
+      for (const k of Object.values(mastery)) {
+        masteryQ += k.totalCount || 0;
+        totalCorrect += k.correctCount || 0;
+      }
+      const totalQ = Math.max(prof.stats?.totalQuestionsAnswered || 0, masteryQ);
+      const accuracy = masteryQ > 0 ? Math.round((totalCorrect / masteryQ) * 100) : 0;
+
+      const dimensionTotals: Record<'spatial' | 'logical' | 'calculation' | 'language' | 'concentration' | 'memory', { sum: number; n: number }> = {
+        spatial: { sum: 0, n: 0 },
+        logical: { sum: 0, n: 0 },
+        calculation: { sum: 0, n: 0 },
+        language: { sum: 0, n: 0 },
+        concentration: { sum: 0, n: 0 },
+        memory: { sum: 0, n: 0 }
+      };
+
+      const subjectTotals: Record<SubjectId, { sum: number; n: number }> = {
+        math: { sum: 0, n: 0 },
+        chinese: { sum: 0, n: 0 },
+        english: { sum: 0, n: 0 },
+        go: { sum: 0, n: 0 }
+      };
+
+      for (const kp of KNOWLEDGE_POINTS_REPOSITORY) {
+        const rec = mastery[kp.id];
+        if (!rec || rec.totalCount <= 0) continue;
+        const score = rec.masteryRate * 100;
+        dimensionTotals[kp.abilityDimension].sum += score;
+        dimensionTotals[kp.abilityDimension].n += 1;
+        subjectTotals[kp.subjectId].sum += score;
+        subjectTotals[kp.subjectId].n += 1;
+      }
+
+      const scoreOf = (bucket: { sum: number; n: number }) =>
+        bucket.n > 0 ? Math.round(bucket.sum / bucket.n) : 0;
+
+      const abilityDimensions: Record<'spatial' | 'logical' | 'calculation' | 'language' | 'concentration' | 'memory', number> = {
+        spatial: scoreOf(dimensionTotals.spatial),
+        logical: scoreOf(dimensionTotals.logical),
+        calculation: scoreOf(dimensionTotals.calculation),
+        language: scoreOf(dimensionTotals.language),
+        concentration: scoreOf(dimensionTotals.concentration),
+        memory: scoreOf(dimensionTotals.memory)
+      };
+
+      const subjectMastery: Record<SubjectId, number> = {
+        math: scoreOf(subjectTotals.math),
+        chinese: scoreOf(subjectTotals.chinese),
+        english: scoreOf(subjectTotals.english),
+        go: scoreOf(subjectTotals.go)
+      };
+
+      const weakKps = KNOWLEDGE_POINTS_REPOSITORY.filter(kp => {
+        const rec = mastery[kp.id];
+        return rec && rec.totalCount >= 2 && rec.masteryRate < 0.65;
+      });
+
+      const masteredKps = KNOWLEDGE_POINTS_REPOSITORY.filter(kp => {
+        const rec = mastery[kp.id];
+        return rec && rec.totalCount >= 2 && rec.masteryRate >= 0.8;
+      });
+
+      return {
+        studentId: prof.id || 'default_student',
+        nickname: prof.nickname || '聪明宝贝',
+        gradeLevel: prof.gradeLevel || 'g1_t1',
+        totalStudyMinutes: prof.stats?.totalStudyMinutes || 0,
+        totalQuestionsAnswered: totalQ,
+        accuracy,
+        streak: prof.checkInStreak || 0,
+        knowledgeMastery: mastery,
+        abilityDimensions,
+        subjectMastery,
+        recentMistakes: mistakes.slice(0, 10),
+        weakKnowledgePoints: weakKps,
+        masteredKnowledgePoints: masteredKps,
+        updatedAt: Date.now()
+      };
+    },
+
     arcadeHighScores(): { speedCapture: number; countLiberties: number; connectCut: number } {
       return this.currentProfile.arcadeHighScores || { speedCapture: 0, countLiberties: 0, connectCut: 0 };
     },
@@ -328,6 +448,9 @@ export const useUserStore = defineStore('userStore', {
   },
 
   actions: {
+    setActiveSubject(subject: SubjectId) {
+      this.activeSubject = subject;
+    },
     openProfileModal() {
       if (!this.isLoggedIn) {
         this.openAuthModal();
@@ -350,7 +473,6 @@ export const useUserStore = defineStore('userStore', {
 
     /**
      * 统一鉴权拦截器 (Auth Guard Helper)
-     * 未登录弹出登录弹窗，已登录无宝贝档案弹出创建宝贝弹窗
      */
     requireAuth(): boolean {
       if (!this.isLoggedIn) {
@@ -372,7 +494,6 @@ export const useUserStore = defineStore('userStore', {
       this.currentUserId = userId;
       this.currentUserEmail = email;
 
-      // Fetch cloud data directly
       const row = await fetchUserProfile(userId);
       if (row) {
         this.isAdmin = Boolean(row.is_admin);
@@ -385,14 +506,9 @@ export const useUserStore = defineStore('userStore', {
         }
       }
 
-
-
       this.lastSavedAt = Date.now();
     },
 
-    /**
-     * 清除登录状态与本地内存缓存
-     */
     clearCloudUser() {
       this.isLoggedIn = false;
       this.currentUserId = null;
@@ -404,9 +520,6 @@ export const useUserStore = defineStore('userStore', {
       this.syncError = null;
     },
 
-    /**
-     * 应用启动时自动恢复 Supabase 登录会话
-     */
     async initCloudSession() {
       if (!isSupabaseConfigured()) return;
       const client = getSupabaseClient();
@@ -420,7 +533,6 @@ export const useUserStore = defineStore('userStore', {
           this.clearCloudUser();
         }
 
-        // Listen to Supabase auth events in real-time
         client.auth.onAuthStateChange(async (event, session) => {
           if (session && session.user) {
             await this.setCloudUser(session.user.id, session.user.email || '');
@@ -433,9 +545,6 @@ export const useUserStore = defineStore('userStore', {
       }
     },
 
-    /**
-     * 实时保存当前所有档案至 Supabase 云数据库
-     */
     async syncToCloudNow(): Promise<boolean> {
       if (!this.isLoggedIn || !isSupabaseConfigured()) {
         return false;
@@ -471,9 +580,6 @@ export const useUserStore = defineStore('userStore', {
       }
     },
 
-    /**
-     * 节流实时保存 (Debounced Real-time Cloud Save)
-     */
     touchSave() {
       if (!this.isLoggedIn || !isSupabaseConfigured()) return;
 
@@ -491,13 +597,13 @@ export const useUserStore = defineStore('userStore', {
       );
     },
 
-    createProfile(nickname: string, avatar: string): ChildProfile | null {
+    createProfile(nickname: string, avatar: string, gradeLevel: GradeLevel = 'g1_t1'): ChildProfile | null {
       if (!this.isLoggedIn) {
         this.openAuthModal();
         return null;
       }
 
-      const trimmed = nickname.trim() || '小棋手';
+      const trimmed = nickname.trim() || '聪明宝贝';
       if (this.isNicknameTaken(trimmed)) {
         return null;
       }
@@ -508,6 +614,7 @@ export const useUserStore = defineStore('userStore', {
         nickname: trimmed,
         avatar: pickedAvatar,
         createdAt: Date.now(),
+        gradeLevel,
         progress: {},
         totalStars: 0,
         badges: [],
@@ -516,6 +623,8 @@ export const useUserStore = defineStore('userStore', {
         unlockedAvatars: Array.from(new Set(['🦁', '👶', '🐱', '🐼', pickedAvatar])),
         mistakes: [],
         solvedMistakes: [],
+        mistakeRecords: [],
+        knowledgeMastery: {},
         arcadeHighScores: {
           speedCapture: 0,
           countLiberties: 0,
@@ -534,7 +643,9 @@ export const useUserStore = defineStore('userStore', {
           gamesWon: 0,
           puzzlesSolved: 0,
           captureCount: 0,
-          totalMoves: 0
+          totalMoves: 0,
+          totalQuestionsAnswered: 0,
+          totalStudyMinutes: 0
         }
       };
 
@@ -575,10 +686,63 @@ export const useUserStore = defineStore('userStore', {
       sound.playButtonSound();
     },
 
+    /**
+     * 🧠 知识点练习结果追踪与画像打通 (Knowledge Point Tracking)
+     */
+    recordKnowledgePractice(knowledgePointId: string, isCorrect: boolean) {
+      if (!this.hasProfile || !knowledgePointId) return;
+      const prof = this.currentProfile;
+      if (!prof.knowledgeMastery) prof.knowledgeMastery = {};
+
+      const existing = prof.knowledgeMastery[knowledgePointId] || {
+        knowledgePointId,
+        totalCount: 0,
+        correctCount: 0,
+        wrongCount: 0,
+        masteryRate: 0,
+        lastPracticedAt: Date.now(),
+        streak: 0
+      };
+
+      existing.totalCount++;
+      if (isCorrect) {
+        existing.correctCount++;
+        existing.streak = (existing.streak || 0) + 1;
+      } else {
+        existing.wrongCount++;
+        existing.streak = 0;
+      }
+      existing.masteryRate = Number((existing.correctCount / existing.totalCount).toFixed(2));
+      existing.lastPracticedAt = Date.now();
+
+      prof.knowledgeMastery[knowledgePointId] = existing;
+
+      if (!prof.stats) {
+        prof.stats = { gamesPlayed: 0, gamesWon: 0, puzzlesSolved: 0, captureCount: 0, totalMoves: 0 };
+      }
+      prof.stats.totalQuestionsAnswered = (prof.stats.totalQuestionsAnswered || 0) + 1;
+
+      this.touchSave();
+    },
+
+    getKnowledgeMastery(knowledgePointId: string): KnowledgeMasteryRecord {
+      const mastery = this.currentProfile.knowledgeMastery || {};
+      return mastery[knowledgePointId] || {
+        knowledgePointId,
+        totalCount: 0,
+        correctCount: 0,
+        wrongCount: 0,
+        masteryRate: 0,
+        lastPracticedAt: 0,
+        streak: 0
+      };
+    },
+
     updateLessonProgress(
       lessonId: string,
       stars: number,
-      rewards: { exp?: number; coins?: number } = {}
+      rewards: { exp?: number; coins?: number } = {},
+      knowledgePointId?: string
     ) {
       if (!this.hasProfile) return;
       const prof = this.currentProfile;
@@ -600,6 +764,10 @@ export const useUserStore = defineStore('userStore', {
 
       if (rewards.exp) this.addExp(rewards.exp);
       if (rewards.coins) this.addCoins(rewards.coins, '闯关金币奖励', '🎯');
+
+      if (knowledgePointId) {
+        this.recordKnowledgePractice(knowledgePointId, true);
+      }
 
       this.unlockBadge('first_move');
       if (lessonId === 'lesson_1_3' || lessonId === 'c1_l4') {
@@ -823,6 +991,53 @@ export const useUserStore = defineStore('userStore', {
       this.touchSave();
     },
 
+    recordSubjectMistake(payload: Omit<MistakeRecord, 'id' | 'createdAt' | 'resolved'>) {
+      if (!this.hasProfile) return;
+      const prof = this.currentProfile;
+      if (!prof.mistakeRecords) prof.mistakeRecords = [];
+      const id = 'mr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+      const existing = prof.mistakeRecords.find(
+        m => m.subjectId === payload.subjectId && m.questionPrompt === payload.questionPrompt && !m.resolved
+      );
+      if (!existing) {
+        prof.mistakeRecords.unshift({
+          id,
+          createdAt: Date.now(),
+          resolved: false,
+          wrongCount: 1,
+          lastWrongAt: Date.now(),
+          ...payload
+        });
+        if (prof.mistakeRecords.length > 50) prof.mistakeRecords.length = 50;
+      } else {
+        existing.wrongCount = (existing.wrongCount || 1) + 1;
+        existing.lastWrongAt = Date.now();
+      }
+
+      if (payload.knowledgePointId) {
+        this.recordKnowledgePractice(payload.knowledgePointId, false);
+      }
+
+      this.touchSave();
+    },
+
+    resolveSubjectMistake(recordId: string) {
+      if (!this.hasProfile) return;
+      const prof = this.currentProfile;
+      if (!prof.mistakeRecords) prof.mistakeRecords = [];
+      const item = prof.mistakeRecords.find(m => m.id === recordId);
+      if (item && !item.resolved) {
+        item.resolved = true;
+        item.resolvedAt = Date.now();
+        if (item.knowledgePointId) {
+          this.recordKnowledgePractice(item.knowledgePointId, true);
+        }
+        this.addCoins(30, '攻克错题(双倍金币)', '💪');
+        this.addExp(40);
+        this.touchSave();
+      }
+    },
+
     resetCurrentProfileProgress() {
       if (!this.hasProfile) return;
       const prof = this.currentProfile;
@@ -838,6 +1053,8 @@ export const useUserStore = defineStore('userStore', {
       prof.unlockedAvatars = ['🦁', '👶', '🐱', '🐼'];
       prof.mistakes = [];
       prof.solvedMistakes = [];
+      prof.mistakeRecords = [];
+      prof.knowledgeMastery = {};
       prof.arcadeHighScores = { speedCapture: 0, countLiberties: 0, connectCut: 0 };
       prof.captureGoStats = { wins: 0, matches: 0 };
       prof.stats = {
@@ -845,7 +1062,9 @@ export const useUserStore = defineStore('userStore', {
         gamesWon: 0,
         puzzlesSolved: 0,
         captureCount: 0,
-        totalMoves: 0
+        totalMoves: 0,
+        totalQuestionsAnswered: 0,
+        totalStudyMinutes: 0
       };
       this.touchSave();
       sound.playButtonSound();
@@ -914,4 +1133,5 @@ export const useUserStore = defineStore('userStore', {
 
   persist: true
 });
+
 
