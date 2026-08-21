@@ -3,6 +3,17 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { playButtonSound, playWinSound, playErrorSound } from '../../lib/audio';
 import { speakText, stopSpeech } from '../../utils/speech';
+import {
+  PINYIN_INITIALS_DATA,
+  PINYIN_DAN_YUNMU,
+  PINYIN_FU_YUNMU,
+  PINYIN_ZHENGTI_DATA,
+  PINYIN_TONES_MAP,
+  getBlendedPinyinDetail,
+  type PinyinInitialItem,
+  type PinyinFinalItem,
+  type PinyinZhengtiItem
+} from '../../data/pinyinDictionary';
 import confetti from 'canvas-confetti';
 import {
   ArrowLeft,
@@ -19,95 +30,14 @@ const activeTab = ref<'soundboard' | 'tones' | 'blender' | 'quiz'>('soundboard')
 // ==========================================
 const soundboardCategory = ref<'dan' | 'sheng' | 'fu' | 'zheng'>('dan');
 
-interface PinyinCard {
-  pinyin: string;
-  name: string;
-  rhyme: string;
-  sampleChar: string;
-  sampleWord: string;
-  icon: string;
-}
+type AnyPinyinCard = PinyinInitialItem | PinyinFinalItem | PinyinZhengtiItem;
 
-// 6 单韵母
-const danYunMu: PinyinCard[] = [
-  { pinyin: 'a', name: '单韵母 a', rhyme: '圆圆脸蛋扎小辫，张大嘴巴 a a a', sampleChar: '阿', sampleWord: '阿姨', icon: '👧' },
-  { pinyin: 'o', name: '单韵母 o', rhyme: '太阳出来红通通，公鸡打鸣 o o o', sampleChar: '窝', sampleWord: '鸟窝', icon: '🐓' },
-  { pinyin: 'e', name: '单韵母 e', rhyme: '清清池塘一只鹅，水中倒影 e e e', sampleChar: '鹅', sampleWord: '白鹅', icon: '🦢' },
-  { pinyin: 'i', name: '单韵母 i', rhyme: '衣服衣服穿身上，一颗小扣 i i i', sampleChar: '衣', sampleWord: '衣服', icon: '👕' },
-  { pinyin: 'u', name: '单韵母 u', rhyme: '乌龟乌龟慢吞吞，嘴巴突出 u u u', sampleChar: '乌', sampleWord: '乌龟', icon: '🐢' },
-  { pinyin: 'ü', name: '单韵母 ü', rhyme: '小鱼吐泡跃龙门，吹起口哨 ü ü ü', sampleChar: '鱼', sampleWord: '小鱼', icon: '🐟' }
-];
+const danYunMu = PINYIN_DAN_YUNMU;
+const shengMu = PINYIN_INITIALS_DATA;
+const fuYunMu = PINYIN_FU_YUNMU;
+const zhengTi = PINYIN_ZHENGTI_DATA;
 
-// 23 声母
-const shengMu: PinyinCard[] = [
-  { pinyin: 'b', name: '声母 b', rhyme: '收听广播 b b b，右下半圆 b b b', sampleChar: '八', sampleWord: '八个', icon: '📻' },
-  { pinyin: 'p', name: '声母 p', rhyme: '泼水泼水 p p p，右上半圆 p p p', sampleChar: '爬', sampleWord: '爬山', icon: '🧗' },
-  { pinyin: 'm', name: '声母 m', rhyme: '两个门洞 m m m，摸人捉迷藏 m m m', sampleChar: '妈', sampleWord: '妈妈', icon: '👩' },
-  { pinyin: 'f', name: '声母 f', rhyme: '一根拐杖 f f f，手扶拐杖 f f f', sampleChar: '风', sampleWord: '大风', icon: '💨' },
-  { pinyin: 'd', name: '声母 d', rhyme: '左下半圆 d d d，得得马蹄 d d d', sampleChar: '大', sampleWord: '大山', icon: '⛰️' },
-  { pinyin: 't', name: '声母 t', rhyme: '伞柄朝下 t t t，特别特别 t t t', sampleChar: '天', sampleWord: '蓝天', icon: '☀️' },
-  { pinyin: 'n', name: '声母 n', rhyme: '一个门洞 n n n，小哪吒 n n n', sampleChar: '你', sampleWord: '你好', icon: '👋' },
-  { pinyin: 'l', name: '声母 l', rhyme: '一根小棒 l l l，快乐快乐 l l l', sampleChar: '乐', sampleWord: '快乐', icon: '😄' },
-  { pinyin: 'g', name: '声母 g', rhyme: '一只白鸽 g g g，鸽子鸽子 g g g', sampleChar: '歌', sampleWord: '唱歌', icon: '🕊️' },
-  { pinyin: 'k', name: '声母 k', rhyme: '蝌蚪蝌蚪 k k k，水里游 k k k', sampleChar: '开', sampleWord: '开花', icon: '🌸' },
-  { pinyin: 'h', name: '声母 h', rhyme: '一把椅子 h h h，坐下喝水 h h h', sampleChar: '河', sampleWord: '小河', icon: '🌊' },
-  { pinyin: 'j', name: '声母 j', rhyme: '母鸡母鸡 j j j，蝴蝶飞来 j j j', sampleChar: '鸡', sampleWord: '小鸡', icon: '🐥' },
-  { pinyin: 'q', name: '声母 q', rhyme: '七个气球 q q q，气球升天 q q q', sampleChar: '七', sampleWord: '七个', icon: '🎈' },
-  { pinyin: 'x', name: '声母 x', rhyme: '刀切西瓜 x x x，大红西瓜 x x x', sampleChar: '西', sampleWord: '西瓜', icon: '🍉' },
-  { pinyin: 'zh', name: '翘舌声母 zh', rhyme: '蜘蛛织网 zh zh zh，织毛衣 zh zh zh', sampleChar: '中', sampleWord: '中国', icon: '🇨🇳' },
-  { pinyin: 'ch', name: '翘舌声母 ch', rhyme: '小皮尺 ch ch ch，大皮尺 ch ch ch', sampleChar: '春', sampleWord: '春天', icon: '🌱' },
-  { pinyin: 'sh', name: '翘舌声母 sh', rhyme: '狮子狮子 sh sh sh，威风凛凛 sh sh sh', sampleChar: '手', sampleWord: '小手', icon: '🦁' },
-  { pinyin: 'r', name: '翘舌声母 r', rhyme: '一轮红日 r r r，日光普照 r r r', sampleChar: '日', sampleWord: '红日', icon: '🌅' },
-  { pinyin: 'z', name: '平舌声母 z', rhyme: '写字写字 z z z，认真写字 z z z', sampleChar: '早', sampleWord: '早上', icon: '✍️' },
-  { pinyin: 'c', name: '平舌声母 c', rhyme: '小刺猬 c c c，满身长刺 c c c', sampleChar: '草', sampleWord: '小草', icon: '🦔' },
-  { pinyin: 's', name: '平舌声母 s', rhyme: '蚕儿吐丝 s s s，半个圆圈 s s s', sampleChar: '四', sampleWord: '四个', icon: '🐛' },
-  { pinyin: 'y', name: '声母 y', rhyme: '树杈树杈 y y y，大树杈 y y y', sampleChar: '月', sampleWord: '月亮', icon: '🌙' },
-  { pinyin: 'w', name: '声母 w', rhyme: '小屋屋顶 w w w，漂亮小屋 w w w', sampleChar: '我', sampleWord: '我们', icon: '🏠' }
-];
-
-// 18 复韵母与鼻韵母
-const fuYunMu: PinyinCard[] = [
-  { pinyin: 'ai', name: '复韵母 ai', rhyme: '挨在一起 ai ai ai，紧挨着 ai ai ai', sampleChar: '爱', sampleWord: '爱心', icon: '❤️' },
-  { pinyin: 'ei', name: '复韵母 ei', rhyme: '小鹿拔草 ei ei ei，加油使劲 ei ei ei', sampleChar: '北', sampleWord: '北方', icon: '🧭' },
-  { pinyin: 'ui', name: '复韵母 ui', rhyme: '围巾围巾 ui ui ui，漂亮围巾 ui ui ui', sampleChar: '水', sampleWord: '河水', icon: '🧣' },
-  { pinyin: 'ao', name: '复韵母 ao', rhyme: '一件棉袄 ao ao ao，暖和棉袄 ao ao ao', sampleChar: '高', sampleWord: '高山', icon: '🧥' },
-  { pinyin: 'ou', name: '复韵母 ou', rhyme: '海鸥海鸥 ou ou ou，飞越大海 ou ou ou', sampleChar: '狗', sampleWord: '小狗', icon: '🐶' },
-  { pinyin: 'iu', name: '复韵母 iu', rhyme: '邮票邮票 iu iu iu，游泳健将 iu iu iu', sampleChar: '九', sampleWord: '九个', icon: '🏊' },
-  { pinyin: 'ie', name: '复韵母 ie', rhyme: '一片椰树 ie ie ie，椰子甜甜 ie ie ie', sampleChar: '叶', sampleWord: '树叶', icon: '🌴' },
-  { pinyin: 'üe', name: '复韵母 üe', rhyme: '一轮明月 üe üe üe，月光如水 üe üe üe', sampleChar: '月', sampleWord: '月光', icon: '🌕' },
-  { pinyin: 'er', name: '特殊韵母 er', rhyme: '一只耳朵 er er er，耳听八方 er er er', sampleChar: '耳', sampleWord: '耳朵', icon: '👂' },
-  { pinyin: 'an', name: '前鼻韵母 an', rhyme: '天安门前 an an an', sampleChar: '安', sampleWord: '安全', icon: '🏛️' },
-  { pinyin: 'en', name: '前鼻韵母 en', rhyme: '按动门铃 en en en', sampleChar: '人', sampleWord: '大人', icon: '🔔' },
-  { pinyin: 'in', name: '前鼻韵母 in', rhyme: '绿树成荫 in in in', sampleChar: '金', sampleWord: '金子', icon: '🌲' },
-  { pinyin: 'un', name: '前鼻韵母 un', rhyme: '白云滚滚 un un un', sampleChar: '春', sampleWord: '春天', icon: '☁️' },
-  { pinyin: 'ün', name: '前鼻韵母 ün', rhyme: '白云飘飘 ün ün ün', sampleChar: '云', sampleWord: '白云', icon: '⛅' },
-  { pinyin: 'ang', name: '后鼻韵母 ang', rhyme: '昂首挺胸 ang ang ang', sampleChar: '羊', sampleWord: '小羊', icon: '🐑' },
-  { pinyin: 'eng', name: '后鼻韵母 eng', rhyme: '一盏台灯 eng eng eng', sampleChar: '风', sampleWord: '大风', icon: '💡' },
-  { pinyin: 'ing', name: '后鼻韵母 ing', rhyme: '雄鹰翱翔 ing ing ing', sampleChar: '星', sampleWord: '星星', icon: '🦅' },
-  { pinyin: 'ong', name: '后鼻韵母 ong', rhyme: '敲响大钟 ong ong ong', sampleChar: '中', sampleWord: '中国', icon: '🔔' }
-];
-
-// 16 整体认读音节
-const zhengTi: PinyinCard[] = [
-  { pinyin: 'zhi', name: '整体认读 zhi', rhyme: '织毛衣 zhi，不用拼，直接读', sampleChar: '只', sampleWord: '一只鸟', icon: '🧶' },
-  { pinyin: 'chi', name: '整体认读 chi', rhyme: '吃西瓜 chi，不用拼，直接读', sampleChar: '吃', sampleWord: '吃饭', icon: '🍉' },
-  { pinyin: 'shi', name: '整体认读 shi', rhyme: '小狮子 shi，不用拼，直接读', sampleChar: '十', sampleWord: '十个', icon: '🦁' },
-  { pinyin: 'ri', name: '整体认读 ri', rhyme: '红日升 ri，不用拼，直接读', sampleChar: '日', sampleWord: '今日', icon: '☀️' },
-  { pinyin: 'zi', name: '整体认读 zi', rhyme: '写大字 zi，不用拼，直接读', sampleChar: '子', sampleWord: '儿子', icon: '✍️' },
-  { pinyin: 'ci', name: '整体认读 ci', rhyme: '小刺猬 ci，不用拼，直接读', sampleChar: '次', sampleWord: '一次', icon: '🦔' },
-  { pinyin: 'si', name: '整体认读 si', rhyme: '吐细丝 si，不用拼，直接读', sampleChar: '四', sampleWord: '四季', icon: '🧵' },
-  { pinyin: 'yi', name: '整体认读 yi', rhyme: '一件衣服 yi，大y带小i', sampleChar: '一', sampleWord: '第一', icon: '👕' },
-  { pinyin: 'wu', name: '整体认读 wu', rhyme: '漂亮小屋 wu，大w带小u', sampleChar: '五', sampleWord: '五个', icon: '🏠' },
-  { pinyin: 'yu', name: '整体认读 yu', rhyme: '金鱼吐泡 yu，大y带小ü脱帽', sampleChar: '鱼', sampleWord: '小鱼', icon: '🐟' },
-  { pinyin: 'ye', name: '整体认读 ye', rhyme: '椰子椰树 ye，大y带ie', sampleChar: '也', sampleWord: '也是', icon: '🌴' },
-  { pinyin: 'yue', name: '整体认读 yue', rhyme: '明月高悬 yue，大y带üe', sampleChar: '月', sampleWord: '月亮', icon: '🌙' },
-  { pinyin: 'yuan', name: '整体认读 yuan', rhyme: '公园游玩 yuan，大y带üan', sampleChar: '元', sampleWord: '一元钱', icon: '⛲' },
-  { pinyin: 'yin', name: '整体认读 yin', rhyme: '音乐美妙 yin，大y带in', sampleChar: '音', sampleWord: '音乐', icon: '🎵' },
-  { pinyin: 'yun', name: '整体认读 yun', rhyme: '白云飘荡 yun，大y带ün', sampleChar: '云', sampleWord: '云彩', icon: '☁️' },
-  { pinyin: 'ying', name: '整体认读 ying', rhyme: '老鹰飞翔 ying，大y带ing', sampleChar: '鹰', sampleWord: '雄鹰', icon: '🦅' }
-];
-
-const currentCards = computed(() => {
+const currentCards = computed<AnyPinyinCard[]>(() => {
   switch (soundboardCategory.value) {
     case 'dan': return danYunMu;
     case 'sheng': return shengMu;
@@ -116,12 +46,13 @@ const currentCards = computed(() => {
   }
 });
 
-const activePinyin = ref<PinyinCard>(danYunMu[0]);
+const activePinyin = ref<AnyPinyinCard>(danYunMu[0]);
 
-const playCard = (card: PinyinCard) => {
+const playCard = (card: AnyPinyinCard) => {
   playButtonSound();
   activePinyin.value = card;
-  speakText(`${card.pinyin}，${card.rhyme}，${card.sampleWord}的${card.sampleChar}`);
+  const spokenText = `${card.spokenName}，${card.rhymeSpoken}，${card.sampleWord}的${card.sampleChar}`;
+  speakText(spokenText);
 };
 
 // ==========================================
@@ -130,27 +61,23 @@ const playCard = (card: PinyinCard) => {
 const toneLetter = ref<string>('a');
 const toneIndex = ref<number>(1);
 
-const tonesData: Record<string, { t1: string; t2: string; t3: string; t4: string }> = {
-  a: { t1: 'ā', t2: 'á', t3: 'ǎ', t4: 'à' },
-  o: { t1: 'ō', t2: 'ó', t3: 'ǒ', t4: 'ò' },
-  e: { t1: 'ē', t2: 'é', t3: 'ě', t4: 'è' },
-  i: { t1: 'ī', t2: 'í', t3: 'ǐ', t4: 'ì' },
-  u: { t1: 'ū', t2: 'ú', t3: 'ǔ', t4: 'ù' },
-  ü: { t1: 'ǖ', t2: 'ǘ', t3: 'ǚ', t4: 'ǜ' }
-};
+const tonesData = computed(() => {
+  return PINYIN_TONES_MAP[toneLetter.value] || PINYIN_TONES_MAP.a;
+});
 
 const playTone = (t: number) => {
   toneIndex.value = t;
   playButtonSound();
-  const currentToneMap = tonesData[toneLetter.value];
-  let soundStr = '';
+  const currentToneMap = tonesData.value;
+  const toneItem = (currentToneMap as any)['t' + t];
   let tip = '';
-  if (t === 1) { soundStr = currentToneMap.t1; tip = '一声平，平地开车'; }
-  else if (t === 2) { soundStr = currentToneMap.t2; tip = '二声扬，上坡加油'; }
-  else if (t === 3) { soundStr = currentToneMap.t3; tip = '三声拐弯，下坡又上坡'; }
-  else if (t === 4) { soundStr = currentToneMap.t4; tip = '四声降，下坡冲刺'; }
+  if (t === 1) { tip = '一声平，平地开车'; }
+  else if (t === 2) { tip = '二声扬，上坡加油'; }
+  else if (t === 3) { tip = '三声拐弯，下坡又上坡'; }
+  else if (t === 4) { tip = '四声降，下坡冲刺'; }
 
-  speakText(`${soundStr}，${tip}`);
+  // 标准带调汉字朗读，避免纯字母被读成英文
+  speakText(`${toneItem.char}——，第${t}声，${tip}`);
 };
 
 // ==========================================
@@ -159,31 +86,39 @@ const playTone = (t: number) => {
 const selectedSheng = ref<string>('b');
 const selectedYun = ref<string>('à');
 
-const blendedResult = computed(() => {
-  return selectedSheng.value + selectedYun.value;
+const blendedDetail = computed(() => {
+  return getBlendedPinyinDetail(selectedSheng.value, selectedYun.value);
 });
 
 const playBlended = () => {
   playButtonSound();
-  speakText(`${selectedSheng.value}，${selectedYun.value}，${blendedResult.value}`);
+  speakText(blendedDetail.value.spokenSpellingText);
 };
 
 // ==========================================
 // 4. AUDIO QUIZ (听音辨音大闯关)
 // ==========================================
 interface QuizItem {
+  id: string;
+  category: string;
   audioPinyin: string;
   voiceText: string;
+  hintText: string;
   options: string[];
   correct: string;
 }
 
 const quizList: QuizItem[] = [
-  { audioPinyin: 'b', voiceText: 'b', options: ['b', 'd', 'p', 'q'], correct: 'b' },
-  { audioPinyin: 'p', voiceText: 'p', options: ['p', 'q', 'b', 'd'], correct: 'p' },
-  { audioPinyin: 'zh', voiceText: 'zh', options: ['zh', 'z', 'ch', 'c'], correct: 'zh' },
-  { audioPinyin: 'ai', voiceText: 'ai', options: ['ai', 'ei', 'ui', 'ao'], correct: 'ai' },
-  { audioPinyin: 'zhi', voiceText: 'zhi', options: ['zhi', 'chi', 'shi', 'zi'], correct: 'zhi' }
+  { id: '1', category: '声母辨析', audioPinyin: 'b', voiceText: '请选出声母：玻', hintText: '收听广播 玻 玻 玻', options: ['b', 'd', 'p', 'q'], correct: 'b' },
+  { id: '2', category: '声母辨析', audioPinyin: 'p', voiceText: '请选出声母：坡', hintText: '泼水泼水 坡 坡 坡', options: ['p', 'q', 'b', 'd'], correct: 'p' },
+  { id: '3', category: '声母辨析', audioPinyin: 'd', voiceText: '请选出声母：得', hintText: '左下半圆 得 得 得', options: ['d', 'b', 't', 'p'], correct: 'd' },
+  { id: '4', category: '声母辨析', audioPinyin: 't', voiceText: '请选出声母：特', hintText: '伞柄朝下 特 特 特', options: ['t', 'f', 'l', 'd'], correct: 't' },
+  { id: '5', category: '翘舌声母', audioPinyin: 'zh', voiceText: '请选出翘舌声母：知', hintText: '蜘蛛织网 知 知 知', options: ['zh', 'z', 'ch', 'c'], correct: 'zh' },
+  { id: '6', category: '平舌声母', audioPinyin: 'z', voiceText: '请选出平舌声母：资', hintText: '写字写字 资 资 资', options: ['z', 'zh', 'c', 's'], correct: 'z' },
+  { id: '7', category: '复韵母辨析', audioPinyin: 'ai', voiceText: '请选出复韵母：挨', hintText: '挨在一起 挨 挨 挨', options: ['ai', 'ei', 'ui', 'ao'], correct: 'ai' },
+  { id: '8', category: '复韵母辨析', audioPinyin: 'ou', voiceText: '请选出复韵母：欧', hintText: '海鸥海鸥 欧 欧 欧', options: ['ou', 'iu', 'ao', 'ui'], correct: 'ou' },
+  { id: '9', category: '整体认读', audioPinyin: 'zhi', voiceText: '请选出整体认读音节：织', hintText: '织毛衣 织，不用拼直接读', options: ['zhi', 'chi', 'shi', 'zi'], correct: 'zhi' },
+  { id: '10', category: '整体认读', audioPinyin: 'yu', voiceText: '请选出整体认读音节：鱼', hintText: '金鱼吐泡 鱼，大y带小ü脱帽', options: ['yu', 'wu', 'yi', 'yue'], correct: 'yu' }
 ];
 
 const quizIdx = ref(0);
@@ -204,12 +139,12 @@ const handleQuizAnswer = (opt: string) => {
 
   if (opt === currentQuiz.value.correct) {
     playWinSound();
-    quizScore.value += 20;
-    quizFeedback.value = '太棒啦！回答完全正确！🎉';
+    quizScore.value += 10;
+    quizFeedback.value = `太棒啦！回答完全正确！🎉 这是【${currentQuiz.value.correct}】`;
     confetti({ particleCount: 60, spread: 50 });
   } else {
     playErrorSound();
-    quizFeedback.value = `听错啦，正确发音是：${currentQuiz.value.correct}`;
+    quizFeedback.value = `听错啦，正确发音是：【${currentQuiz.value.correct}】（${currentQuiz.value.hintText}）`;
   }
 };
 
@@ -256,7 +191,7 @@ const goBack = () => {
         </h1>
 
         <div class="text-xs font-black bg-white/20 px-3 py-1 rounded-full hidden sm:block">
-          一年级上册必备基石
+          部编版一年级上册 · 标准语音拼读
         </div>
       </div>
     </header>
@@ -373,12 +308,15 @@ const goBack = () => {
               <div class="text-6xl sm:text-7xl font-black text-amber-600 tracking-wider">
                 {{ activePinyin.pinyin }}
               </div>
-              <div class="text-sm font-black text-slate-800 mt-2">
-                【{{ activePinyin.name }}】
+              <div class="text-sm font-black text-slate-800 mt-2 flex items-center justify-center gap-2">
+                <span>【{{ activePinyin.name }}】</span>
+                <span class="px-2.5 py-0.5 bg-amber-100 text-amber-800 text-xs rounded-full font-bold">
+                  读作：{{ activePinyin.sound }}
+                </span>
               </div>
 
               <!-- Rhyme Box -->
-              <div class="my-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs sm:text-sm font-bold text-amber-900 leading-relaxed">
+              <div class="my-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs sm:text-sm font-bold text-amber-900 leading-relaxed text-left">
                 🎵 <span class="font-black">发音口诀：</span><br />
                 {{ activePinyin.rhyme }}
               </div>
@@ -393,7 +331,7 @@ const goBack = () => {
               class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 text-white font-black text-base shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
             >
               <Volume2 class="w-5 h-5" />
-              <span>跟读发音与口诀</span>
+              <span>跟读标准发音与口诀</span>
             </button>
           </div>
         </div>
@@ -448,9 +386,12 @@ const goBack = () => {
           >
             <div class="text-xs font-black opacity-80">第 {{ t }} 声</div>
             <div class="text-5xl font-black my-3 group-hover:scale-110 transition-transform">
-              {{ (tonesData[toneLetter as keyof typeof tonesData] as any)['t' + t] }}
+              {{ (tonesData as any)['t' + t].sym }}
             </div>
-            <div class="text-xs font-black">
+            <div class="text-xs font-black mb-1 text-amber-700">
+              读作：{{ (tonesData as any)['t' + t].char }}
+            </div>
+            <div class="text-[11px] font-bold opacity-90">
               {{ t === 1 ? '🚗 一声平 (平地开)' : t === 2 ? '🚗 二声扬 (上坡冲)' : t === 3 ? '🚗 三声拐弯 (下坡上坡)' : '🚗 四声降 (下坡冲)' }}
             </div>
           </div>
@@ -471,18 +412,44 @@ const goBack = () => {
         </div>
 
         <!-- Blender Equation View -->
-        <div class="bg-gradient-to-r from-amber-100 via-orange-100 to-rose-100 rounded-3xl p-6 border-3 border-amber-300 text-center shadow-inner flex items-center justify-center gap-4 sm:gap-6">
-          <span class="text-4xl sm:text-6xl font-black text-amber-900">{{ selectedSheng }}</span>
-          <span class="text-2xl sm:text-4xl font-extrabold text-amber-500">+</span>
-          <span class="text-4xl sm:text-6xl font-black text-orange-900">{{ selectedYun }}</span>
-          <span class="text-2xl sm:text-4xl font-extrabold text-amber-500">=</span>
-          <span class="text-5xl sm:text-7xl font-black text-rose-600 animate-bounce">{{ blendedResult }}</span>
+        <div class="bg-gradient-to-r from-amber-100 via-orange-100 to-rose-100 rounded-3xl p-6 border-3 border-amber-300 text-center shadow-inner space-y-3">
+          <div class="flex items-center justify-center gap-3 sm:gap-6">
+            <div class="flex flex-col items-center">
+              <span class="text-4xl sm:text-6xl font-black text-amber-900">{{ selectedSheng }}</span>
+              <span class="text-xs font-bold text-amber-700">({{ blendedDetail.shengSound }})</span>
+            </div>
+
+            <span class="text-2xl sm:text-4xl font-extrabold text-amber-500">+</span>
+
+            <div class="flex flex-col items-center">
+              <span class="text-4xl sm:text-6xl font-black text-orange-900">{{ selectedYun }}</span>
+              <span class="text-xs font-bold text-orange-700">({{ blendedDetail.yunSound }})</span>
+            </div>
+
+            <span class="text-2xl sm:text-4xl font-extrabold text-amber-500">=</span>
+
+            <div class="flex flex-col items-center">
+              <span class="text-5xl sm:text-7xl font-black text-rose-600 animate-bounce">{{ blendedDetail.blendedPinyin }}</span>
+              <span v-if="blendedDetail.sampleChar" class="text-xs font-black text-rose-700">({{ blendedDetail.sampleChar }})</span>
+            </div>
+          </div>
+
+          <!-- Sample Character Display Pill -->
+          <div v-if="blendedDetail.sampleChar" class="inline-flex items-center gap-2 px-4 py-1.5 bg-white/90 border border-amber-300 rounded-full text-xs sm:text-sm font-black text-amber-900 shadow-xs">
+            <span>🌱 拼读字例：【{{ blendedDetail.sampleChar }}】（{{ blendedDetail.sampleWord }}）</span>
+          </div>
+          <div v-else class="inline-flex items-center gap-2 px-4 py-1.5 bg-white/90 border border-amber-200 rounded-full text-xs font-bold text-slate-600">
+            <span>💡 拼读发音：{{ blendedDetail.shengSound }} - {{ blendedDetail.yunSound }} -> {{ blendedDetail.blendedPinyin }}</span>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
           <!-- Left: Shengmu Selector -->
           <div class="space-y-2">
-            <div class="text-xs font-black text-slate-700">1. 选择声母 (Initials)：</div>
+            <div class="text-xs font-black text-slate-700 flex items-center justify-between">
+              <span>1. 选择声母 (Initials)：</span>
+              <span class="text-amber-600 font-bold">当前：{{ selectedSheng }} ({{ blendedDetail.shengSound }})</span>
+            </div>
             <div class="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1 bg-slate-50 rounded-2xl border border-slate-200">
               <button
                 v-for="s in ['b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'j', 'q', 'x', 'zh', 'ch', 'sh', 'r', 'z', 'c', 's']"
@@ -490,7 +457,7 @@ const goBack = () => {
                 @click="selectedSheng = s; playBlended()"
                 :class="[
                   'py-2 rounded-xl text-base font-black border transition-all cursor-pointer',
-                  selectedSheng === s ? 'bg-amber-500 text-white border-amber-600' : 'bg-white text-slate-800'
+                  selectedSheng === s ? 'bg-amber-500 text-white border-amber-600 scale-105 shadow-xs' : 'bg-white text-slate-800 hover:bg-amber-50'
                 ]"
               >
                 {{ s }}
@@ -500,7 +467,10 @@ const goBack = () => {
 
           <!-- Right: Yunmu Selector -->
           <div class="space-y-2">
-            <div class="text-xs font-black text-slate-700">2. 选择带声调韵母 (Vowels)：</div>
+            <div class="text-xs font-black text-slate-700 flex items-center justify-between">
+              <span>2. 选择带声调韵母 (Vowels)：</span>
+              <span class="text-orange-600 font-bold">当前：{{ selectedYun }} ({{ blendedDetail.yunSound }})</span>
+            </div>
             <div class="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1 bg-slate-50 rounded-2xl border border-slate-200">
               <button
                 v-for="y in ['ā', 'á', 'ǎ', 'à', 'ō', 'ó', 'ǒ', 'ò', 'ē', 'é', 'ě', 'è', 'ī', 'í', 'ǐ', 'ì', 'ū', 'ú', 'ǔ', 'ù', 'ái', 'ài', 'ǎo', 'ào', 'ān', 'àn', 'āng', 'àng']"
@@ -508,7 +478,7 @@ const goBack = () => {
                 @click="selectedYun = y; playBlended()"
                 :class="[
                   'py-2 rounded-xl text-base font-black border transition-all cursor-pointer',
-                  selectedYun === y ? 'bg-orange-500 text-white border-orange-600' : 'bg-white text-slate-800'
+                  selectedYun === y ? 'bg-orange-500 text-white border-orange-600 scale-105 shadow-xs' : 'bg-white text-slate-800 hover:bg-orange-50'
                 ]"
               >
                 {{ y }}
@@ -519,10 +489,10 @@ const goBack = () => {
 
         <button
           @click="playBlended"
-          class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 text-white font-black text-lg sm:text-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <Volume2 class="w-6 h-6" />
-          <span>大声拼读出来：{{ selectedSheng }} - {{ selectedYun }} -> {{ blendedResult }}</span>
+          <span>大声拼读出来：{{ selectedSheng }}（{{ blendedDetail.shengSound }}） - {{ selectedYun }}（{{ blendedDetail.yunSound }}） -> {{ blendedDetail.blendedPinyin }}<span v-if="blendedDetail.sampleChar">（{{ blendedDetail.sampleChar }}）</span></span>
         </button>
       </div>
 
@@ -532,11 +502,12 @@ const goBack = () => {
       <div v-else-if="activeTab === 'quiz'" class="max-w-xl mx-auto bg-white rounded-3xl p-6 sm:p-8 border-3 border-amber-200 shadow-xl space-y-6 animate-fade-in text-center">
         <div>
           <div class="flex items-center justify-between text-xs font-black text-slate-500 mb-2">
-            <span>闯关进度：第 {{ quizIdx + 1 }}/{{ quizList.length }} 题</span>
+            <span class="px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-full">{{ currentQuiz.category }}</span>
+            <span>第 {{ quizIdx + 1 }}/{{ quizList.length }} 题</span>
             <span class="text-amber-600 font-bold">得分：{{ quizScore }} 分</span>
           </div>
           <h2 class="text-2xl font-cartoon font-bold text-slate-900">
-            仔细听！选出你听到的拼音
+            仔细听！选出你听到的标准拼音
           </h2>
         </div>
 
@@ -548,7 +519,7 @@ const goBack = () => {
         >
           <Volume2 class="w-14 h-14 group-hover:animate-bounce" />
         </button>
-        <p class="text-xs text-slate-400 font-bold">点击大喇叭重新播放发音</p>
+        <p class="text-xs text-slate-400 font-bold">点击大喇叭播放标准汉语发音</p>
 
         <!-- 4 Options Grid -->
         <div class="grid grid-cols-2 gap-4">
@@ -571,14 +542,14 @@ const goBack = () => {
         </div>
 
         <!-- Feedback Message -->
-        <div v-if="quizFeedback" class="text-sm font-black text-amber-800 animate-fade-in">
+        <div v-if="quizFeedback" class="text-sm font-black text-amber-800 animate-fade-in p-3 bg-amber-50 border border-amber-200 rounded-2xl">
           {{ quizFeedback }}
         </div>
 
         <button
           v-if="isQuizAnswered"
           @click="nextQuiz"
-          class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-lg rounded-2xl shadow-md active:scale-95 transition-all cursor-pointer"
+          class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 text-white font-black text-lg rounded-2xl shadow-md active:scale-95 transition-all cursor-pointer"
         >
           下一题 ➔
         </button>
@@ -587,4 +558,3 @@ const goBack = () => {
     </main>
   </div>
 </template>
-
