@@ -1,15 +1,60 @@
 {
-  "name": "一诺弈学 (YiNuo Go) - 少儿启蒙学棋乐园",
-  "short_name": "一诺弈学",
-  "description": "专为 4~10 岁少儿定制的高端互动围棋启蒙教学 Web 应用，气、叫吃、手筋、死活、人机对弈全功能支持。",
-  "start_url": "./",
+  "id": "com.yinuoacademy.app",
+  "name": "一诺未来学堂 (YiNuo Academy) - 少儿全科智趣启蒙世界",
+  "short_name": "一诺未来学堂",
+  "description": "专为 4~10 岁少儿定制的多元全科互动智趣启蒙世界，涵盖围棋博弈、数理口算、国学语文与自然拼读英语。",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#FDFBF7",
   "theme_color": "#FF7A00",
   "orientation": "any",
+  "categories": ["education", "kids", "games"],
+  "shortcuts": [
+    {
+      "name": "学堂大厅",
+      "short_name": "大厅",
+      "description": "进入全科智趣大厅",
+      "url": "/",
+      "icons": [{ "src": "/logo/logo-avatar-circle-144.png", "sizes": "144x144" }]
+    },
+    {
+      "name": "围棋学堂",
+      "short_name": "围棋",
+      "description": "进入围棋启蒙主线与死活宝库",
+      "url": "/learn",
+      "icons": [{ "src": "/logo/logo-avatar-circle-144.png", "sizes": "144x144" }]
+    },
+    {
+      "name": "数学口算",
+      "short_name": "数学",
+      "description": "100以内进退位口算与速算挑战",
+      "url": "/subject/math/drill",
+      "icons": [{ "src": "/logo/logo-primary-144.png", "sizes": "144x144" }]
+    },
+    {
+      "name": "错题攻坚",
+      "short_name": "错题本",
+      "description": "全学科错题诊断与变式消题",
+      "url": "/mistakes",
+      "icons": [{ "src": "/logo/logo-avatar-circle-144.png", "sizes": "144x144" }]
+    },
+    {
+      "name": "学情看板",
+      "short_name": "学情看板",
+      "description": "家长与教师学情成长分析报告",
+      "url": "/parent-dashboard",
+      "icons": [{ "src": "/logo/logo-primary-144.png", "sizes": "144x144" }]
+    }
+  ],
   "icons": [
     {
-      "src": "/logo/logo-primary-144.png",
+      "src": "/logo/logo-primary-48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo/logo-avatar-circle-144.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "any maskable"
@@ -27,7 +72,7 @@
       "purpose": "any maskable"
     },
     {
-      "src": "/logo/logo-primary.svg",
+      "src": "/logo/logo-avatar-circle.svg",
       "sizes": "1024x1024",
       "type": "image/svg+xml",
       "purpose": "any maskable"

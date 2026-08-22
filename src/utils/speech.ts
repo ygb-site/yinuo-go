@@ -4,12 +4,13 @@ export const isSpeaking = ref(false);
 /** 页面喇叭开关。只控制朗读，不影响落子音效。 */
 export const speechPlaybackEnabled = ref(true);
 
-const MAX_CHUNK_LEN = 80;
+const MAX_NATURAL_CHUNK_LEN = 160;
 
 /**
- * 伴读语音合成引擎
- * 采用原生 Web Speech API 结合高自然度发音人智能选择，
- * 默认阳光少儿男童音（云希/康康/云健，Pitch 1.15 / Rate 1.0），自然亲切。
+ * 伴读高保真自然人声语音引擎
+ * 采用原生 Web Speech API 神经网络/自然声发音人，
+ * 保持原生音高（Pitch 1.0，防止失真变电音）与自然舒缓语速（Rate 0.95），
+ * 完整句子连贯朗读，杜绝短句机械顿挫感与粤语混淆。
  */
 export class SpeechCompanion {
   private static player: HTMLAudioElement | null = null;
@@ -38,12 +39,12 @@ export class SpeechCompanion {
 
   public static formatSpokenText(text: string): string {
     return text
-      .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
+      .replace(/[🌀-🧿]|[☀-⛿]|[✀-➿]/gu, '')
       .replace(/【|】|📖|🎯|⭐|🐼|🦁|🚀|⚔️|🏰|⚡|🔄|❤️|🛡️|🪙|🏆|🌸|🎉|✨|🐶|🐱|🦊|🦄|👧|👦|🎓|🌟|🧚|🐰/g, '')
       .replace(/\([a-zA-Z\s\-']+\)/g, '')
       .replace(/([A-Ta-t])([1-9]|1[0-9])/g, '$1 $2 ')
-      .replace(/！+/g, '！ ')
-      .replace(/，+/g, '， ')
+      .replace(/！+/g, '！')
+      .replace(/，+/g, '，')
       .replace(/~+/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
@@ -54,7 +55,39 @@ export class SpeechCompanion {
     if (!enabled) this.stop();
   }
 
-  /** 优先锁定超好听的阳光少年/男童音（如微软云希、康康、云健等） */
+  /**
+   * 判断是否为粤语或非普通话方言（严格过滤）
+   */
+  private static isDialectOrCantonese(voice: SpeechSynthesisVoice): boolean {
+    const lang = (voice.lang || '').toLowerCase();
+    const name = (voice.name || '').toLowerCase();
+
+    // 严禁任何粤语 (zh-HK, zh-MO, yue, cantonese, sin-ji 善芝, hiu-mou, cheung)
+    if (
+      lang.includes('hk') ||
+      lang.includes('mo') ||
+      lang.includes('yue') ||
+      name.includes('hk') ||
+      name.includes('hong kong') ||
+      name.includes('cantonese') ||
+      name.includes('sin-ji') ||
+      name.includes('sinji') ||
+      name.includes('hiugaai') ||
+      name.includes('hiumou') ||
+      name.includes('cheung')
+    ) {
+      return true;
+    }
+
+    // 过滤台湾腔 (zh-TW, meijia, hanhan, zhiwei)
+    if (lang.includes('tw') || name.includes('taiwan') || name.includes('meijia') || name.includes('hanhan')) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /** 优先锁定高质量自然人声/神经声音 (如苹果 Siri普通话/婷婷/玉舒、微软云希/晓晓/康康等) */
   private static pickNaturalVoice(): SpeechSynthesisVoice | null {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
 
@@ -66,41 +99,51 @@ export class SpeechCompanion {
       }
     }
 
-    const voices = this.cachedVoices;
-    if (!voices || voices.length === 0) return null;
+    const allVoices = this.cachedVoices;
+    if (!allVoices || allVoices.length === 0) return null;
 
-    const naturalKeywords = [
-      'yunxi',       // 微软云希 (阳光少年男声/正太音)
+    // 1. 严格筛选出大陆普通话发音人
+    const mandarinVoices = allVoices.filter((v) => {
+      if (this.isDialectOrCantonese(v)) return false;
+      const lang = (v.lang || '').toLowerCase();
+      return (
+        lang === 'zh-cn' ||
+        lang === 'zh_cn' ||
+        lang === 'cmn-hans-cn' ||
+        lang === 'cmn-cn' ||
+        lang === 'cmn-hans' ||
+        lang === 'zh'
+      );
+    });
+
+    if (mandarinVoices.length === 0) {
+      const anyMandarin = allVoices.find(v => !this.isDialectOrCantonese(v) && v.lang.toLowerCase().startsWith('zh'));
+      return anyMandarin || null;
+    }
+
+    // 2. 优先锁定自然度最高的高保真 Enhanced / Premium / Neural 人声
+    const highQualityKeywords = [
+      'enhanced',    // Apple Enhanced 高保真自然人声
+      'premium',     // Apple Premium 旗舰人声
+      'neural',      // 微软/各大平台 Neural 神经网络自然人声
+      'online (natural)', // Edge 在线自然音
+      'yunxi',       // 微软云希 (阳光少年男声 · 最优)
+      'xiaoxiao',    // 微软晓晓 (自然甜美)
       'kangkang',    // 微软康康 (阳光男童)
       'yunjian',     // 微软云健 (朝气少年)
-      'xiaoxiao',    // 微软晓晓 (自然声)
-      'sin-ji',      // 苹果 Siri 自然音
-      'tingting',    // 苹果婷婷
-      'natural',     // 各种自然人声
-      'cmn-hans-cn'
+      'tingting',    // 苹果婷婷 (iOS 普通话标准音)
+      'yushu',       // 苹果玉舒 (iOS 普通话标准音)
+      'siri',        // 苹果 Siri 普通话
+      'lili',        // 苹果莉莉
+      'cmn-hans-cn'  // Google/Android 官方普通话
     ];
 
-    for (const kw of naturalKeywords) {
-      const matched = voices.find(
-        (v) =>
-          (v.lang.includes('zh') || v.lang.includes('cmn')) &&
-          v.name.toLowerCase().includes(kw)
-      );
+    for (const kw of highQualityKeywords) {
+      const matched = mandarinVoices.find((v) => v.name.toLowerCase().includes(kw));
       if (matched) return matched;
     }
 
-    // 默认 zh-CN
-    const zhVoice = voices.find(
-      (v) =>
-        v.lang === 'zh-CN' ||
-        v.lang === 'zh_CN' ||
-        v.lang === 'cmn-Hans-CN' ||
-        v.lang.startsWith('zh') ||
-        v.lang.startsWith('cmn')
-    );
-    if (zhVoice) return zhVoice;
-
-    return null;
+    return mandarinVoices[0] || null;
   }
 
   public static speak(text: string, onEnd?: () => void) {
@@ -118,7 +161,7 @@ export class SpeechCompanion {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       try {
         window.speechSynthesis.cancel();
-        const chunks = this.splitIntoChunks(spokenText);
+        const chunks = this.splitIntoNaturalChunks(spokenText);
         this.speakWithSpeechSynthesis(chunks, 0, token, onEnd);
         return;
       } catch (err) {
@@ -126,11 +169,11 @@ export class SpeechCompanion {
       }
     }
 
-    // 方案 B: 降级走音频流播放
-    this.playAudioChunks(this.splitIntoChunks(spokenText), 0, token, onEnd);
+    // 方案 B: 降级走普通话音频流播放
+    this.playAudioChunks(this.splitIntoNaturalChunks(spokenText), 0, token, onEnd);
   }
 
-  /** 使用 Web Speech API 自然朗读 */
+  /** 使用 Web Speech API 进行自然流畅朗读 */
   private static speakWithSpeechSynthesis(
     chunks: string[],
     index: number,
@@ -150,17 +193,16 @@ export class SpeechCompanion {
     const chunk = chunks[index];
     const utterance = new SpeechSynthesisUtterance(chunk);
 
-    // 阳光少年男童声参数：音调 1.15，语速 1.0
-    utterance.pitch = 1.15;
-    utterance.rate = 1.0;
+    // 自然人声参数：保持原生音高 1.0 (防止电音失真)，语速 0.95 (亲切自然)
+    utterance.pitch = 1.0;
+    utterance.rate = 0.95;
     utterance.volume = 1.0;
+    utterance.lang = 'zh-CN';
 
     const voice = this.pickNaturalVoice();
     if (voice) {
       utterance.voice = voice;
       utterance.lang = voice.lang || 'zh-CN';
-    } else {
-      utterance.lang = 'zh-CN';
     }
 
     utterance.onend = () => {
@@ -178,7 +220,7 @@ export class SpeechCompanion {
     window.speechSynthesis.speak(utterance);
   }
 
-  /** 本地开发走 Vite 同源代理；线上走百度 TTS 降级 */
+  /** 本地开发走 Vite 同源代理；线上走百度 TTS 降级 (普通话) */
   private static buildTtsUrl(text: string): string {
     const encoded = encodeURIComponent(text);
     if (typeof window !== 'undefined') {
@@ -222,9 +264,15 @@ export class SpeechCompanion {
     }
   }
 
-  private static splitIntoChunks(text: string): string[] {
-    const strongBreaks = '。！？；!?;';
-    const weakBreaks = '，,、 ';
+  /**
+   * 按完整段落/长句自然切分（保留逗号和句号的自然呼吸停顿，避免机械断句）
+   */
+  private static splitIntoNaturalChunks(text: string): string[] {
+    if (text.length <= MAX_NATURAL_CHUNK_LEN) {
+      return [text];
+    }
+
+    const strongBreaks = '。！？；\n';
     const chunks: string[] = [];
     let buffer = '';
 
@@ -236,15 +284,11 @@ export class SpeechCompanion {
 
     for (const char of text) {
       buffer += char;
-      if (buffer.length >= MAX_CHUNK_LEN) {
+      if (buffer.length >= MAX_NATURAL_CHUNK_LEN) {
         flush();
         continue;
       }
-      if (buffer.length >= 35 && weakBreaks.includes(char)) {
-        flush();
-        continue;
-      }
-      if (buffer.length >= 14 && strongBreaks.includes(char)) {
+      if (buffer.length >= 60 && strongBreaks.includes(char)) {
         flush();
       }
     }

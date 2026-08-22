@@ -10,6 +10,7 @@ import { showAlert } from '../utils/alert';
 // 🌟 Core Views (Lazy Loaded)
 const HomeView = () => import('../views/HomeView.vue');
 const ProfileView = () => import('../views/ProfileView.vue');
+const ParentDashboardView = () => import('../views/ParentDashboardView.vue');
 const AdminView = () => import('../views/AdminView.vue');
 const ShopView = () => import('../views/ShopView.vue');
 
@@ -46,6 +47,7 @@ const ChinesePinyinView = () => import('../views/chinese/ChinesePinyinView.vue')
 const ChineseHanziView = () => import('../views/chinese/ChineseHanziView.vue');
 const ChinesePoetryView = () => import('../views/chinese/ChinesePoetryView.vue');
 const ChineseIdiomView = () => import('../views/chinese/ChineseIdiomView.vue');
+const ChineseRiddlesView = () => import('../views/chinese/ChineseRiddlesView.vue');
 
 // 🔤 English Specialized Features (Lazy Loaded)
 const EnglishPhonicsView = () => import('../views/english/EnglishPhonicsView.vue');
@@ -92,14 +94,18 @@ const router = createRouter({
     { path: '/subject/chinese/hanzi', name: 'chinese-hanzi', component: ChineseHanziView },
     { path: '/subject/chinese/poetry', name: 'chinese-poetry', component: ChinesePoetryView },
     { path: '/subject/chinese/idiom', name: 'chinese-idiom', component: ChineseIdiomView },
+    { path: '/subject/chinese/riddles', name: 'chinese-riddles', component: ChineseRiddlesView },
+    { path: '/riddles', redirect: '/subject/chinese/riddles' },
 
     // 🔤 English Specialized Features
     { path: '/subject/english/phonics', name: 'english-phonics', component: EnglishPhonicsView },
     { path: '/subject/english/flashcards', name: 'english-flashcards', component: EnglishFlashcardsView },
 
-    // 👑 User Center & Management
+    // 👑 User Center & Parent Analytics
     { path: '/shop', name: 'shop', component: ShopView },
     { path: '/profile', name: 'profile', component: ProfileView },
+    { path: '/parent-dashboard', name: 'parent-dashboard', component: ParentDashboardView },
+    { path: '/dashboard', redirect: '/parent-dashboard' },
     { path: '/admin', name: 'admin', component: AdminView },
 
     // Fallback
@@ -170,4 +176,3 @@ router.beforeEach((to) => {
 });
 
 export default router;
-

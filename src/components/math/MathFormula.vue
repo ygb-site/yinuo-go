@@ -15,6 +15,16 @@ const props = withDefaults(
   }
 );
 
+function escapeHtml(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const renderedHtml = computed(() => {
   if (!props.formula) return '';
   try {
@@ -32,7 +42,7 @@ const renderedHtml = computed(() => {
     });
   } catch (err) {
     console.warn('[MathFormula] KaTeX Render Error:', err);
-    return `<span class="text-red-500 font-mono text-sm">${props.formula}</span>`;
+    return `<span class="text-red-500 font-mono text-sm">${escapeHtml(props.formula)}</span>`;
   }
 });
 </script>

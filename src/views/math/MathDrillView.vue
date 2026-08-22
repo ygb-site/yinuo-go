@@ -8,6 +8,7 @@ import {
   type MathDrillQuestion
 } from '../../services/mathDrillEngine';
 import { useUserStore } from '../../stores/useUserStore';
+import { useAiTutorStore } from '../../stores/useAiTutorStore';
 import {
   playButtonSound,
   playWinSound,
@@ -37,6 +38,7 @@ import {
 
 const router = useRouter();
 const userStore = useUserStore();
+const tutorStore = useAiTutorStore();
 
 // Step state: 'config' | 'playing' | 'result' | 'print'
 const currentStep = ref<'config' | 'playing' | 'result' | 'print'>('config');
@@ -259,6 +261,14 @@ const stopDraw = () => {
 // Synchronize inputAnswer with current question's recorded answer
 const syncCurrentAnswerToInput = () => {
   if (!currentQuestion.value) return;
+  tutorStore.setContext({
+    subjectId: 'math',
+    questionPrompt: currentQuestion.value.expression,
+    userAnswer: inputAnswer.value,
+    correctAnswer: String(currentQuestion.value.correctAnswer),
+    knowledgePointTitle: currentQuestion.value.categoryName,
+    errorReason: currentQuestion.value.explanation
+  });
   if (currentQuestion.value.userAnswer !== undefined && currentQuestion.value.userAnswer !== null) {
     inputAnswer.value = String(currentQuestion.value.userAnswer);
   } else {

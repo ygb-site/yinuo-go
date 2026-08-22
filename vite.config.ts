@@ -64,9 +64,77 @@ function ttsProxyPlugin(): Plugin {
   };
 }
 
+/**
+ * 开发/预览模式下提供 AI / LLM 跨域转发代理 (解决浏览器直接请求大模型 API 的 CORS 限制)
+ */
+function llmProxyPlugin(): Plugin {
+  const handle = async (req: IncomingMessage, res: ServerResponse) => {
+    if (req.method !== 'POST') {
+      res.statusCode = 405;
+      res.end('Method Not Allowed');
+      return;
+    }
+
+    let bodyData = '';
+    req.on('data', (chunk) => {
+      bodyData += chunk;
+    });
+
+    req.on('end', async () => {
+      try {
+        const { targetUrl, headers, payload } = JSON.parse(bodyData || '{}');
+        if (!targetUrl) {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Missing targetUrl' }));
+          return;
+        }
+
+        const remote = await fetch(targetUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(headers || {})
+          },
+          body: JSON.stringify(payload || {})
+        });
+
+        const dataText = await remote.text();
+        res.statusCode = remote.status;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(dataText);
+      } catch (err: any) {
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ error: err?.message || 'Proxy request failed' }));
+      }
+    });
+  };
+
+  const mount = (middlewares: { use: (fn: (req: IncomingMessage, res: ServerResponse, next: () => void) => void) => void }) => {
+    middlewares.use((req, res, next) => {
+      if (req.url && req.url.startsWith('/api/llm-proxy')) {
+        void handle(req, res);
+        return;
+      }
+      next();
+    });
+  };
+
+  return {
+    name: 'yinuo-llm-proxy',
+    configureServer(server) {
+      mount(server.middlewares);
+    },
+    configurePreviewServer(server) {
+      mount(server.middlewares);
+    }
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [vue(), ttsProxyPlugin()],
+  plugins: [vue(), ttsProxyPlugin(), llmProxyPlugin()],
   base: '/', // HTML5 History 模式（无 # 号模式）统一使用根路径 /
   build: {
     outDir: 'dist',

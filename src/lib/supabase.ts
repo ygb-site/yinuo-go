@@ -16,7 +16,7 @@ export interface SupabaseConfig {
 }
 
 /**
- * 自动净化并提取标准的 Supabase Origin (去除多余的 /rest/v1/ 等路径)
+ * 自动净化并提取标准的 Supabase Origin (仅允许严格 https 协议)
  */
 export function sanitizeSupabaseUrl(rawUrl: string): string {
   let url = (rawUrl || '').trim();
@@ -24,13 +24,22 @@ export function sanitizeSupabaseUrl(rawUrl: string): string {
 
   try {
     const parsed = new URL(url);
+    if (parsed.protocol !== 'https:') {
+      console.warn('[Supabase Security] Insecure protocol rejected:', parsed.protocol);
+      return '';
+    }
     return parsed.origin;
   } catch {
-    url = url.replace(/\/+$/, '');
-    url = url.replace(/\/rest\/v1\/?$/i, '');
-    url = url.replace(/\/auth\/v1\/?$/i, '');
-    url = url.replace(/\/+$/, '');
-    return url;
+    // 尝试补齐 https:// 校验
+    if (!url.startsWith('https://') && !url.includes('://')) {
+      try {
+        const parsedWithHttps = new URL('https://' + url.replace(/^\/+/, ''));
+        return parsedWithHttps.origin;
+      } catch {
+        return '';
+      }
+    }
+    return '';
   }
 }
 
@@ -42,8 +51,10 @@ export function getSupabaseConfig(): SupabaseConfig {
   let customKey = '';
 
   if (typeof window !== 'undefined' && window.localStorage) {
-    customUrl = window.localStorage.getItem(STORAGE_KEY_URL) || '';
-    customKey = window.localStorage.getItem(STORAGE_KEY_KEY) || '';
+    try {
+      customUrl = window.localStorage.getItem(STORAGE_KEY_URL) || '';
+      customKey = window.localStorage.getItem(STORAGE_KEY_KEY) || '';
+    } catch {}
   }
 
   const envUrl = (import.meta.env.VITE_SUPABASE_URL as string) || '';
@@ -53,9 +64,11 @@ export function getSupabaseConfig(): SupabaseConfig {
   const url = sanitizeSupabaseUrl(rawUrl);
   const anonKey = (envKey || customKey || DEFAULT_SUPABASE_ANON_KEY).trim();
 
-  // 如果 localStorage 中之前存储了带 /rest/v1/ 的路径，静默修正为标准 origin
-  if (typeof window !== 'undefined' && window.localStorage && customUrl && customUrl !== url) {
-    window.localStorage.setItem(STORAGE_KEY_URL, url);
+  // 如果 localStorage 中之前存储了带 /rest/v1/ 等多余路径或非安全格式，静默修正为标准 origin
+  if (typeof window !== 'undefined' && window.localStorage && customUrl && customUrl !== url && url) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY_URL, url);
+    } catch {}
   }
 
   return {
@@ -113,13 +126,15 @@ export function saveCustomSupabaseConfig(url: string, anonKey: string): boolean 
   const cleanUrl = sanitizeSupabaseUrl(url);
   const cleanKey = anonKey.trim();
 
-  if (cleanUrl && cleanKey) {
-    window.localStorage.setItem(STORAGE_KEY_URL, cleanUrl);
-    window.localStorage.setItem(STORAGE_KEY_KEY, cleanKey);
-  } else {
-    window.localStorage.removeItem(STORAGE_KEY_URL);
-    window.localStorage.removeItem(STORAGE_KEY_KEY);
-  }
+  try {
+    if (cleanUrl && cleanKey) {
+      window.localStorage.setItem(STORAGE_KEY_URL, cleanUrl);
+      window.localStorage.setItem(STORAGE_KEY_KEY, cleanKey);
+    } else {
+      window.localStorage.removeItem(STORAGE_KEY_URL);
+      window.localStorage.removeItem(STORAGE_KEY_KEY);
+    }
+  } catch {}
 
   cachedClient = null;
   return isSupabaseConfigured();

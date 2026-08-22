@@ -16,6 +16,7 @@ import {
   getCurrentCloudUser,
 } from '../services/cloudSyncService';
 import { isSupabaseConfigured, getSupabaseClient } from '../lib/supabase';
+import { useAiTutorStore } from './useAiTutorStore';
 
 /**
  * 独立儿童用户档案 (Child Profile Data Structure)
@@ -511,6 +512,14 @@ export const useUserStore = defineStore('userStore', {
           if (row.settings_data.theme) this.theme = row.settings_data.theme;
           if (typeof row.settings_data.soundEnabled === 'boolean') this.soundEnabled = row.settings_data.soundEnabled;
           if (typeof row.settings_data.volume === 'number') this.volume = row.settings_data.volume;
+          if (row.settings_data.aiConfig && typeof row.settings_data.aiConfig === 'object') {
+            try {
+              const tutorStore = useAiTutorStore();
+              tutorStore.saveConfig(row.settings_data.aiConfig);
+            } catch (e) {
+              console.warn('[AI Config Cloud Restore Warn]', e);
+            }
+          }
         }
       }
 
@@ -526,6 +535,10 @@ export const useUserStore = defineStore('userStore', {
       this.currentProfileId = '';
       this.lastSavedAt = null;
       this.syncError = null;
+      try {
+        const tutorStore = useAiTutorStore();
+        tutorStore.config.apiKey = '';
+      } catch {}
     },
 
     async initCloudSession() {
@@ -568,7 +581,14 @@ export const useUserStore = defineStore('userStore', {
           {
             theme: this.theme,
             soundEnabled: this.soundEnabled,
-            volume: this.volume
+            volume: this.volume,
+            aiConfig: {
+              mode: useAiTutorStore().config.mode,
+              endpoint: useAiTutorStore().config.endpoint,
+              apiKey: useAiTutorStore().config.apiKey,
+              model: useAiTutorStore().config.model,
+              autoSpeech: useAiTutorStore().config.autoSpeech
+            }
           }
         );
 

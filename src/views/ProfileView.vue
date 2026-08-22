@@ -11,6 +11,7 @@ import { showAlert, showConfirm } from '../utils/alert';
 import { SHOP_THEMES } from '../data/shopData';
 import { playButtonSound, playWinSound, playErrorSound, triggerConfetti } from '../lib/audio';
 import { sound } from '../utils/sound';
+import { createSafeProfileArchive } from '../services/dataArchiveService';
 import {
   Trophy,
   Star,
@@ -271,11 +272,8 @@ const exportData = () => {
     return;
   }
   playButtonSound();
-  const data = {
-    userStore: userStore.$state,
-    exportDate: new Date().toISOString()
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const archive = createSafeProfileArchive(userStore.currentProfile);
+  const blob = new Blob([JSON.stringify(archive, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -470,6 +468,24 @@ const confirmReset = async () => {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- 📊 家长/教师学情看板快捷入口 -->
+      <div v-if="userStore.hasProfile" class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5 text-center sm:text-left">
+          <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl flex-shrink-0">📊</div>
+          <div>
+            <div class="font-black text-base sm:text-lg flex items-center gap-2 justify-center sm:justify-start">
+              <span>家长与教师学情全景看板</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] bg-white/20 border border-white/30 font-bold">AI 每日成长档案</span>
+            </div>
+            <div class="text-xs text-indigo-100 mt-0.5">查看四大学科能力雷达图、错题诊断、AI 家长日报与多端云备份</div>
+          </div>
+        </div>
+        <router-link to="/parent-dashboard" class="px-5 py-2.5 bg-white hover:bg-indigo-50 text-indigo-900 rounded-2xl text-xs font-black shadow transition active:scale-95 flex items-center gap-1.5 flex-shrink-0">
+          <span>进入学情看板</span>
+          <ArrowRight class="w-3.5 h-3.5" />
+        </router-link>
       </div>
 
       <!-- 🧠 宝贝多学科知识点与能力画像图谱 (Student Learning Profile) -->

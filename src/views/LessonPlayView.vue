@@ -5,6 +5,7 @@ import { CHAPTERS_DATA, type Lesson, type PuzzleNode, type LessonSubPuzzle } fro
 import { GoGame } from '../engine/GoGame';
 import type { Point } from '../engine/types';
 import { useUserStore } from '../stores/useUserStore';
+import { useAiTutorStore } from '../stores/useAiTutorStore';
 import { playHintSound, playButtonSound, playErrorSound, playStoneSound, playCaptureSound } from '../lib/audio';
 import { speakText, stopSpeech, speechPlaybackEnabled, SpeechCompanion } from '../utils/speech';
 import GoBoard from '../components/board/GoBoard.vue';
@@ -32,6 +33,7 @@ import {
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+const tutorStore = useAiTutorStore();
 
 // Flatten all lessons
 const allLessons = computed<Lesson[]>(() => {
@@ -47,6 +49,18 @@ const currentLesson = computed<Lesson>(() => {
   const found = allLessons.value.find(l => l.id === id);
   return found || allLessons.value[0];
 });
+
+watch(() => currentLesson.value, (les) => {
+  if (les) {
+    tutorStore.setContext({
+      subjectId: "go",
+      questionPrompt: les.title + "：" + (les.description || ""),
+      correctAnswer: "正解着手",
+      knowledgePointTitle: les.title,
+      lessonTitle: les.title
+    });
+  }
+}, { immediate: true });
 
 const currentIndex = computed(() => {
   return allLessons.value.findIndex(l => l.id === currentLesson.value.id);

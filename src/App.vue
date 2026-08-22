@@ -7,6 +7,7 @@ import ProfileSwitcherModal from './components/common/ProfileSwitcherModal.vue';
 import CartoonAlertModal from './components/common/CartoonAlertModal.vue';
 import UnlockCelebrationModal from './components/common/UnlockCelebrationModal.vue';
 import AuthModal from './components/common/AuthModal.vue';
+import AiTutorFloatModal from './components/common/AiTutorFloatModal.vue';
 import { useUserStore } from './stores/useUserStore';
 
 const userStore = useUserStore();
@@ -29,6 +30,9 @@ onMounted(() => {
     <!-- Hidden footer on mobile to keep view compact and neat -->
     <Footer class="hidden lg:block" />
 
+    <!-- Global AI Tutor Assistant Floating Button & Modal -->
+    <AiTutorFloatModal />
+
     <!-- Global Profile Switcher / Creation Modal -->
     <ProfileSwitcherModal
       :isOpen="userStore.isProfileModalOpen"
@@ -48,4 +52,3 @@ onMounted(() => {
     <CartoonAlertModal />
   </div>
 </template>
-

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { getLessonById, getAllLessonsBySubject } from '../data/academicCurriculum';
 import type { UniversalLesson, UniversalQuestionStep, SubjectId } from '../types/curriculum';
 import { useUserStore } from '../stores/useUserStore';
+import { useAiTutorStore } from '../stores/useAiTutorStore';
 import { playButtonSound, playVictorySound } from '../lib/audio';
 import { speakText, stopSpeech } from '../utils/speech';
 import UniversalQuestionRenderer from '../components/questions/UniversalQuestionRenderer.vue';
@@ -18,6 +19,7 @@ import {
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+const tutorStore = useAiTutorStore();
 
 const lessonId = computed(() => (route.params.lessonId as string) || (route.params.id as string));
 const currentLesson = computed<UniversalLesson | null>(() => {
@@ -49,6 +51,13 @@ const isLastStep = computed(() => {
 const updateMascotForStep = () => {
   if (!currentStep.value) return;
   mascotMood.value = 'happy';
+  tutorStore.setContext({
+    subjectId: subjectId.value,
+    questionPrompt: currentStep.value.promptText,
+    correctAnswer: String((currentStep.value as any).correctAnswer || (currentStep.value as any).targetText || (currentStep.value as any).correctOptionId || ''),
+    knowledgePointTitle: currentLesson.value?.title,
+    lessonTitle: currentLesson.value?.title
+  });
   if (currentStep.value.dialogues && currentStep.value.dialogues.length > 0) {
     mascotText.value = currentStep.value.dialogues[0];
   } else {

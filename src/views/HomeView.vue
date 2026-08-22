@@ -66,6 +66,14 @@ const navigateTo = (path: string) => {
 
 const quickPracticeHubs = [
   {
+    title: '家长学情看板',
+    subject: '报告',
+    icon: '📊',
+    tag: 'AI全景日报',
+    color: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    route: '/parent-dashboard'
+  },
+  {
     title: '语数外错题本',
     subject: '全科',
     icon: '📕',
@@ -80,6 +88,14 @@ const quickPracticeHubs = [
     tag: '进退位计算',
     color: 'bg-blue-50 text-blue-700 border-blue-200',
     route: '/subject/math/drill'
+  },
+  {
+    title: '智趣谜语急转弯',
+    subject: '语文',
+    icon: '🧩',
+    tag: '猜谜冲关',
+    color: 'bg-amber-50 text-amber-700 border-amber-200',
+    route: '/subject/chinese/riddles'
   },
   {
     title: '生字笔顺演练',
