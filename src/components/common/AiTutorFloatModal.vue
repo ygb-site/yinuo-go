@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, watch, watchEffect, onMounted } from 'vue';
+import { ref, computed, nextTick, watch, watchEffect, onMounted, onUnmounted } from 'vue';
 import { useAiTutorStore } from '../../stores/useAiTutorStore';
 import { useUserStore } from '../../stores/useUserStore';
 import { sound } from '../../utils/sound';
@@ -41,6 +41,13 @@ const variationResult = ref<'correct' | 'wrong' | null>(null);
 const isMascotHovered = ref(false);
 const showApiKey = ref(false);
 const isSavingConfig = ref(false);
+const isInputFocused = ref(false);
+const viewportHeight = ref<number | null>(null);
+
+const isMobile = computed(() => {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth < 640;
+});
 
 const subjectName = computed(() => {
   const s = tutorStore.currentContext?.subjectId;
@@ -108,6 +115,29 @@ function scrollToBottom() {
   });
 }
 
+function updateViewport() {
+  if (typeof window !== 'undefined' && window.visualViewport) {
+    viewportHeight.value = window.visualViewport.height;
+    if (isInputFocused.value) {
+      scrollToBottom();
+    }
+  }
+}
+
+watch(
+  () => tutorStore.isOpen,
+  (open) => {
+    if (typeof document !== 'undefined') {
+      if (open) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+  },
+  { immediate: true }
+);
+
 watch(
   () => tutorStore.chatMessages.length,
   () => {
@@ -136,6 +166,21 @@ watchEffect(() => {
 
 onMounted(() => {
   tutorStore.ensureContext();
+  if (typeof window !== 'undefined' && window.visualViewport) {
+    viewportHeight.value = window.visualViewport.height;
+    window.visualViewport.addEventListener('resize', updateViewport);
+    window.visualViewport.addEventListener('scroll', updateViewport);
+  }
+});
+
+onUnmounted(() => {
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = '';
+  }
+  if (typeof window !== 'undefined' && window.visualViewport) {
+    window.visualViewport.removeEventListener('resize', updateViewport);
+    window.visualViewport.removeEventListener('scroll', updateViewport);
+  }
 });
 
 async function handleSendMessage(text?: string) {
@@ -178,9 +223,19 @@ function toggleVoiceInput() {
 }
 
 function handleInputFocus() {
+  isInputFocused.value = true;
   setTimeout(() => {
+    updateViewport();
     scrollToBottom();
-  }, 250);
+  }, 100);
+}
+
+function handleInputBlur() {
+  // 延迟失焦状态，避免点击快捷按钮时触发跳动
+  setTimeout(() => {
+    isInputFocused.value = false;
+    updateViewport();
+  }, 200);
 }
 
 function handleChooseVariationOption(optionId: string) {
@@ -291,26 +346,28 @@ async function handleSaveConfig() {
   <div
     v-if="tutorStore.isOpen"
     class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+    :style="viewportHeight && isMobile ? { height: viewportHeight + 'px', top: '0px', bottom: 'auto' } : {}"
     @click="tutorStore.closeTutor()"
   >
     <div
-      class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl border border-amber-200 flex flex-col max-h-[90dvh] sm:max-h-[85vh] overflow-hidden animate-pop-in"
+      class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl border border-amber-200 flex flex-col overflow-hidden animate-pop-in"
+      :style="viewportHeight && isMobile ? { height: viewportHeight + 'px', maxHeight: viewportHeight + 'px' } : { maxHeight: '88dvh' }"
       @click.stop
     >
-      <!-- 🌟 Header 顶部栏 (精致清爽) -->
-      <div class="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 px-4 py-3 flex items-center justify-between shadow-sm relative text-white flex-shrink-0">
+      <!-- 🌟 Header 顶部栏 (始终固定在最顶部，绝对不被顶出屏幕) -->
+      <div class="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 px-4 py-2.5 sm:py-3 flex items-center justify-between shadow-sm relative text-white flex-shrink-0">
         <div class="flex items-center gap-2.5 min-w-0">
-          <div class="w-10 h-10 rounded-2xl bg-white/95 shadow-sm flex items-center justify-center text-2xl border border-amber-200 flex-shrink-0">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/95 shadow-sm flex items-center justify-center text-xl sm:text-2xl border border-amber-200 flex-shrink-0">
             🐼
           </div>
           <div class="min-w-0">
             <div class="flex items-center gap-1.5 flex-wrap">
-              <h3 class="font-black text-white text-base tracking-wide drop-shadow-2xs">小诺 AI 伴学导师</h3>
-              <span class="text-[11px] px-2 py-0.5 rounded-full font-bold bg-white/20 text-white backdrop-blur-xs border border-white/30">
+              <h3 class="font-black text-white text-sm sm:text-base tracking-wide drop-shadow-2xs">小诺 AI 伴学导师</h3>
+              <span class="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full font-bold bg-white/20 text-white backdrop-blur-xs border border-white/30">
                 {{ subjectIcon }} {{ subjectName }}
               </span>
             </div>
-            <p class="text-[11px] text-amber-100 font-medium truncate max-w-[240px] sm:max-w-xs mt-0.5">
+            <p class="text-[10px] sm:text-[11px] text-amber-100 font-medium truncate max-w-[220px] sm:max-w-xs mt-0.5">
               {{ tutorStore.currentContext?.knowledgePointTitle || tutorStore.currentContext?.lessonTitle || '启发式思维点拨 · 语音伴读' }}
             </p>
           </div>
@@ -318,7 +375,7 @@ async function handleSaveConfig() {
 
         <button
           @click="tutorStore.closeTutor()"
-          class="w-8 h-8 rounded-full bg-black/15 hover:bg-black/25 text-white flex items-center justify-center transition active:scale-90 flex-shrink-0 cursor-pointer"
+          class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/15 hover:bg-black/25 text-white flex items-center justify-center transition active:scale-90 flex-shrink-0 cursor-pointer"
           title="关闭"
         >
           <X class="w-4 h-4" />
@@ -326,12 +383,12 @@ async function handleSaveConfig() {
       </div>
 
       <!-- 📑 功能分段标签栏 (Segmented Capsule Tabs) -->
-      <div class="p-2 bg-amber-50/60 border-b border-amber-100 flex-shrink-0 select-none">
+      <div class="p-1.5 sm:p-2 bg-amber-50/60 border-b border-amber-100 flex-shrink-0 select-none">
         <div class="grid grid-cols-4 gap-1 bg-amber-100/60 p-1 rounded-2xl">
           <button
             @click="tutorStore.setTab('hints')"
             :class="[
-              'py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer',
+              'py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer',
               tutorStore.activeTab === 'hints'
                 ? 'bg-white text-amber-900 shadow-sm font-black'
                 : 'text-amber-800/70 hover:text-amber-900 hover:bg-white/40'
@@ -344,7 +401,7 @@ async function handleSaveConfig() {
           <button
             @click="tutorStore.setTab('chat')"
             :class="[
-              'py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer',
+              'py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer',
               tutorStore.activeTab === 'chat'
                 ? 'bg-white text-amber-900 shadow-sm font-black'
                 : 'text-amber-800/70 hover:text-amber-900 hover:bg-white/40'
@@ -357,7 +414,7 @@ async function handleSaveConfig() {
           <button
             @click="tutorStore.setTab('variation')"
             :class="[
-              'py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer',
+              'py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer',
               tutorStore.activeTab === 'variation'
                 ? 'bg-white text-amber-900 shadow-sm font-black'
                 : 'text-amber-800/70 hover:text-amber-900 hover:bg-white/40'
@@ -370,7 +427,7 @@ async function handleSaveConfig() {
           <button
             @click="tutorStore.setTab('settings')"
             :class="[
-              'py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer',
+              'py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer',
               tutorStore.activeTab === 'settings'
                 ? 'bg-white text-amber-900 shadow-sm font-black'
                 : 'text-amber-800/70 hover:text-amber-900 hover:bg-white/40'
@@ -383,18 +440,18 @@ async function handleSaveConfig() {
       </div>
 
       <!-- 📖 弹窗 Body 内容区域 (响应式视口适配) -->
-      <div class="flex-1 overflow-y-auto p-3.5 sm:p-4 bg-[#FAF8F5] space-y-3 min-h-0">
+      <div class="flex-1 overflow-y-auto p-3 sm:p-4 bg-[#FAF8F5] min-h-0 flex flex-col">
         
         <!-- Tab 1: 🌟 梯度点拨 (3步渐进式启发) -->
         <div v-if="tutorStore.activeTab === 'hints'" class="space-y-3">
           
           <!-- 题目与背景回顾栏 -->
-          <div class="bg-white rounded-2xl p-3 border border-amber-200/80 flex items-start gap-2.5 shadow-2xs">
+          <div class="bg-white rounded-2xl p-2.5 sm:p-3 border border-amber-200/80 flex items-start gap-2 shadow-2xs">
             <div class="p-1.5 bg-amber-100 text-amber-800 rounded-xl flex-shrink-0 mt-0.5">
-              <BookOpen class="w-4 h-4" />
+              <BookOpen class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div class="flex-1 min-w-0">
-              <div class="text-[11px] font-bold text-amber-700">当前探究点：</div>
+              <div class="text-[10px] sm:text-[11px] font-bold text-amber-700">当前探究点：</div>
               <div class="text-xs sm:text-sm font-black text-gray-900 mt-0.5 break-words leading-snug">
                 {{ tutorStore.currentContext?.questionPrompt || '核心知识点思维探究' }}
               </div>
@@ -419,16 +476,16 @@ async function handleSaveConfig() {
           </div>
 
           <!-- 提示卡片内容 -->
-          <div class="bg-white rounded-3xl p-4 sm:p-5 border border-amber-200 shadow-sm space-y-3 text-left">
+          <div class="bg-white rounded-3xl p-3.5 sm:p-5 border border-amber-200 shadow-sm space-y-3 text-left">
             <!-- 头部：标题与一键朗读 -->
             <div class="flex items-center justify-between gap-2">
-              <div class="font-black text-amber-950 text-sm sm:text-base flex items-center gap-1.5 truncate">
+              <div class="font-black text-amber-950 text-xs sm:text-base flex items-center gap-1.5 truncate">
                 <Sparkles class="w-4 h-4 text-amber-500 flex-shrink-0" />
                 <span class="truncate">{{ tutorStore.currentHint?.title || '小诺伴学点拨' }}</span>
               </div>
               <button
                 @click="tutorStore.readCurrentHint()"
-                class="flex items-center gap-1 px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-full text-xs font-black transition active:scale-95 flex-shrink-0 cursor-pointer"
+                class="flex items-center gap-1 px-2.5 sm:px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-full text-xs font-black transition active:scale-95 flex-shrink-0 cursor-pointer"
               >
                 <Volume2 class="w-3.5 h-3.5 text-amber-700 animate-pulse" />
                 <span>点读伴读</span>
@@ -436,7 +493,7 @@ async function handleSaveConfig() {
             </div>
 
             <!-- 小诺拟人化启发语录 -->
-            <div class="bg-gradient-to-br from-amber-50 to-orange-50/40 rounded-2xl p-3.5 border border-amber-100/80 text-amber-950 text-xs sm:text-sm font-bold leading-relaxed shadow-2xs">
+            <div class="bg-gradient-to-br from-amber-50 to-orange-50/40 rounded-2xl p-3 border border-amber-100/80 text-amber-950 text-xs sm:text-sm font-bold leading-relaxed shadow-2xs">
               🗣️ {{ tutorStore.currentHint?.speechText || '跟着小诺一起动脑筋，先看清规则与步骤！' }}
             </div>
 
@@ -456,10 +513,10 @@ async function handleSaveConfig() {
           </div>
         </div>
 
-        <!-- Tab 2: 💬 问问小诺 (AI 问答 + 移动端自适应键盘防挤压) -->
-        <div v-if="tutorStore.activeTab === 'chat'" class="flex flex-col h-[55vh] sm:h-[400px] max-h-[500px] min-h-[220px]">
-          <!-- 聊天消息流 (支持自适应收缩) -->
-          <div ref="chatScrollRef" class="flex-1 overflow-y-auto min-h-0 space-y-2.5 pr-1 pb-2">
+        <!-- Tab 2: 💬 问问小诺 (全自适应弹性聊天流，软键盘弹起时仅压缩中间消息区，顶栏与输入框绝不丢失) -->
+        <div v-if="tutorStore.activeTab === 'chat'" class="flex flex-col h-full flex-1 min-h-0">
+          <!-- 聊天消息流 -->
+          <div ref="chatScrollRef" class="flex-1 overflow-y-auto min-h-0 space-y-2 pr-1 pb-2">
             <div
               v-for="msg in tutorStore.chatMessages"
               :key="msg.id"
@@ -470,7 +527,7 @@ async function handleSaveConfig() {
             >
               <div
                 :class="[
-                  'w-8 h-8 rounded-full flex items-center justify-center text-base flex-shrink-0 shadow-2xs',
+                  'w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-sm sm:text-base flex-shrink-0 shadow-2xs',
                   msg.role === 'user' ? 'bg-amber-500 text-white' : 'bg-amber-100 border border-amber-300'
                 ]"
               >
@@ -478,7 +535,7 @@ async function handleSaveConfig() {
               </div>
               <div
                 :class="[
-                  'p-3 rounded-2xl text-xs sm:text-sm font-medium leading-relaxed shadow-2xs whitespace-pre-line break-words',
+                  'p-2.5 sm:p-3 rounded-2xl text-xs sm:text-sm font-medium leading-relaxed shadow-2xs whitespace-pre-line break-words',
                   msg.role === 'user'
                     ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-tr-none'
                     : 'bg-white border border-amber-200/80 text-gray-800 rounded-tl-none'
@@ -489,7 +546,7 @@ async function handleSaveConfig() {
                 <button
                   v-if="msg.role === 'assistant'"
                   @click="readMessageText(msg.text)"
-                  class="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-full text-[10px] font-bold text-amber-800 transition active:scale-95 cursor-pointer"
+                  class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-full text-[10px] font-bold text-amber-800 transition active:scale-95 cursor-pointer"
                   title="朗读"
                 >
                   <Volume2 class="w-3 h-3 text-amber-600" />
@@ -499,13 +556,13 @@ async function handleSaveConfig() {
             </div>
 
             <!-- 麦克风录音中的波形提示 -->
-            <div v-if="isListening" class="bg-amber-100 border-2 border-amber-400 p-3 rounded-2xl animate-pulse flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center animate-ping flex-shrink-0">
-                <Mic class="w-4 h-4" />
+            <div v-if="isListening" class="bg-amber-100 border-2 border-amber-400 p-2.5 rounded-2xl animate-pulse flex items-center gap-2">
+              <div class="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center animate-ping flex-shrink-0">
+                <Mic class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0">
                 <div class="text-xs font-black text-amber-900">🎤 小诺正在认真听你说话...</div>
-                <div class="text-xs text-amber-800 font-medium truncate">
+                <div class="text-[11px] text-amber-800 font-medium truncate">
                   {{ transcriptText || '说完了小诺马上回答你哦！' }}
                 </div>
               </div>
@@ -513,20 +570,20 @@ async function handleSaveConfig() {
 
             <!-- AI 思考中动画 -->
             <div v-if="tutorStore.isAiThinking" class="flex gap-2 mr-auto max-w-[85%] items-center">
-              <div class="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-base flex-shrink-0">
+              <div class="w-7 h-7 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-sm flex-shrink-0">
                 🐼
               </div>
-              <div class="bg-white border border-amber-200 rounded-2xl rounded-tl-none p-3 shadow-2xs text-xs text-amber-700 flex items-center gap-1.5">
+              <div class="bg-white border border-amber-200 rounded-2xl rounded-tl-none p-2.5 shadow-2xs text-xs text-amber-700 flex items-center gap-1.5">
                 <RefreshCw class="w-3.5 h-3.5 animate-spin text-amber-500" />
-                <span>小诺正在动脑筋组织语言中...</span>
+                <span>小诺正在动脑筋思考中...</span>
               </div>
             </div>
           </div>
 
-          <!-- 免打字一键快捷提问卡片 -->
-          <div class="py-1 border-t border-amber-100/80 flex-shrink-0">
+          <!-- 👶 免打字快捷提问卡片 (打字聚焦时自动隐匿，腾出全部垂直空间) -->
+          <div v-if="!isInputFocused" class="py-1 border-t border-amber-100/80 flex-shrink-0 animate-fade-in">
             <div class="text-[10px] font-bold text-amber-800 mb-1 flex items-center gap-1">
-              <span>👉 快捷提问（点一下直接问）：</span>
+              <span>👉 快捷提问卡片：</span>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-1">
               <button
@@ -541,8 +598,8 @@ async function handleSaveConfig() {
             </div>
           </div>
 
-          <!-- 底部输入与语音说话按钮 -->
-          <div class="flex items-center gap-1.5 pt-1.5 border-t border-gray-100 flex-shrink-0">
+          <!-- 底部输入与语音说话按钮 (始终紧贴软键盘上方，不遮挡任何内容) -->
+          <div class="flex items-center gap-1.5 pt-1.5 border-t border-gray-100 flex-shrink-0 bg-[#FAF8F5]">
             <button
               @click="toggleVoiceInput"
               :class="[
@@ -554,14 +611,15 @@ async function handleSaveConfig() {
               title="语音说话"
             >
               <Mic :class="['w-3.5 h-3.5', isListening ? 'animate-pulse' : '']" />
-              <span>{{ isListening ? '正在听...' : '语音' }}</span>
+              <span>{{ isListening ? '听...' : '语音' }}</span>
             </button>
 
             <input
               v-model="userInput"
               @focus="handleInputFocus"
+              @blur="handleInputBlur"
               @keyup.enter="handleSendMessage()"
-              placeholder="也可以输入提问内容..."
+              placeholder="输入提问内容..."
               class="flex-1 px-3 py-2 rounded-xl border border-amber-200 focus:border-amber-500 focus:outline-none text-xs sm:text-sm bg-white"
             />
             
