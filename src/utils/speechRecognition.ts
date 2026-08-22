@@ -13,7 +13,32 @@ export const recognitionError = ref('');
 let recognitionInstance: any = null;
 let startTimestamp = 0;
 
-export function startSpeechRecognition(
+/**
+ * 主动拉取浏览器/系统麦克风原生授权弹窗 (Active Microphone Permission Request)
+ */
+export async function requestMicrophonePermission(): Promise<boolean> {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    return false;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // 成功获取权限后立即释放音频流轨道
+    stream.getTracks().forEach(track => {
+      try {
+        track.stop();
+      } catch {}
+    });
+    return true;
+  } catch (err: any) {
+    console.warn('[STT] getUserMedia permission request error:', err);
+    return false;
+  }
+}
+
+/**
+ * 启动语音识别（若权限受限会自动尝试主动拉起授权）
+ */
+export async function startSpeechRecognition(
   onResult: (text: string, isFinal: boolean) => void,
   onEnd?: () => void,
   onError?: (err: string) => void
@@ -28,6 +53,22 @@ export function startSpeechRecognition(
     recognitionError.value = err;
     if (onError) onError(err);
     return;
+  }
+
+  // 1. 主动检查/拉起麦克风授权 (唤起浏览器系统级权限弹窗)
+  try {
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+      const hasPerm = await requestMicrophonePermission();
+      if (!hasPerm) {
+        // 如果拉取失败或被用户点击拒绝
+        const msg = '麦克风权限未开启。请在弹出的系统对话框中点击“允许”，或在浏览器设置中开启麦克风权限！';
+        recognitionError.value = msg;
+        if (onError) onError(msg);
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('[STT] Pre-permission check skipped:', e);
   }
 
   try {
@@ -70,25 +111,25 @@ export function startSpeechRecognition(
       onResult(current, Boolean(final));
     };
 
-    recognitionInstance.onerror = (event: any) => {
+    recognitionInstance.onerror = async (event: any) => {
       console.warn('[STT] Speech recognition error:', event.error);
       const elapsed = Date.now() - startTimestamp;
       isListening.value = false;
 
       let msg = '';
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        msg = '麦克风权限未开启。请在浏览器设置中允许麦克风权限，或使用手机键盘自带的语音输入！';
+        // 权限受限时，再次尝试主动拉取授权
+        msg = '麦克风权限受限。请在浏览器弹窗中点击“允许”，或在地址栏权限设置中开启麦克风！';
       } else if (event.error === 'network') {
-        msg = '手机浏览器语音服务连接受限，建议直接点击下方提问卡片，或使用手机输入法键盘自带的麦克风！';
+        msg = '手机浏览器语音云通道受限，建议直接点击下方快捷提问卡片，或使用手机输入法键盘自带的麦克风语音转文字！';
       } else if (event.error === 'no-speech') {
-        // 如果极短时间就报 no-speech，通常是移动端没有真正采集到声音
         if (elapsed < 800) {
-          msg = '未检测到声音，建议离麦克风近一点，或点击下方快捷问题卡片！';
+          msg = '未检测到声音，建议离麦克风近一点再试一次，或点击下方快捷问题卡片！';
         } else {
           msg = '小诺刚才没听清楚，请再试一次哦！';
         }
       } else {
-        msg = '语音识别通道受限，请使用键盘输入或点击下方快捷提问卡片！';
+        msg = '语音识别暂不可用，请使用键盘输入或点击下方快捷提问卡片！';
       }
 
       recognitionError.value = msg;
