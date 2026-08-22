@@ -4,6 +4,7 @@ import { useAiTutorStore } from '../../stores/useAiTutorStore';
 import { useUserStore } from '../../stores/useUserStore';
 import { sound } from '../../utils/sound';
 import { speakText, stopSpeech } from '../../utils/speech';
+import { showAlert } from '../../utils/alert';
 import {
   startSpeechRecognition,
   stopSpeechRecognition,
@@ -39,6 +40,7 @@ const selectedVariationOption = ref<string | null>(null);
 const variationResult = ref<'correct' | 'wrong' | null>(null);
 const isMascotHovered = ref(false);
 const showApiKey = ref(false);
+const isSavingConfig = ref(false);
 
 const subjectName = computed(() => {
   const s = tutorStore.currentContext?.subjectId;
@@ -117,6 +119,9 @@ watch(
   () => tutorStore.activeTab,
   () => {
     tutorStore.ensureContext();
+    if (tutorStore.activeTab === 'chat') {
+      scrollToBottom();
+    }
   }
 );
 
@@ -160,9 +165,22 @@ function toggleVoiceInput() {
         if (userInput.value.trim()) {
           handleSendMessage(userInput.value);
         }
+      },
+      (errMsg) => {
+        showAlert({
+          title: '语音识别提示 🎤',
+          message: errMsg || '手机浏览器网页语音功能受限。您可以直接点击下方的快捷提问卡片，或使用手机键盘上的麦克风直接语音转文字哦！',
+          type: 'info'
+        });
       }
     );
   }
+}
+
+function handleInputFocus() {
+  setTimeout(() => {
+    scrollToBottom();
+  }, 250);
 }
 
 function handleChooseVariationOption(optionId: string) {
@@ -199,6 +217,43 @@ function readMessageText(text: string) {
   sound.playButtonSound();
   speakText(text);
 }
+
+async function handleSaveConfig() {
+  isSavingConfig.value = true;
+  tutorStore.saveConfig({
+    mode: 'custom_api',
+    endpoint: tutorStore.config.endpoint,
+    apiKey: tutorStore.config.apiKey,
+    model: tutorStore.config.model
+  });
+
+  if (userStore.isLoggedIn) {
+    const ok = await userStore.syncToCloudNow();
+    isSavingConfig.value = false;
+    if (ok) {
+      sound.playWinSound();
+      showAlert({
+        title: '云端同步成功 ☁️',
+        message: '大模型配置与 API Key 已成功保存，并实时同步至您的家长云端账号！在手机、平板等任意设备登录均会自动生效。',
+        type: 'success'
+      });
+    } else {
+      showAlert({
+        title: '已保存至本地 💾',
+        message: '大模型配置已成功保存至当前浏览器（刷新不会丢失）。云端同步遇到微小网络波动：' + (userStore.syncError || '稍后会自动重试'),
+        type: 'info'
+      });
+    }
+  } else {
+    isSavingConfig.value = false;
+    sound.playWinSound();
+    showAlert({
+      title: '已保存至本地 💾',
+      message: '大模型配置与 API Key 已成功保存于当前浏览器，刷新页面不会丢失！\n\n💡 提示：登录家长账号后可自动多端云同步，换设备免重复输入。',
+      type: 'info'
+    });
+  }
+}
 </script>
 
 <template>
@@ -232,18 +287,18 @@ function readMessageText(text: string) {
     </div>
   </div>
 
-  <!-- 2. 小诺 AI 伴学导师全局对话弹窗 (Modal) -->
+  <!-- 2. 小诺 AI 伴学导师全局对话弹窗 (Modal / Bottom Sheet on Mobile) -->
   <div
     v-if="tutorStore.isOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+    class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
     @click="tutorStore.closeTutor()"
   >
     <div
-      class="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-amber-200 flex flex-col max-h-[88vh] overflow-hidden animate-pop-in"
+      class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl border border-amber-200 flex flex-col max-h-[90dvh] sm:max-h-[85vh] overflow-hidden animate-pop-in"
       @click.stop
     >
       <!-- 🌟 Header 顶部栏 (精致清爽) -->
-      <div class="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 px-4 py-3 flex items-center justify-between shadow-sm relative text-white">
+      <div class="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 px-4 py-3 flex items-center justify-between shadow-sm relative text-white flex-shrink-0">
         <div class="flex items-center gap-2.5 min-w-0">
           <div class="w-10 h-10 rounded-2xl bg-white/95 shadow-sm flex items-center justify-center text-2xl border border-amber-200 flex-shrink-0">
             🐼
@@ -327,8 +382,8 @@ function readMessageText(text: string) {
         </div>
       </div>
 
-      <!-- 📖 弹窗 Body 内容区域 -->
-      <div class="flex-1 overflow-y-auto p-3.5 sm:p-4 bg-[#FAF8F5] space-y-3">
+      <!-- 📖 弹窗 Body 内容区域 (响应式视口适配) -->
+      <div class="flex-1 overflow-y-auto p-3.5 sm:p-4 bg-[#FAF8F5] space-y-3 min-h-0">
         
         <!-- Tab 1: 🌟 梯度点拨 (3步渐进式启发) -->
         <div v-if="tutorStore.activeTab === 'hints'" class="space-y-3">
@@ -367,7 +422,7 @@ function readMessageText(text: string) {
           <div class="bg-white rounded-3xl p-4 sm:p-5 border border-amber-200 shadow-sm space-y-3 text-left">
             <!-- 头部：标题与一键朗读 -->
             <div class="flex items-center justify-between gap-2">
-              <div class="font-black text-amber-955 text-sm sm:text-base flex items-center gap-1.5 truncate">
+              <div class="font-black text-amber-950 text-sm sm:text-base flex items-center gap-1.5 truncate">
                 <Sparkles class="w-4 h-4 text-amber-500 flex-shrink-0" />
                 <span class="truncate">{{ tutorStore.currentHint?.title || '小诺伴学点拨' }}</span>
               </div>
@@ -401,10 +456,10 @@ function readMessageText(text: string) {
           </div>
         </div>
 
-        <!-- Tab 2: 💬 问问小诺 (AI 问答 + 语音对话) -->
-        <div v-if="tutorStore.activeTab === 'chat'" class="flex flex-col h-[380px]">
-          <!-- 聊天消息流 -->
-          <div ref="chatScrollRef" class="flex-1 overflow-y-auto space-y-2.5 pr-1 pb-2">
+        <!-- Tab 2: 💬 问问小诺 (AI 问答 + 移动端自适应键盘防挤压) -->
+        <div v-if="tutorStore.activeTab === 'chat'" class="flex flex-col h-[55vh] sm:h-[400px] max-h-[500px] min-h-[220px]">
+          <!-- 聊天消息流 (支持自适应收缩) -->
+          <div ref="chatScrollRef" class="flex-1 overflow-y-auto min-h-0 space-y-2.5 pr-1 pb-2">
             <div
               v-for="msg in tutorStore.chatMessages"
               :key="msg.id"
@@ -469,7 +524,7 @@ function readMessageText(text: string) {
           </div>
 
           <!-- 免打字一键快捷提问卡片 -->
-          <div class="py-1.5 border-t border-amber-100/80">
+          <div class="py-1 border-t border-amber-100/80 flex-shrink-0">
             <div class="text-[10px] font-bold text-amber-800 mb-1 flex items-center gap-1">
               <span>👉 快捷提问（点一下直接问）：</span>
             </div>
@@ -487,7 +542,7 @@ function readMessageText(text: string) {
           </div>
 
           <!-- 底部输入与语音说话按钮 -->
-          <div class="flex items-center gap-1.5 pt-2 border-t border-gray-100">
+          <div class="flex items-center gap-1.5 pt-1.5 border-t border-gray-100 flex-shrink-0">
             <button
               @click="toggleVoiceInput"
               :class="[
@@ -504,6 +559,7 @@ function readMessageText(text: string) {
 
             <input
               v-model="userInput"
+              @focus="handleInputFocus"
               @keyup.enter="handleSendMessage()"
               placeholder="也可以输入提问内容..."
               class="flex-1 px-3 py-2 rounded-xl border border-amber-200 focus:border-amber-500 focus:outline-none text-xs sm:text-sm bg-white"
@@ -690,18 +746,12 @@ function readMessageText(text: string) {
 
               <button
                 type="button"
-                @click="() => {
-                  tutorStore.saveConfig({
-                    mode: 'custom_api',
-                    endpoint: tutorStore.config.endpoint,
-                    apiKey: tutorStore.config.apiKey,
-                    model: tutorStore.config.model
-                  });
-                  sound.playWinSound();
-                }"
-                class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 text-white rounded-xl font-black text-xs shadow-xs transition active:scale-95 flex items-center justify-center gap-1 cursor-pointer"
+                @click="handleSaveConfig"
+                :disabled="isSavingConfig"
+                class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 disabled:opacity-60 text-white rounded-xl font-black text-xs shadow-xs transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <span>💾 保存并同步配置</span>
+                <RefreshCw v-if="isSavingConfig" class="w-3.5 h-3.5 animate-spin" />
+                <span>{{ isSavingConfig ? '正在保存并同步...' : '💾 保存并立即生效' }}</span>
               </button>
             </div>
 
