@@ -334,11 +334,11 @@ const confirmReset = async () => {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-6 sm:py-10 px-4 sm:px-6 lg:px-8 select-none">
-    <div class="max-w-6xl mx-auto space-y-6 sm:space-y-8">
+  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-3 sm:py-10 px-2.5 sm:px-6 lg:px-8 select-none">
+    <div class="max-w-6xl mx-auto space-y-4 sm:space-y-8">
 
       <!-- Case A: Logged In & Has Child Profile -->
-      <div v-if="userStore.hasProfile" class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm relative overflow-hidden">
+      <div v-if="userStore.hasProfile" class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border-2 border-orange-100 shadow-2xs relative overflow-hidden">
         <div class="absolute -right-12 -top-12 w-64 h-64 bg-orange-100/60 rounded-full blur-3xl pointer-events-none"></div>
 
         <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -473,15 +473,15 @@ const confirmReset = async () => {
       </div>
 
       <!-- 🧠 宝贝多学科知识点与能力画像图谱 (Student Learning Profile) -->
-      <div v-if="userStore.hasProfile" class="bg-white rounded-3xl p-5 sm:p-7 border-2 border-indigo-100 shadow-sm space-y-5">
+      <div v-if="userStore.hasProfile" class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border-2 border-indigo-100 shadow-2xs space-y-4 sm:space-y-5">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <div class="space-y-0.5">
-            <div class="text-[11px] font-black text-indigo-600 uppercase tracking-wide flex items-center gap-1">
-              <Brain class="w-3.5 h-3.5" />
-              <span>Multi-Subject Competency Graph · 全科能力画像</span>
+          <div class="space-y-0.5 min-w-0">
+            <div class="text-[10px] sm:text-[11px] font-black text-indigo-600 uppercase tracking-wide flex items-center gap-1">
+              <Brain class="w-3.5 h-3.5 shrink-0" />
+              <span class="truncate">全科能力画像与学情分析</span>
             </div>
-            <h2 class="text-lg sm:text-xl font-black text-gray-900 flex items-center gap-2">
-              <span class="font-cartoon font-bold">🧠 宝贝多学科素养与知识点掌握图谱</span>
+            <h2 class="text-base sm:text-xl font-black text-gray-900 flex items-center gap-1.5 truncate">
+              <span class="font-cartoon font-bold truncate">🧠 宝贝多学科素养与学情图谱</span>
             </h2>
           </div>
           <span class="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full">
@@ -598,8 +598,8 @@ const confirmReset = async () => {
       </div>
 
       <!-- 📕 语数外错题攻坚大本营 (Mistake Notebook Growth Center Portal) -->
-      <div v-if="userStore.hasProfile" class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-rose-100 shadow-sm space-y-5">
-        <div class="flex items-center justify-between flex-wrap gap-4">
+      <div v-if="userStore.hasProfile" class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border-2 border-rose-100 shadow-2xs space-y-4 sm:space-y-5">
+        <div class="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
           <div class="flex items-center gap-3.5">
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 via-pink-500 to-purple-600 text-white flex items-center justify-center text-2xl shadow-md">
               📕
@@ -1188,6 +1188,7 @@ const confirmReset = async () => {
     />
   </div>
 </template>
+
 
 
 

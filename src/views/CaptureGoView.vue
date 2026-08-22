@@ -283,7 +283,7 @@ const toggleZenMode = () => {
       <!-- =========================================================
            MODE 1: 🧘 ZEN / ZONE 纯净沉浸模式 (极简紧凑 · 专为手机优化)
            ========================================================= -->
-      <div v-if="isZenMode" class="space-y-2 max-w-lg mx-auto animate-fade-in">
+      <div v-if="isZenMode" class="space-y-2 max-w-2xl mx-auto animate-fade-in w-full">
         
         <!-- Top Sleek Target HUD Bar -->
         <div class="bg-white/95 backdrop-blur-md rounded-2xl p-2.5 sm:p-3 border-2 border-orange-200 shadow-sm flex items-center justify-between gap-2">
@@ -340,7 +340,7 @@ const toggleZenMode = () => {
             :theme="userStore.theme"
             :highlightPoints="highlightPoints"
             :lastMove="lastMove"
-            :sizePx="460"
+            :sizePx="580"
             @move="handlePlayerMove"
           />
         </div>
@@ -437,7 +437,7 @@ const toggleZenMode = () => {
                 :theme="userStore.theme"
                 :highlightPoints="highlightPoints"
                 :lastMove="lastMove"
-                :sizePx="480"
+                :sizePx="520"
                 @move="handlePlayerMove"
               />
             </div>
@@ -582,4 +582,5 @@ const toggleZenMode = () => {
 
   </div>
 </template>
+
 

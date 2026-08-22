@@ -609,7 +609,7 @@ const goBack = () => {
           </span>
         </h2>
 
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
           <button
             v-for="cnt in [10, 20, 30, 50, 100]"
             :key="cnt"
@@ -630,21 +630,23 @@ const goBack = () => {
       </div>
 
       <!-- Action Buttons Row -->
-      <div class="flex flex-col sm:flex-row gap-4 pt-2">
+      <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
         <button
           @click="startDrill"
-          class="flex-1 py-4 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-lg sm:text-xl shadow-xl hover:shadow-blue-200 transform hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+          class="flex-1 py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-base sm:text-xl shadow-lg hover:shadow-blue-200 transform hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer min-w-0"
         >
-          <Play class="w-6 h-6 fill-current" />
-          <span>开始连续作答 ({{ selectedCount }}题 · 答完交卷)</span>
+          <Play class="w-5 h-5 sm:w-6 sm:h-6 fill-current shrink-0" />
+          <span class="hidden sm:inline">开始连续作答 ({{ selectedCount }}题 · 答完交卷)</span>
+          <span class="sm:hidden truncate">开始连续作答 ({{ selectedCount }}题)</span>
         </button>
 
         <button
           @click="openPrintMode"
-          class="py-4 px-6 rounded-2xl bg-white border-2 border-blue-300 hover:border-blue-500 text-blue-700 font-black text-base shadow-md hover:bg-blue-50/50 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          class="py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl bg-white border-2 border-blue-300 hover:border-blue-500 text-blue-700 font-black text-sm sm:text-base shadow-sm hover:bg-blue-50/50 active:scale-95 transition-all flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer shrink-0"
         >
-          <Printer class="w-5 h-5" />
-          <span>生成 A4 纸质试卷与答案</span>
+          <Printer class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+          <span class="hidden sm:inline">生成 A4 纸质试卷与答案</span>
+          <span class="sm:hidden">🖨️ A4 试卷</span>
         </button>
       </div>
     </main>
@@ -788,10 +790,11 @@ const goBack = () => {
               <button
                 v-if="currentIdx < questions.length - 1"
                 @click="goToNext"
-                class="flex-1 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 text-white font-black text-base shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                class="flex-1 py-3.5 px-3 sm:px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 text-white font-black text-sm sm:text-base shadow-md active:scale-95 transition-all flex items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0"
               >
-                <span>保存并下一题</span>
-                <ArrowRight class="w-5 h-5" />
+                <span class="hidden sm:inline">保存并下一题</span>
+                <span class="sm:hidden truncate">下一题</span>
+                <ArrowRight class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
               </button>
 
               <button
@@ -1378,6 +1381,7 @@ const goBack = () => {
   }
 }
 </style>
+
 
 
 

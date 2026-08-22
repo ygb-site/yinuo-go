@@ -130,26 +130,26 @@ const isNavActive = (itemPath: string) => {
 
 <template>
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-orange-100 shadow-xs select-none">
-    <div class="max-w-7xl mx-auto px-2.5 sm:px-5 lg:px-6">
-      <div class="flex items-center justify-between h-14 sm:h-18 gap-1.5 sm:gap-4">
+    <div class="max-w-7xl mx-auto px-2 sm:px-5 lg:px-6">
+      <div class="flex items-center justify-between h-13 sm:h-18 gap-1 sm:gap-4">
         
         <!-- Left: Brand Logo & Title -->
         <div
           @click="navigateTo('/')"
-          class="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+          class="flex items-center gap-1.5 sm:gap-2 cursor-pointer group flex-shrink-0 min-w-0"
           title="返回学堂大厅"
         >
           <div
-            class="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-rose-500 p-0.5 shadow-sm flex items-center justify-center border-2 border-white group-hover:rotate-6 transition-transform flex-shrink-0 overflow-hidden"
+            class="w-8 h-8 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-rose-500 p-0.5 shadow-sm flex items-center justify-center border-2 border-white group-hover:rotate-6 transition-transform flex-shrink-0 overflow-hidden"
           >
             <img src="/logo/logo-avatar-circle-144.png" alt="一诺未来学堂" class="w-full h-full object-contain" />
           </div>
-          <div class="flex flex-col justify-center">
-            <div class="flex items-center gap-1.5 leading-none">
-              <span class="text-lg sm:text-2xl font-cartoon font-extrabold bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 bg-clip-text text-transparent whitespace-nowrap tracking-wide sm:tracking-wider">
+          <div class="flex flex-col justify-center min-w-0">
+            <div class="flex items-center gap-1 sm:gap-1.5 leading-none">
+              <span class="text-base sm:text-2xl font-cartoon font-extrabold bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 bg-clip-text text-transparent whitespace-nowrap tracking-tight sm:tracking-wider">
                 一诺未来学堂
               </span>
-              <span class="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-2xs tracking-wider whitespace-nowrap">
+              <span class="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[8px] sm:text-[10px] font-black px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded-full shadow-2xs tracking-wider whitespace-nowrap">
                 EDU
               </span>
             </div>
@@ -178,39 +178,39 @@ const isNavActive = (itemPath: string) => {
         </nav>
 
         <!-- Right: Actions, Coins, User Profile -->
-        <div class="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
+        <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           
           <button
             v-if="!userStore.isLoggedIn"
             @click="userStore.openAuthModal()"
-            class="flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white border border-amber-300 px-3 py-1.5 rounded-2xl cursor-pointer shadow-sm transition transform active:scale-95 text-xs font-black"
+            class="flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white border border-amber-300 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl cursor-pointer shadow-sm transition transform active:scale-95 text-[11px] sm:text-xs font-black whitespace-nowrap"
           >
-            <LogIn class="w-3.5 h-3.5 flex-shrink-0" />
-            <span>登录 / 注册</span>
+            <LogIn class="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+            <span>登录</span>
           </button>
 
           <button
             v-else-if="!userStore.hasProfile"
             @click="userStore.openProfileModal()"
-            class="flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white border border-emerald-300 px-3 py-1.5 rounded-2xl cursor-pointer shadow-sm transition transform active:scale-95 text-xs font-black"
+            class="flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white border border-emerald-300 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl cursor-pointer shadow-sm transition transform active:scale-95 text-[11px] sm:text-xs font-black whitespace-nowrap"
           >
-            <UserPlus class="w-3.5 h-3.5 flex-shrink-0" />
-            <span>创建宝贝</span>
+            <UserPlus class="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+            <span>建宝贝</span>
           </button>
 
           <div v-else ref="userMenuRef" class="relative flex-shrink-0">
             <button
               type="button"
               @click.stop="showUserMenu = !showUserMenu"
-              class="flex items-center gap-1 sm:gap-1.5 bg-amber-50/90 hover:bg-amber-100/90 border border-orange-200 pl-1 sm:pl-1.5 pr-2 py-0.5 sm:py-1 rounded-full cursor-pointer transition shadow-2xs group"
+              class="flex items-center gap-0.5 sm:gap-1.5 bg-amber-50/90 hover:bg-amber-100/90 border border-orange-200 pl-1 pr-1.5 sm:pr-2 py-0.5 sm:py-1 rounded-full cursor-pointer transition shadow-2xs group"
             >
-              <span class="text-base sm:text-lg select-none group-hover:scale-110 transition-transform">
+              <span class="text-sm sm:text-lg select-none group-hover:scale-110 transition-transform">
                 {{ userStore.avatar }}
               </span>
-              <span class="text-xs font-black text-gray-800 max-w-[60px] sm:max-w-[80px] truncate">
+              <span class="text-[11px] sm:text-xs font-black text-gray-800 max-w-[45px] sm:max-w-[80px] truncate">
                 {{ userStore.nickname }}
               </span>
-              <ChevronDown class="w-3 h-3 text-orange-400" />
+              <ChevronDown class="w-2.5 h-2.5 sm:w-3 sm:h-3 text-orange-400" />
             </button>
 
             <!-- User Menu Dropdown -->
@@ -293,18 +293,18 @@ const isNavActive = (itemPath: string) => {
           <div class="flex items-center gap-1 sm:gap-1.5">
             <div
               @click="navigateTo('/shop')"
-              class="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 sm:px-2.5 py-1 rounded-full text-amber-700 text-xs font-black cursor-pointer hover:bg-amber-100 transition-colors shadow-2xs"
+              class="flex items-center gap-0.5 sm:gap-1 bg-amber-50 border border-amber-200 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-amber-700 text-[11px] sm:text-xs font-black cursor-pointer hover:bg-amber-100 transition-colors shadow-2xs"
               title="我的金币"
             >
-              <Coins class="w-3.5 h-3.5 text-amber-500" />
+              <Coins class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-500 flex-shrink-0" />
               <span>{{ userStore.coins }}</span>
             </div>
 
             <div
-              class="flex items-center gap-1 bg-amber-500/10 border border-amber-300 px-2 sm:px-2.5 py-1 rounded-full text-amber-600 text-xs font-black shadow-2xs"
+              class="flex items-center gap-0.5 sm:gap-1 bg-amber-500/10 border border-amber-300 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-amber-600 text-[11px] sm:text-xs font-black shadow-2xs"
               title="我的总星星"
             >
-              <Star class="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+              <Star class="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-amber-400 text-amber-500 flex-shrink-0" />
               <span>{{ userStore.totalStars }}</span>
             </div>
           </div>
@@ -312,11 +312,11 @@ const isNavActive = (itemPath: string) => {
           <!-- Sound Toggle -->
           <button
             @click="toggleSound"
-            class="p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-transform active:scale-90"
+            class="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-transform active:scale-90 flex-shrink-0"
             :title="userStore.soundEnabled ? '静音' : '开启音效'"
           >
-            <Volume2 v-if="userStore.soundEnabled" class="w-4 h-4 text-emerald-600" />
-            <VolumeX v-else class="w-4 h-4 text-slate-400" />
+            <Volume2 v-if="userStore.soundEnabled" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
+            <VolumeX v-else class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
           </button>
         </div>
 
@@ -325,17 +325,17 @@ const isNavActive = (itemPath: string) => {
   </header>
 
   <!-- Mobile Bottom Navigation Bar (6 Tabs) -->
-  <nav v-if="!route.path.includes('/lesson/')" class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-orange-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-1 pt-1.5 pb-[max(0.4rem,env(safe-area-inset-bottom))] flex items-center justify-around select-none">
+  <nav v-if="!route.path.includes('/lesson/')" class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-orange-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-1 pt-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] flex items-center justify-around select-none">
     <button
       v-for="item in navItems"
       :key="item.path"
       @click="navigateTo(item.path)"
-      class="flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-150 active:scale-90 cursor-pointer min-w-0 relative group"
+      class="flex-1 flex flex-col items-center justify-center py-0.5 px-0.5 rounded-xl transition-all duration-150 active:scale-90 cursor-pointer min-w-0 relative group"
       :class="isNavActive(item.path) ? 'text-orange-600 font-black' : 'text-gray-400 hover:text-gray-600'"
     >
       <div
         v-if="isNavActive(item.path)"
-        class="absolute -top-1.5 w-6 h-1 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full shadow-xs"
+        class="absolute -top-1 w-6 h-1 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full shadow-xs"
       ></div>
 
       <div
@@ -346,7 +346,7 @@ const isNavActive = (itemPath: string) => {
       </div>
 
       <span
-        class="text-[10px] leading-none mt-0.5 whitespace-nowrap truncate max-w-full"
+        class="text-[10px] leading-tight mt-0.5 whitespace-nowrap truncate max-w-full"
         :class="isNavActive(item.path) ? 'font-black text-orange-600' : 'font-bold text-gray-500'"
       >
         {{ item.shortName }}

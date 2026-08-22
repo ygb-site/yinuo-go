@@ -193,19 +193,19 @@ const goBack = () => {
 <template>
   <div class="min-h-screen bg-[#FDFBF7] pb-20 select-none">
     <!-- Top Header -->
-    <header class="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 text-white py-6 px-4 shadow-md">
-      <div class="max-w-6xl mx-auto flex items-center justify-between">
+    <header class="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 text-white py-4 sm:py-6 px-3 sm:px-4 shadow-md">
+      <div class="max-w-6xl mx-auto flex items-center justify-between gap-2">
         <button
           @click="goBack"
-          class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+          class="px-3 sm:px-4 py-1.5 sm:py-2 bg-white/20 hover:bg-white/30 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5 active:scale-95 transition-all cursor-pointer shrink-0"
         >
-          <ArrowLeft class="w-4 h-4" />
-          <span>返回语文馆</span>
+          <ArrowLeft class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span>返回</span>
         </button>
 
-        <h1 class="text-xl sm:text-3xl font-cartoon font-bold flex items-center gap-2">
+        <h1 class="text-base sm:text-3xl font-cartoon font-bold flex items-center gap-1.5 sm:gap-2 truncate">
           <span>👑</span>
-          <span>汉语拼音魔法王国 (Pinyin Master)</span>
+          <span class="truncate">汉语拼音魔法王国</span>
         </h1>
 
         <div class="text-xs font-black bg-white/20 px-3 py-1 rounded-full hidden sm:block">
@@ -219,53 +219,57 @@ const goBack = () => {
       <!-- ==========================================
            FOUR MAIN PINYIN MODES TABS
            ========================================== -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white p-2 rounded-3xl border-2 border-amber-200 shadow-sm">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 bg-white p-1.5 sm:p-2 rounded-2xl sm:rounded-3xl border-2 border-amber-200 shadow-2xs">
         <button
           @click="switchTab('soundboard')"
           :class="[
-            'py-3 px-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 cursor-pointer',
+            'py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0',
             activeTab === 'soundboard'
-              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md scale-102'
+              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md scale-[1.02]'
               : 'text-slate-600 hover:bg-amber-50'
           ]"
         >
-          <span>📢 拼音点读大本营</span>
+          <span class="hidden sm:inline">📢 拼音点读大本营</span>
+          <span class="sm:hidden truncate">📢 拼音点读</span>
         </button>
 
         <button
           @click="switchTab('tones')"
           :class="[
-            'py-3 px-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 cursor-pointer',
+            'py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0',
             activeTab === 'tones'
-              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md scale-102'
+              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md scale-[1.02]'
               : 'text-slate-600 hover:bg-amber-50'
           ]"
         >
-          <span>🚗 四声调小汽车</span>
+          <span class="hidden sm:inline">🚗 四声调小汽车</span>
+          <span class="sm:hidden truncate">🚗 四声调卡</span>
         </button>
 
         <button
           @click="switchTab('blender')"
           :class="[
-            'py-3 px-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 cursor-pointer',
+            'py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0',
             activeTab === 'blender'
-              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md scale-102'
+              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md scale-[1.02]'
               : 'text-slate-600 hover:bg-amber-50'
           ]"
         >
-          <span>🧪 声韵魔法拼读器</span>
+          <span class="hidden sm:inline">🧪 声韵魔法拼读器</span>
+          <span class="sm:hidden truncate">🧪 魔法拼读</span>
         </button>
 
         <button
           @click="switchTab('quiz')"
           :class="[
-            'py-3 px-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 cursor-pointer',
+            'py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0',
             activeTab === 'quiz'
-              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md scale-102'
+              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md scale-[1.02]'
               : 'text-slate-600 hover:bg-amber-50'
           ]"
         >
-          <span>🎯 听音辨音大闯关</span>
+          <span class="hidden sm:inline">🎯 听音辨音大闯关</span>
+          <span class="sm:hidden truncate">🎯 听音辨音</span>
         </button>
       </div>
 
@@ -576,3 +580,4 @@ const goBack = () => {
     </main>
   </div>
 </template>
+

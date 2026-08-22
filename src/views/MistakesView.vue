@@ -480,55 +480,56 @@ const goBack = () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#FDFBF7] py-4 sm:py-6 px-3 sm:px-6 select-none">
-    <div class="max-w-6xl mx-auto space-y-6">
+  <div class="min-h-screen bg-[#FDFBF7] py-3 sm:py-6 px-2.5 sm:px-6 select-none">
+    <div class="max-w-6xl mx-auto space-y-4 sm:space-y-6">
 
       <!-- Breadcrumb & Top Bar -->
-      <div class="flex items-center justify-between flex-wrap gap-3">
+      <div class="flex items-center justify-between flex-wrap gap-2">
         <button
           @click="goBack"
-          class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-100/80 hover:bg-amber-200 text-amber-900 rounded-2xl text-xs sm:text-sm font-black transition-all active:scale-95 border border-amber-300 shadow-2xs cursor-pointer"
+          class="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 bg-amber-100/80 hover:bg-amber-200 text-amber-900 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black transition-all active:scale-95 border border-amber-300 shadow-2xs cursor-pointer shrink-0"
         >
-          <ArrowLeft class="w-4 h-4" />
-          <span>返回学堂大厅</span>
+          <ArrowLeft class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span>返回大厅</span>
         </button>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 sm:gap-2">
           <button
             @click="openDailyParentReport"
-            class="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 text-white rounded-2xl text-xs sm:text-sm font-black shadow-md transition-all active:scale-95 cursor-pointer"
+            class="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 text-white rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black shadow-sm transition-all active:scale-95 cursor-pointer shrink-0"
           >
-            <FileText class="w-4 h-4" />
-            <span>📊 每日学情报告 (家长端)</span>
+            <FileText class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span class="hidden sm:inline">📊 每日学情报告 (家长端)</span>
+            <span class="sm:hidden">📊 学情报告</span>
           </button>
 
-          <div class="flex items-center gap-1.5 bg-rose-100 text-rose-800 px-3.5 py-1.5 rounded-full text-xs font-black border border-rose-200">
-            <BookMarked class="w-4 h-4 text-rose-600" />
-            <span>全学科智能错题本中心</span>
+          <div class="hidden sm:flex items-center gap-1.5 bg-rose-100 text-rose-800 px-3 py-1.5 rounded-full text-xs font-black border border-rose-200">
+            <BookMarked class="w-3.5 h-3.5 text-rose-600" />
+            <span>智能错题本</span>
           </div>
         </div>
       </div>
 
       <!-- Header Hero Banner -->
-      <div class="bg-gradient-to-r from-rose-500 via-pink-500 to-purple-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      <div class="bg-gradient-to-r from-rose-500 via-pink-500 to-purple-600 rounded-2xl sm:rounded-3xl p-4 sm:p-8 text-white shadow-lg sm:shadow-xl relative overflow-hidden">
         <div class="absolute -right-8 -bottom-8 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
 
-        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div class="space-y-3 text-center md:text-left">
-            <div class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3.5 py-1 rounded-full text-xs font-black">
+        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
+          <div class="space-y-2 sm:space-y-3 text-center md:text-left w-full md:w-auto">
+            <div class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-black">
               <Sparkles class="w-3.5 h-3.5 text-amber-300" />
-              <span>智能收录做题错题 · 随时随机出题 · 答对自动移出</span>
+              <span>智能收录 · 随机出题 · 答对自动移出</span>
             </div>
-            <h1 class="text-2xl sm:text-4xl font-cartoon font-bold tracking-wide drop-shadow-sm">
-              语数外全学科错题攻坚大本营
+            <h1 class="text-xl sm:text-4xl font-cartoon font-bold tracking-wide drop-shadow-sm">
+              全学科错题攻坚大本营
             </h1>
-            <p class="text-xs sm:text-sm text-white/90 font-medium max-w-xl leading-relaxed">
-              做题做错自动入本！一键开启错题随机抽题练，答对即刻移出错题本并领双倍金币，彻底消灭知识盲区！
+            <p class="text-xs sm:text-sm text-white/90 font-medium max-w-xl leading-relaxed line-clamp-2">
+              做题做错自动入本！一键开启错题随机抽题练，答对即刻移出错题本并领双倍金币！
             </p>
           </div>
 
           <!-- Quick Action Card -->
-          <div class="bg-white/15 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/25 text-center min-w-[240px] flex flex-col justify-between gap-3">
+          <div class="bg-white/15 backdrop-blur-md rounded-2xl p-3.5 sm:p-5 border border-white/25 text-center w-full md:w-auto min-w-0 md:min-w-[240px] flex flex-col justify-between gap-2.5 sm:gap-3">
             <div>
               <div class="text-xs font-bold text-white/80">待消灭错题总数</div>
               <div class="text-3xl font-black text-amber-300 mt-0.5">
@@ -1269,4 +1270,5 @@ const goBack = () => {
 
   </div>
 </template>
+
 
