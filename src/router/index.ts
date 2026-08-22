@@ -7,49 +7,49 @@ import { CHAPTERS_DATA, type Lesson } from '../data/chapters';
 import { sound } from '../utils/sound';
 import { showAlert } from '../utils/alert';
 
-// Core Global Views
-import HomeView from '../views/HomeView.vue';
-import ProfileView from '../views/ProfileView.vue';
-import AdminView from '../views/AdminView.vue';
-import ShopView from '../views/ShopView.vue';
+// 🌟 Core Views (Lazy Loaded)
+const HomeView = () => import('../views/HomeView.vue');
+const ProfileView = () => import('../views/ProfileView.vue');
+const AdminView = () => import('../views/AdminView.vue');
+const ShopView = () => import('../views/ShopView.vue');
 
-// ♟️ Go Dedicated Views
-import GoHubView from '../views/GoHubView.vue';
-import AdventureView from '../views/AdventureView.vue';
-import LessonPlayView from '../views/LessonPlayView.vue';
-import PracticeView from '../views/PracticeView.vue';
-import BattleView from '../views/BattleView.vue';
-import TsumegoView from '../views/TsumegoView.vue';
-import AiMatchView from '../views/AiMatchView.vue';
-import FreeBoardView from '../views/FreeBoardView.vue';
-import DictionaryView from '../views/DictionaryView.vue';
-import ArcadeView from '../views/ArcadeView.vue';
-import CaptureGoView from '../views/CaptureGoView.vue';
-import MistakesView from '../views/MistakesView.vue';
-import TwoPlayerView from '../views/TwoPlayerView.vue';
-import RhymesView from '../views/RhymesView.vue';
-import RankExamView from '../views/RankExamView.vue';
-import WorksheetView from '../views/WorksheetView.vue';
+// ♟️ Go Dedicated Views (Lazy Loaded)
+const GoHubView = () => import('../views/GoHubView.vue');
+const AdventureView = () => import('../views/AdventureView.vue');
+const LessonPlayView = () => import('../views/LessonPlayView.vue');
+const PracticeView = () => import('../views/PracticeView.vue');
+const BattleView = () => import('../views/BattleView.vue');
+const TsumegoView = () => import('../views/TsumegoView.vue');
+const AiMatchView = () => import('../views/AiMatchView.vue');
+const FreeBoardView = () => import('../views/FreeBoardView.vue');
+const DictionaryView = () => import('../views/DictionaryView.vue');
+const ArcadeView = () => import('../views/ArcadeView.vue');
+const CaptureGoView = () => import('../views/CaptureGoView.vue');
+const MistakesView = () => import('../views/MistakesView.vue');
+const TwoPlayerView = () => import('../views/TwoPlayerView.vue');
+const RhymesView = () => import('../views/RhymesView.vue');
+const RankExamView = () => import('../views/RankExamView.vue');
+const WorksheetView = () => import('../views/WorksheetView.vue');
 
-// Universal Multi-Subject Views
-import SubjectHubView from '../views/SubjectHubView.vue';
-import SubjectLearnView from '../views/SubjectLearnView.vue';
-import UniversalLessonPlayView from '../views/UniversalLessonPlayView.vue';
+// 📚 Universal Multi-Subject Views (Lazy Loaded)
+const SubjectHubView = () => import('../views/SubjectHubView.vue');
+const SubjectLearnView = () => import('../views/SubjectLearnView.vue');
+const UniversalLessonPlayView = () => import('../views/UniversalLessonPlayView.vue');
 
-// 🔢 Math Specialized Features
-import MathDrillView from '../views/math/MathDrillView.vue';
-import MathSpeedView from '../views/math/MathSpeedView.vue';
-import TwentyFourView from '../views/math/TwentyFourView.vue';
+// 🔢 Math Specialized Features (Lazy Loaded)
+const MathDrillView = () => import('../views/math/MathDrillView.vue');
+const MathSpeedView = () => import('../views/math/MathSpeedView.vue');
+const TwentyFourView = () => import('../views/math/TwentyFourView.vue');
 
-// 🏮 Chinese Specialized Features
-import ChinesePinyinView from '../views/chinese/ChinesePinyinView.vue';
-import ChineseHanziView from '../views/chinese/ChineseHanziView.vue';
-import ChinesePoetryView from '../views/chinese/ChinesePoetryView.vue';
-import ChineseIdiomView from '../views/chinese/ChineseIdiomView.vue';
+// 🏮 Chinese Specialized Features (Lazy Loaded)
+const ChinesePinyinView = () => import('../views/chinese/ChinesePinyinView.vue');
+const ChineseHanziView = () => import('../views/chinese/ChineseHanziView.vue');
+const ChinesePoetryView = () => import('../views/chinese/ChinesePoetryView.vue');
+const ChineseIdiomView = () => import('../views/chinese/ChineseIdiomView.vue');
 
-// 🔤 English Specialized Features
-import EnglishPhonicsView from '../views/english/EnglishPhonicsView.vue';
-import EnglishFlashcardsView from '../views/english/EnglishFlashcardsView.vue';
+// 🔤 English Specialized Features (Lazy Loaded)
+const EnglishPhonicsView = () => import('../views/english/EnglishPhonicsView.vue');
+const EnglishFlashcardsView = () => import('../views/english/EnglishFlashcardsView.vue');
 
 const router = createRouter({
   history: createWebHistory(),

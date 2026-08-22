@@ -13,9 +13,16 @@
     <meta name="apple-mobile-web-app-title" content="一诺弈学" />
     <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#F97316" />
+    
+    <!-- 优化 Google Fonts 异步非阻塞加载，防止国内网络卡白屏 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700;800&family=Quicksand:wght@600;700;800&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700;800&family=Quicksand:wght@600;700;800&family=ZCOOL+KuaiLe&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700;800&family=Quicksand:wght@600;700;800&family=ZCOOL+KuaiLe&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700;800&family=Quicksand:wght@600;700;800&family=ZCOOL+KuaiLe&display=swap" />
+    </noscript>
+
     <title>YiNuo Go (一诺弈学) - 少儿互动启蒙围棋世界</title>
     <meta name="description" content="专为 4~10 岁少儿定制的高端互动围棋教学 Web 应用，气、叫吃、手筋、死活、人机对弈全功能支持。" />
     <!-- GitHub Pages SPA 路由重定向还原脚本（支持无 # 号 HTML5 History 模式） -->
@@ -37,3 +44,4 @@
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
+

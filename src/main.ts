@@ -3,7 +3,6 @@ import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 import App from './App.vue';
 import router from './router';
-import 'katex/dist/katex.min.css';
 import './style.css';
 
 const app = createApp(App);

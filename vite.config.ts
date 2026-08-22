@@ -72,7 +72,34 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    chunkSizeWarningLimit: 1500
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('katex')) {
+              return 'vendor-katex';
+            }
+            if (id.includes('hanzi-writer') || id.includes('pinyin-pro')) {
+              return 'vendor-hanzi';
+            }
+            if (id.includes('@supabase')) {
+              return 'vendor-supabase';
+            }
+            if (id.includes('lucide-vue-next')) {
+              return 'vendor-lucide';
+            }
+            if (id.includes('canvas-confetti') || id.includes('howler')) {
+              return 'vendor-effects';
+            }
+            if (id.includes('vue') || id.includes('pinia')) {
+              return 'vendor-vue-core';
+            }
+            return 'vendor-other';
+          }
+        }
+      }
+    }
   }
 });
 
