@@ -1,6 +1,19 @@
 import type { StoneColor, Point, BoardSize } from '../engine/types';
 
-export type SubjectId = 'go' | 'math' | 'chinese' | 'english';
+export type SchoolStage = 'primary' | 'junior' | 'senior';
+
+export type CoreSubjectId = 'go' | 'math' | 'chinese' | 'english';
+
+export type SubjectId =
+  | CoreSubjectId
+  | 'physics'
+  | 'chemistry'
+  | 'biology'
+  | 'history'
+  | 'geography'
+  | 'politics'
+  | 'ethics'
+  | 'science';
 
 export type GradeLevel =
   | 'g1_t1' | 'g1_t2'
@@ -8,30 +21,109 @@ export type GradeLevel =
   | 'g3_t1' | 'g3_t2'
   | 'g4_t1' | 'g4_t2'
   | 'g5_t1' | 'g5_t2'
-  | 'g6_t1' | 'g6_t2';
+  | 'g6_t1' | 'g6_t2'
+  | 'g7_t1' | 'g7_t2'
+  | 'g8_t1' | 'g8_t2'
+  | 'g9_t1' | 'g9_t2'
+  | 'g10_t1' | 'g10_t2'
+  | 'g11_t1' | 'g11_t2'
+  | 'g12_t1' | 'g12_t2';
 
 export interface GradeMeta {
   id: GradeLevel;
+  stage: SchoolStage;
   name: string;
   shortName: string;
   subtitle: string;
   badge: string;
+  defaultSubjects: SubjectId[];
 }
 
 export const GRADE_LEVELS: GradeMeta[] = [
-  { id: 'g1_t1', name: '一年级上册', shortName: '一上', subtitle: '基础启蒙', badge: '基础基石' },
-  { id: 'g1_t2', name: '一年级下册', shortName: '一下', subtitle: '进阶巩固', badge: '进阶巩固' },
-  { id: 'g2_t1', name: '二年级上册', shortName: '二上', subtitle: '思维拔高', badge: '思维培优' },
-  { id: 'g2_t2', name: '二年级下册', shortName: '二下', subtitle: '综合飞跃', badge: '综合飞跃' },
-  { id: 'g3_t1', name: '三年级上册', shortName: '三上', subtitle: '概念深化', badge: '核心拓展' },
-  { id: 'g3_t2', name: '三年级下册', shortName: '三下', subtitle: '逻辑建构', badge: '逻辑跃升' },
-  { id: 'g4_t1', name: '四年级上册', shortName: '四上', subtitle: '系统思维', badge: '高阶进阶' },
-  { id: 'g4_t2', name: '四年级下册', shortName: '四下', subtitle: '模型建立', badge: '建模探索' },
-  { id: 'g5_t1', name: '五年级上册', shortName: '五上', subtitle: '抽象综合', badge: '综合素养' },
-  { id: 'g5_t2', name: '五年级下册', shortName: '五下', subtitle: '深度探究', badge: '深度探究' },
-  { id: 'g6_t1', name: '六年级上册', shortName: '六上', subtitle: '小升初冲刺', badge: '冲刺培优' },
-  { id: 'g6_t2', name: '六年级下册', shortName: '六下', subtitle: '初小衔接', badge: '初小衔接' }
+  // 🏫 小学阶段 (Primary 1-6)
+  { id: 'g1_t1', stage: 'primary', name: '一年级上册', shortName: '一上', subtitle: '幼小衔接·基础基石', badge: '基础基石', defaultSubjects: ['chinese', 'math', 'english', 'ethics'] },
+  { id: 'g1_t2', stage: 'primary', name: '一年级下册', shortName: '一下', subtitle: '进阶巩固·思维初启', badge: '进阶巩固', defaultSubjects: ['chinese', 'math', 'english', 'ethics'] },
+  { id: 'g2_t1', stage: 'primary', name: '二年级上册', shortName: '二上', subtitle: '乘法启蒙·素养培优', badge: '思维培优', defaultSubjects: ['chinese', 'math', 'english', 'ethics'] },
+  { id: 'g2_t2', stage: 'primary', name: '二年级下册', shortName: '二下', subtitle: '有余除法·综合跃升', badge: '综合飞跃', defaultSubjects: ['chinese', 'math', 'english', 'ethics'] },
+  { id: 'g3_t1', stage: 'primary', name: '三年级上册', shortName: '三上', subtitle: '分水岭突破·概念深化', badge: '核心拓展', defaultSubjects: ['chinese', 'math', 'english', 'science'] },
+  { id: 'g3_t2', stage: 'primary', name: '三年级下册', shortName: '三下', subtitle: '面积小数·逻辑建构', badge: '逻辑跃升', defaultSubjects: ['chinese', 'math', 'english', 'science'] },
+  { id: 'g4_t1', stage: 'primary', name: '四年级上册', shortName: '四上', subtitle: '大数运算·系统思维', badge: '高阶进阶', defaultSubjects: ['chinese', 'math', 'english', 'science'] },
+  { id: 'g4_t2', stage: 'primary', name: '四年级下册', shortName: '四下', subtitle: '简便计算·模型探索', badge: '建模探索', defaultSubjects: ['chinese', 'math', 'english', 'science'] },
+  { id: 'g5_t1', stage: 'primary', name: '五年级上册', shortName: '五上', subtitle: '小数因倍·抽象综合', badge: '综合素养', defaultSubjects: ['chinese', 'math', 'english', 'science'] },
+  { id: 'g5_t2', stage: 'primary', name: '五年级下册', shortName: '五下', subtitle: '分数字母·深度探究', badge: '深度探究', defaultSubjects: ['chinese', 'math', 'english', 'science'] },
+  { id: 'g6_t1', stage: 'primary', name: '六年级上册', shortName: '六上', subtitle: '分数乘除·小升初冲刺', badge: '冲刺培优', defaultSubjects: ['chinese', 'math', 'english', 'science'] },
+  { id: 'g6_t2', stage: 'primary', name: '六年级下册', shortName: '六下', subtitle: '负数比例·初小衔接', badge: '初小衔接', defaultSubjects: ['chinese', 'math', 'english', 'science'] },
+
+  // 🎓 初中阶段 (Junior 7-9)
+  { id: 'g7_t1', stage: 'junior', name: '初一上册(七年级)', shortName: '初一上', subtitle: '有理数整式·初中启程', badge: '初中起航', defaultSubjects: ['chinese', 'math', 'english', 'ethics', 'history', 'geography', 'biology'] },
+  { id: 'g7_t2', stage: 'junior', name: '初一下册(七年级)', shortName: '初一下', subtitle: '相交线方程·体系形成', badge: '初阶深化', defaultSubjects: ['chinese', 'math', 'english', 'ethics', 'history', 'geography', 'biology'] },
+  { id: 'g8_t1', stage: 'junior', name: '初二上册(八年级)', shortName: '初二上', subtitle: '几何全等·初二物理登场', badge: '物理启蒙', defaultSubjects: ['chinese', 'math', 'english', 'physics', 'history', 'geography', 'biology'] },
+  { id: 'g8_t2', stage: 'junior', name: '初二下册(八年级)', shortName: '初二下', subtitle: '函数勾股·地生中考会考', badge: '地生会考', defaultSubjects: ['chinese', 'math', 'english', 'physics', 'history', 'geography', 'biology'] },
+  { id: 'g9_t1', stage: 'junior', name: '初三上册(九年级)', shortName: '初三上', subtitle: '一元二次·初三化学登场', badge: '化学开启', defaultSubjects: ['chinese', 'math', 'english', 'physics', 'chemistry', 'ethics', 'history'] },
+  { id: 'g9_t2', stage: 'junior', name: '初三下册(九年级)', shortName: '初三下', subtitle: '中考总复习·衡水中考真题', badge: '中考冲刺', defaultSubjects: ['chinese', 'math', 'english', 'physics', 'chemistry', 'ethics', 'history'] },
+
+  // 🏛️ 高中阶段 (Senior 10-12)
+  { id: 'g10_t1', stage: 'senior', name: '高一上册(必修一)', shortName: '高一上', subtitle: '集合函数·高中基础筑基', badge: '高一筑基', defaultSubjects: ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology'] },
+  { id: 'g10_t2', stage: 'senior', name: '高一下册(必修二)', shortName: '高一下', subtitle: '三角函数向量·新高考选科', badge: '选科定位', defaultSubjects: ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology'] },
+  { id: 'g11_t1', stage: 'senior', name: '高二上册(选必一)', shortName: '高二上', subtitle: '圆锥曲线导数·深度拔高', badge: '重点突破', defaultSubjects: ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology'] },
+  { id: 'g11_t2', stage: 'senior', name: '高二下册(选必二)', shortName: '高二下', subtitle: '数列立体几何·一轮前哨', badge: '高阶攻坚', defaultSubjects: ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology'] },
+  { id: 'g12_t1', stage: 'senior', name: '高三上册(一轮总复习)', shortName: '高三一轮', subtitle: '全科地毯式扫雷·衡水百校模考', badge: '一轮复习', defaultSubjects: ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology'] },
+  { id: 'g12_t2', stage: 'senior', name: '高三下册(高考全真冲刺)', shortName: '高三冲刺', subtitle: '北京卷/衡水模拟·终极压轴', badge: '高考冲刺', defaultSubjects: ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology'] }
 ];
+
+export type ExamRegion = 'beijing' | 'hengshui';
+export type ExamType = 'weekly' | 'monthly' | 'midterm' | 'final';
+
+export interface ExamQuestion {
+  id: string;
+  type: 'single_choice' | 'fill_blank' | 'calculation' | 'solution';
+  prompt: string;
+  options?: string[];
+  correctAnswer: string;
+  score: number;
+  knowledgePoint: string;
+  difficulty: number; // 1-5
+  regionFlavor: ExamRegion;
+  explanation: string;
+  stepGuide?: string[];
+  userAnswer?: string;
+  isCorrect?: boolean;
+  awardedScore?: number;
+}
+
+export interface ExamPaper {
+  id: string;
+  title: string;
+  stage: SchoolStage;
+  gradeLevel: GradeLevel;
+  subjectId: SubjectId;
+  examType: ExamType;
+  region: ExamRegion;
+  durationMinutes: number;
+  totalScore: number;
+  questions: ExamQuestion[];
+  createdAt: number;
+  paperCode: string;
+  summary: string;
+}
+
+export interface HomeworkEntry {
+  id: string;
+  createdAt: number;
+  dateStr: string;
+  stage: SchoolStage;
+  gradeLevel: GradeLevel;
+  subjectId: SubjectId;
+  textbookVersion: string;
+  chapterTitle: string;
+  pageRange: string;
+  homeworkContent: string;
+  imageUrl?: string;
+  keyKnowledgePoints: string[];
+  generatedQuiz: ExamQuestion[];
+  quizCompleted: boolean;
+  quizScore?: number;
+}
 
 export interface SubjectMeta {
   id: SubjectId;
@@ -297,7 +389,7 @@ export interface StudentLearningProfile {
   streak: number;
   knowledgeMastery: Record<string, KnowledgeMasteryRecord>;
   abilityDimensions: Record<'spatial' | 'logical' | 'calculation' | 'language' | 'concentration' | 'memory', number>;
-  subjectMastery: Record<SubjectId, number>;
+  subjectMastery: Partial<Record<SubjectId, number>>;
   recentMistakes: MistakeRecord[];
   weakKnowledgePoints: KnowledgePoint[];
   masteredKnowledgePoints: KnowledgePoint[];
@@ -387,7 +479,7 @@ export interface MistakeRecord {
 export interface DailyLearningReport {
   date: string; // YYYY-MM-DD
   totalMinutes: number;
-  subjectMinutes: Record<SubjectId, number>;
+  subjectMinutes: Partial<Record<SubjectId, number>>;
   completedLessons: number;
   masteredKnowledgePoints: string[];
   weakKnowledgePoints: string[];
@@ -396,4 +488,3 @@ export interface DailyLearningReport {
   parentAdvice: string;
   tomorrowRecommendations: string[];
 }
-

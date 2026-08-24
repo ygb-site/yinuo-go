@@ -1,6 +1,6 @@
-import type { SubjectMeta, SubjectId } from '../types/curriculum';
+import type { SubjectMeta, CoreSubjectId } from '../types/curriculum';
 
-export const SUBJECTS_CONFIG: Record<SubjectId, SubjectMeta> = {
+export const SUBJECTS_CONFIG: Record<CoreSubjectId, SubjectMeta> = {
   go: {
     id: 'go',
     name: '围棋博弈',

@@ -23,11 +23,11 @@ const userStore = useUserStore();
 
 const subjectId = computed<SubjectId>(() => {
   const s = route.params.id as SubjectId;
-  return s && SUBJECTS_CONFIG[s] ? s : 'math';
+  return s && (SUBJECTS_CONFIG as any)[s] ? s : 'math';
 });
 
 const subjectMeta = computed(() => {
-  return SUBJECTS_CONFIG[subjectId.value] || SUBJECTS_CONFIG.math;
+  return (SUBJECTS_CONFIG as any)[subjectId.value] || SUBJECTS_CONFIG.math;
 });
 
 // All chapters for this subject

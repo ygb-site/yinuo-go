@@ -12,8 +12,6 @@ import {
   Star,
   Gamepad2,
   Compass,
-  Flame,
-  Swords,
   ShoppingBag,
   UserCheck,
   ChevronDown,
@@ -22,10 +20,11 @@ import {
   ShieldAlert,
   LogOut,
   User,
-  Sparkles,
   BookMarked,
   BarChart3,
-  WifiOff
+  WifiOff,
+  BookOpen,
+  FileCheck
 } from 'lucide-vue-next';
 import { isOffline } from '../utils/pwa';
 
@@ -40,11 +39,10 @@ const showUserMenu = ref(false);
 const userMenuRef = ref<HTMLElement | null>(null);
 
 const handleGlobalClick = (event: Event) => {
-  const target = event.target as Node;
-  if (showThemeDropdown.value && themeDropdownRef.value && !themeDropdownRef.value.contains(target)) {
+  if (showThemeDropdown.value && themeDropdownRef.value && !themeDropdownRef.value.contains(event.target as Node)) {
     showThemeDropdown.value = false;
   }
-  if (showUserMenu.value && userMenuRef.value && !userMenuRef.value.contains(target)) {
+  if (showUserMenu.value && userMenuRef.value && !userMenuRef.value.contains(event.target as Node)) {
     showUserMenu.value = false;
   }
 };
@@ -61,14 +59,14 @@ watch(() => route.fullPath, () => {
   showThemeDropdown.value = false;
 });
 
-// Multi-Subject Navigation Tabs
+// Streamlined K12 Focused Navigation Tabs (去掉三大馆，保留作业、出卷、棋艺、错题、成长)
 const navItems = [
-  { path: '/', name: '学堂大厅', shortName: '大厅', icon: Compass, badge: '全科' },
-  { path: '/learn', name: '棋艺馆', shortName: '棋艺', icon: Gamepad2, badge: '博弈' },
-  { path: '/subject/math', name: '数理馆', shortName: '数学', icon: Flame, badge: '启思' },
-  { path: '/subject/chinese', name: '语文馆', shortName: '语文', icon: Swords, badge: '博雅' },
-  { path: '/subject/english', name: '英语馆', shortName: '英语', icon: Sparkles, badge: '灵犀' },
-  { path: '/profile', name: '成长中心', shortName: '我的', icon: UserCheck, badge: '' }
+  { path: '/', name: '学堂首页', shortName: '首页', icon: Compass },
+  { path: '/homework', name: '每日作业', shortName: '作业', icon: BookOpen },
+  { path: '/exam', name: '智能出卷', shortName: '出卷', icon: FileCheck },
+  { path: '/learn', name: '棋艺馆', shortName: '棋艺', icon: Gamepad2 },
+  { path: '/mistakes', name: '错题本', shortName: '错题', icon: BookMarked },
+  { path: '/profile', name: '成长中心', shortName: '我的', icon: UserCheck }
 ];
 
 const toggleSound = () => {
@@ -98,6 +96,8 @@ const handleLogout = async () => {
 
 const isNavActive = (itemPath: string) => {
   if (itemPath === '/') return route.path === '/';
+  if (itemPath === '/homework') return route.path.startsWith('/homework');
+  if (itemPath === '/exam') return route.path.startsWith('/exam');
   if (itemPath === '/learn') {
     return (
       route.path === '/learn' ||
@@ -115,21 +115,12 @@ const isNavActive = (itemPath: string) => {
       route.path === '/rank-exam' ||
       route.path === '/worksheet' ||
       route.path === '/free-board' ||
-      route.path === '/mistakes'
+      route.path === '/checkers' ||
+      route.path === '/gomoku'
     );
   }
-  if (itemPath === '/subject/math') {
-    return route.path.startsWith('/subject/math');
-  }
-  if (itemPath === '/subject/chinese') {
-    return route.path.startsWith('/subject/chinese');
-  }
-  if (itemPath === '/subject/english') {
-    return route.path.startsWith('/subject/english');
-  }
-  if (itemPath === '/profile') {
-    return route.path === '/profile' || route.path === '/shop';
-  }
+  if (itemPath === '/mistakes') return route.path.startsWith('/mistakes');
+  if (itemPath === '/profile') return route.path === '/profile' || route.path === '/shop';
   return route.path === itemPath;
 };
 </script>
@@ -143,7 +134,7 @@ const isNavActive = (itemPath: string) => {
         <div
           @click="navigateTo('/')"
           class="flex items-center gap-1.5 sm:gap-2 cursor-pointer group flex-shrink-0 min-w-0"
-          title="返回学堂大厅"
+          title="返回学堂首页"
         >
           <div
             class="w-8 h-8 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-rose-500 p-0.5 shadow-sm flex items-center justify-center border-2 border-white group-hover:rotate-6 transition-transform flex-shrink-0 overflow-hidden"
@@ -156,11 +147,11 @@ const isNavActive = (itemPath: string) => {
                 一诺未来学堂
               </span>
               <span class="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[8px] sm:text-[10px] font-black px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded-full shadow-2xs tracking-wider whitespace-nowrap">
-                EDU
+                K12伴学
               </span>
             </div>
             <span class="hidden sm:block text-[10px] font-bold text-gray-400 leading-tight whitespace-nowrap mt-0.5">
-              多元启蒙 · 围棋 / 数理 / 语文 / 英语
+              12年贯通式作业伴学 · 全真出卷(北京/衡水) · 益智棋艺
             </span>
           </div>
         </div>
@@ -237,7 +228,7 @@ const isNavActive = (itemPath: string) => {
               <div class="py-1 space-y-0.5">
                 <button
                   @click="openProfileSwitcher"
-                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-amber-50 text-slate-700 flex items-center gap-2 transition-colors"
+                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-amber-50 text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
                 >
                   <User class="w-4 h-4 text-orange-500" />
                   <span>切换宝贝档案</span>
@@ -245,11 +236,11 @@ const isNavActive = (itemPath: string) => {
 
                 <button
                   @click="navigateTo('/mistakes')"
-                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-rose-50 text-slate-700 flex items-center justify-between transition-colors"
+                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-rose-50 text-slate-700 flex items-center justify-between transition-colors cursor-pointer"
                 >
                   <div class="flex items-center gap-2">
                     <BookMarked class="w-4 h-4 text-rose-500" />
-                    <span>智能错题本</span>
+                    <span>全科错题本</span>
                   </div>
                   <span
                     v-if="userStore.mistakeRecords && userStore.mistakeRecords.filter(m => !m.resolved).length > 0"
@@ -261,15 +252,15 @@ const isNavActive = (itemPath: string) => {
 
                 <button
                   @click="navigateTo('/parent-dashboard')"
-                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-blue-50 text-slate-700 flex items-center gap-2 transition-colors"
+                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-blue-50 text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
                 >
                   <BarChart3 class="w-4 h-4 text-blue-500" />
-                  <span>学情看板 (家长/教师)</span>
+                  <span>家长学情看板</span>
                 </button>
 
                 <button
                   @click="navigateTo('/profile')"
-                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-amber-50 text-slate-700 flex items-center gap-2 transition-colors"
+                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-amber-50 text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
                 >
                   <UserCheck class="w-4 h-4 text-emerald-500" />
                   <span>成长中心 & 证书</span>
@@ -277,7 +268,7 @@ const isNavActive = (itemPath: string) => {
 
                 <button
                   @click="navigateTo('/shop')"
-                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-amber-50 text-slate-700 flex items-center gap-2 transition-colors"
+                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-amber-50 text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
                 >
                   <ShoppingBag class="w-4 h-4 text-purple-500" />
                   <span>装扮商城</span>
@@ -286,7 +277,7 @@ const isNavActive = (itemPath: string) => {
                 <button
                   v-if="userStore.isAdmin"
                   @click="navigateTo('/admin')"
-                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-rose-50 text-rose-600 flex items-center gap-2 transition-colors"
+                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-rose-50 text-rose-600 flex items-center gap-2 transition-colors cursor-pointer"
                 >
                   <ShieldAlert class="w-4 h-4" />
                   <span>管理后台</span>
@@ -296,7 +287,7 @@ const isNavActive = (itemPath: string) => {
               <div class="pt-1 border-t border-gray-100">
                 <button
                   @click="handleLogout"
-                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-slate-50 text-slate-400 hover:text-slate-600 flex items-center gap-2 transition-colors text-[11px]"
+                  class="w-full px-3 py-2 rounded-xl text-left hover:bg-slate-50 text-slate-400 hover:text-slate-600 flex items-center gap-2 transition-colors text-[11px] cursor-pointer"
                 >
                   <LogOut class="w-3.5 h-3.5" />
                   <span>退出登录</span>
@@ -334,7 +325,7 @@ const isNavActive = (itemPath: string) => {
           <!-- Sound Toggle -->
           <button
             @click="toggleSound"
-            class="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-transform active:scale-90 flex-shrink-0"
+            class="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-transform active:scale-90 flex-shrink-0 cursor-pointer"
             :title="userStore.soundEnabled ? '静音' : '开启音效'"
           >
             <Volume2 v-if="userStore.soundEnabled" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />

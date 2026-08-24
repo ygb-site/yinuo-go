@@ -327,7 +327,7 @@ export const useUserStore = defineStore('userStore', {
         memory: { sum: 0, n: 0 }
       };
 
-      const subjectTotals: Record<SubjectId, { sum: number; n: number }> = {
+      const subjectTotals: Record<string, { sum: number; n: number }> = {
         math: { sum: 0, n: 0 },
         chinese: { sum: 0, n: 0 },
         english: { sum: 0, n: 0 },
@@ -340,7 +340,7 @@ export const useUserStore = defineStore('userStore', {
         const score = rec.masteryRate * 100;
         dimensionTotals[kp.abilityDimension].sum += score;
         dimensionTotals[kp.abilityDimension].n += 1;
-        subjectTotals[kp.subjectId].sum += score;
+        (subjectTotals[kp.subjectId] = subjectTotals[kp.subjectId] || { sum: 0, n: 0 }).sum += score;
         subjectTotals[kp.subjectId].n += 1;
       }
 
@@ -356,7 +356,7 @@ export const useUserStore = defineStore('userStore', {
         memory: scoreOf(dimensionTotals.memory)
       };
 
-      const subjectMastery: Record<SubjectId, number> = {
+      const subjectMastery: Partial<Record<SubjectId, number>> = {
         math: scoreOf(subjectTotals.math),
         chinese: scoreOf(subjectTotals.chinese),
         english: scoreOf(subjectTotals.english),
