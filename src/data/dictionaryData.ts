@@ -167,7 +167,7 @@ export const GO_DICTIONARY: DictEntry[] = [
     demoBoardSize: 5,
     demoInitialStones: [{ r: 2, c: 2, color: 'B' }],
     demoInteractiveMoves: [{ r: 1, c: 2 }],
-    demoExplanation: '在黑子上方落子手拉手，两颗子共享6条呼吸管道！'
+    demoExplanation: '在黑子上方落子手拉手，两颗子手拉手共享6口气！'
   },
   {
     id: 'atari',

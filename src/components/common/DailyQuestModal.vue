@@ -92,7 +92,7 @@ const dynamicQuests = computed<DynamicQuest[]>(() => {
       {
         id: 'breath_review_stage1',
         title: '🌬️ 棋子呼吸温习',
-        desc: '在闯关地图中复习 1 次棋子的4条呼吸管道',
+        desc: '在闯关地图中复习 1 次棋子的4口气',
         icon: Sparkles,
         rewardCoins: 15,
         rewardExp: 30,

@@ -764,10 +764,6 @@ export class GoGame {
     if (this.consecutivePasses >= 2) return true;
     if (this.isBoardFull()) return true;
     if (!this.hasLegalMoves("B") && !this.hasLegalMoves("W")) return true;
-    if (this.history.length >= 6) {
-      // 只要有一方已完全无任何合法落子点 (无处可下全部为禁着点)，则对局立即结束并进入自动点目
-      if (!this.hasLegalMoves("B") || !this.hasLegalMoves("W")) return true;
-    }
     return false;
   }
 

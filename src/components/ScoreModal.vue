@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { ScoreBreakdown, StoneColor } from '../engine/types';
-import { Trophy, RotateCcw, X, HelpCircle } from 'lucide-vue-next';
+import { Trophy, RotateCcw, X, HelpCircle, Search } from 'lucide-vue-next';
 
 const props = defineProps<{
   score: ScoreBreakdown;
   userColor: StoneColor;
   isOpen: boolean;
+  canReview?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'restart'): void;
+  (e: 'review'): void;
 }>();
 
 const showExplanation = ref(false);
@@ -133,20 +135,31 @@ const showExplanation = ref(false);
         </div>
 
         <!-- Actions -->
-        <div class="flex gap-2 pt-1">
+        <div class="flex flex-col gap-2 pt-1">
           <button
-            @click="emit('close')"
-            class="flex-1 py-2.5 sm:py-3 px-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer"
+            v-if="canReview !== false"
+            @click="emit('review')"
+            class="w-full py-2.5 sm:py-3 px-3 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 text-white font-black text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            查看盘面
+            <Search class="w-4 h-4" />
+            <span>🔍 开启 AI 逐步复盘 (劣势/优势转折分析)</span>
           </button>
-          <button
-            @click="emit('restart')"
-            class="flex-1 py-2.5 sm:py-3 px-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white font-black text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <RotateCcw class="w-4 h-4" />
-            <span>再来一局</span>
-          </button>
+
+          <div class="flex gap-2">
+            <button
+              @click="emit('close')"
+              class="flex-1 py-2.5 sm:py-3 px-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer"
+            >
+              查看盘面
+            </button>
+            <button
+              @click="emit('restart')"
+              class="flex-1 py-2.5 sm:py-3 px-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white font-black text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <RotateCcw class="w-4 h-4" />
+              <span>再战一局</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

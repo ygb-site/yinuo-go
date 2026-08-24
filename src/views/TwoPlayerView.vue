@@ -14,15 +14,22 @@ import {
 } from '../lib/audio';
 import { showConfirm, showAlert } from '../utils/alert';
 import GoBoard from '../components/board/GoBoard.vue';
+import GoWinRateBar from '../components/board/GoWinRateBar.vue';
+import GoReviewModal from '../components/board/GoReviewModal.vue';
+import GoHistoryModal from '../components/board/GoHistoryModal.vue';
+import { saveGoGame, type SavedGoGame } from '../services/goHistoryService';
+import GoMoveFeedback from '../components/board/GoMoveFeedback.vue';
+import { evaluateLiveMove, type LiveMoveEvaluation } from '../services/goReviewService';
 import {
   Users,
+  BookOpen,
+  Search,
   RotateCcw,
   Eye,
   AlertTriangle,
   Flag,
   Trophy,
   X,
-  Wind,
   Layers,
   Scale,
   Sparkles,
@@ -66,7 +73,6 @@ const highlightPoints = ref<Point[]>([]);
 // Visual assistants
 const showLiberties = ref(true);
 const showAtari = ref(true);
-const showBreathingTubes = ref(true);
 const showTerritory = ref(false);
 
 const blackName = ref('黑方 (玩家1)');
@@ -84,6 +90,79 @@ const scoreResult = ref<ScoreBreakdown | null>(null);
 const winReason = ref<string>(''); // 'scoring' | 'resign'
 const resignedPlayerColor = ref<StoneColor | null>(null);
 const autoPassNotice = ref<string>('');
+const showReviewModal = ref(false);
+const showHistoryModal = ref(false);
+
+const reviewTargetHistory = ref<any[]>([]);
+const reviewTargetBoardSize = ref<BoardSize>(9);
+const reviewTargetKomi = ref<number>(3.5);
+const reviewTargetBlackName = ref<string>('黑方');
+const reviewTargetWhiteName = ref<string>('白方');
+
+const saveCurrentGameToHistory = () => {
+  if (game.value.history.length === 0) return;
+  const durSec = blackSeconds.value + whiteSeconds.value;
+  saveGoGame({
+    mode: 'twoplayer',
+    modeLabel: '双人面对面对弈',
+    boardSize: boardSize.value,
+    komi: komi.value,
+    blackName: blackName.value,
+    whiteName: whiteName.value,
+    history: JSON.parse(JSON.stringify(game.value.history)),
+    durationSeconds: durSec,
+    durationFormatted: formatTime(durSec),
+    scoreResult: scoreResult.value,
+    winner: scoreResult.value?.winner || (resignedPlayerColor.value ? (resignedPlayerColor.value === 'B' ? 'W' : 'B') : null),
+    winReason: winReason.value
+  });
+};
+
+const openReviewForCurrent = () => {
+  reviewTargetHistory.value = game.value.history;
+  reviewTargetBoardSize.value = boardSize.value;
+  reviewTargetKomi.value = komi.value;
+  reviewTargetBlackName.value = blackName.value;
+  reviewTargetWhiteName.value = whiteName.value;
+  showReviewModal.value = true;
+};
+
+const handleReviewFromHistory = (saved: SavedGoGame) => {
+  reviewTargetHistory.value = saved.history;
+  reviewTargetBoardSize.value = saved.boardSize;
+  reviewTargetKomi.value = saved.komi;
+  reviewTargetBlackName.value = saved.blackName;
+  reviewTargetWhiteName.value = saved.whiteName;
+  showHistoryModal.value = false;
+  showReviewModal.value = true;
+};
+
+const handleLoadGameFromHistory = (saved: SavedGoGame) => {
+  boardSize.value = saved.boardSize;
+  komi.value = saved.komi;
+  blackName.value = saved.blackName;
+  whiteName.value = saved.whiteName;
+
+  const g = new GoGame(saved.boardSize, saved.komi);
+  for (const rec of saved.history) {
+    if (rec.point === null) {
+      g.pass(rec.color);
+    } else {
+      g.playMove(rec.point.r, rec.point.c, rec.color);
+    }
+  }
+  game.value = g;
+  lastMove.value = saved.history.length > 0 ? saved.history[saved.history.length - 1].point : null;
+  currentEvaluation.value = null;
+  isGameOver.value = false;
+  scoreResult.value = saved.scoreResult || null;
+  showAlert({
+    title: '📜 棋谱载入成功',
+    message: "已成功载入【" + saved.title + "】（共 " + saved.totalMoves + " 手）至当前棋盘！",
+    type: 'success'
+  });
+};
+const currentEvaluation = ref<LiveMoveEvaluation | null>(null);
 
 const blackCaptures = computed(() => game.value.capturedByBlack);
 const whiteCaptures = computed(() => game.value.capturedByWhite);
@@ -216,13 +295,18 @@ const handleMove = (point: Point) => {
   lastMove.value = point;
   saveMatchState();
 
+  const lastRec = game.value.history[game.value.history.length - 1];
+  if (lastRec) {
+    currentEvaluation.value = evaluateLiveMove(game.value, point, lastRec.color, res.capturedStones);
+  }
+
   // 1. Check if game is immediately finished
   if (game.value.isGameFinished()) {
     let reason = '双方双双停一手（Pass），棋局定型自动数子判定输赢！';
     if (game.value.isBoardFull()) {
       reason = '全盘交叉点已全部下满，自动进入终局点目结算！';
     } else if (!game.value.hasLegalMoves('B') || !game.value.hasLegalMoves('W')) {
-      reason = '一方已无任何合法着法（被完全包围），自动终局数子判定胜负！';
+      reason = '双方均已无任何合法着法，自动终局数子判定胜负！';
     }
     triggerScoringSettlement(reason);
     return;
@@ -277,6 +361,7 @@ const triggerScoringSettlement = (reasonDesc: string) => {
   scoreResult.value = score;
   winReason.value = reasonDesc;
   showScoreModal.value = true;
+  saveCurrentGameToHistory();
 
   playVictorySound();
   triggerConfetti();
@@ -322,6 +407,7 @@ const handleResign = (color: StoneColor) => {
         territoryMap: []
       };
       showScoreModal.value = true;
+      saveCurrentGameToHistory();
       playVictorySound();
       triggerConfetti();
     }
@@ -403,6 +489,15 @@ const toggleZenMode = () => {
             <span v-if="currentTurn === 'B' && !isGameOver" class="w-2 h-2 rounded-full bg-orange-500 animate-ping flex-shrink-0"></span>
           </div>
 
+          <!-- History Records Button in Zen Mode -->
+          <button
+            @click="showHistoryModal = true"
+            class="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-black transition active:scale-95 cursor-pointer flex-shrink-0 shadow-2xs border border-amber-200"
+            title="查看历史对局记录与棋谱档案"
+          >
+            <BookOpen class="w-4 h-4 text-amber-700" />
+          </button>
+
           <!-- Exit Zen Mode Button -->
           <button
             @click="toggleZenMode"
@@ -411,6 +506,20 @@ const toggleZenMode = () => {
           >
             <Minimize2 class="w-4 h-4" />
           </button>
+        </div>
+
+        <!-- 🌟 Real-time AI Win Rate Tug-of-War Bar (胜率分析实时条) -->
+        <GoWinRateBar
+          :game="game"
+          :blackName="blackName"
+          :whiteName="whiteName"
+          :canReview="true"
+          @openReview="openReviewForCurrent"
+        />
+
+        <!-- 🌟 Real-time Tactical Move Feedback (当下一手棋的战术评析与专业术语反馈) -->
+        <div v-if="currentEvaluation" class="flex items-center justify-start px-1">
+          <GoMoveFeedback :evaluation="currentEvaluation" />
         </div>
 
         <!-- Center: Maximized Board -->
@@ -428,7 +537,6 @@ const toggleZenMode = () => {
             :readonly="isGameOver"
             :showLiberties="showLiberties"
             :showAtari="showAtari"
-            :showBreathingTubes="showBreathingTubes"
             :showTerritory="showTerritory"
             :theme="userStore.theme"
             :highlightPoints="highlightPoints"
@@ -458,11 +566,14 @@ const toggleZenMode = () => {
             <span>停一手</span>
           </button>
 
+          
+
+          <!-- 👁️ 数气开关 (Liberty Numbers Toggle) -->
           <button
             @click="showLiberties = !showLiberties"
             class="py-2 px-2 rounded-xl border text-xs font-black transition active:scale-95 cursor-pointer flex items-center justify-center gap-0.5"
-            :class="showLiberties ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-gray-50 border-gray-200 text-gray-500'"
-            title="开关数气"
+            :class="showLiberties ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-gray-50 border-gray-200 text-gray-400'"
+            title="开关数气 (显示气数数字)"
           >
             <Eye class="w-3.5 h-3.5" />
           </button>
@@ -521,6 +632,15 @@ const toggleZenMode = () => {
                 <span>🧘 专注模式 (Zone)</span>
               </button>
 
+              <button
+                @click="showHistoryModal = true"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-black transition active:scale-95 cursor-pointer shadow-2xs border border-amber-300"
+                title="查看历史对局与已保存棋谱"
+              >
+                <BookOpen class="w-3.5 h-3.5 text-amber-700" />
+                <span>📜 棋谱档案</span>
+              </button>
+
               <div class="inline-flex items-center gap-2 bg-purple-100 text-purple-900 px-3 py-1 rounded-full text-xs font-black">
                 <Users class="w-3.5 h-3.5 text-purple-700" />
                 <span>亲子面对面对弈</span>
@@ -553,14 +673,28 @@ const toggleZenMode = () => {
           
           <!-- Right / Top: Interactive GoBoard (order-1 on mobile, 8 cols on desktop) -->
           <div class="order-1 lg:order-2 lg:col-span-8 bg-white rounded-3xl p-4 sm:p-6 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-4 w-full">
+            
+            <!-- 🌟 Real-time AI Win Rate Tug-of-War Bar -->
+            <GoWinRateBar
+              :game="game"
+              :blackName="blackName"
+              :whiteName="whiteName"
+              :canReview="true"
+              @openReview="openReviewForCurrent"
+            />
+
+            <!-- 🌟 Real-time Tactical Move Feedback -->
+            <div v-if="currentEvaluation" class="w-full flex items-center justify-start">
+              <GoMoveFeedback :evaluation="currentEvaluation" />
+            </div>
+
             <GoBoard
               :game="game"
               :manualMove="true"
               :readonly="isGameOver"
               :showLiberties="showLiberties"
               :showAtari="showAtari"
-              :showBreathingTubes="showBreathingTubes"
-              :showTerritory="showTerritory"
+                :showTerritory="showTerritory"
               :theme="userStore.theme"
               :highlightPoints="highlightPoints"
               :lastMove="lastMove"
@@ -705,14 +839,7 @@ const toggleZenMode = () => {
               </div>
 
               <div class="grid grid-cols-3 gap-1.5 sm:gap-2">
-                <button
-                  @click="showBreathingTubes = !showBreathingTubes"
-                  class="py-2 px-1.5 rounded-2xl border text-[11px] font-black flex items-center justify-center gap-1 transition active:scale-95 cursor-pointer"
-                  :class="showBreathingTubes ? 'bg-emerald-100 border-emerald-300 text-emerald-950' : 'bg-gray-50 border-gray-200 text-gray-600'"
-                >
-                  <Wind class="w-3.5 h-3.5 text-emerald-600" />
-                  <span>呼吸管</span>
-                </button>
+                
 
                 <button
                   @click="showLiberties = !showLiberties"
@@ -883,25 +1010,55 @@ const toggleZenMode = () => {
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex gap-2.5 pt-2">
+          <div class="flex flex-col gap-2 pt-2">
             <button
-              @click="showScoreModal = false"
-              class="flex-1 py-3 px-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer"
+              @click="showScoreModal = false; openReviewForCurrent()"
+              class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 text-white font-black text-xs sm:text-sm shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
             >
-              查看棋盘复盘
+              <Search class="w-4 h-4" />
+              <span>🔍 开启 AI 逐步复盘 (劣势/优势转折分析)</span>
             </button>
 
-            <button
-              @click="() => initGame(true)"
-              class="flex-1 py-3 px-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white font-black text-xs sm:text-sm shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center gap-1"
-            >
-              <RotateCcw class="w-4 h-4" />
-              <span>再战一局 🚀</span>
-            </button>
+            <div class="flex gap-2">
+              <button
+                @click="showScoreModal = false; showHistoryModal = true"
+                class="flex-1 py-2.5 px-3 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-xs sm:text-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-1"
+              >
+                <BookOpen class="w-3.5 h-3.5 text-amber-700" />
+                <span>查看历史棋谱</span>
+              </button>
+
+              <button
+                @click="() => initGame(true)"
+                class="flex-1 py-2.5 px-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white font-black text-xs sm:text-sm shadow-md transition active:scale-95 cursor-pointer flex items-center justify-center gap-1"
+              >
+                <RotateCcw class="w-4 h-4" />
+                <span>再战一局 🚀</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </Teleport>
+
+    <!-- Global AI Move-by-Move Review Modal -->
+    <GoReviewModal
+      :isOpen="showReviewModal"
+      :history="reviewTargetHistory"
+      :boardSize="reviewTargetBoardSize"
+      :komi="reviewTargetKomi"
+      :blackName="reviewTargetBlackName"
+      :whiteName="reviewTargetWhiteName"
+      @close="showReviewModal = false"
+    />
+
+    <!-- Global Match History Records Modal -->
+    <GoHistoryModal
+      :isOpen="showHistoryModal"
+      @close="showHistoryModal = false"
+      @loadGame="handleLoadGameFromHistory"
+      @reviewGame="handleReviewFromHistory"
+    />
 
   </div>
 </template>

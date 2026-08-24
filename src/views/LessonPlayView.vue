@@ -21,7 +21,6 @@ import {
   BookOpen,
   Volume2,
   VolumeX,
-  Wind,
   X,
   ChevronDown,
   ChevronUp,
@@ -135,7 +134,6 @@ const attemptCount = ref(0);
 // Visual Aids
 const showLiberties = ref(true);
 const showAtari = ref(true);
-const showBreathingTubes = ref(true);
 
 // Mobile Concept Modal / Drawer State
 const showConceptDrawer = ref(false);
@@ -560,7 +558,6 @@ const handleBackToMap = () => {
               :readonly="isLessonComplete || isBotThinking || isCurrentStepCompleted"
               :showLiberties="showLiberties"
               :showAtari="showAtari"
-              :showBreathingTubes="showBreathingTubes"
               :theme="userStore.theme"
               :manualMove="true"
               :highlightPoints="currentStepState.highlightPoints"
@@ -573,15 +570,7 @@ const handleBackToMap = () => {
           <!-- Assistant Toggles & Point Guide -->
           <div class="w-full flex flex-wrap items-center justify-between gap-1.5 pt-2.5 mt-2 border-t border-gray-100 text-xs font-bold text-gray-600">
             <div class="flex flex-wrap items-center gap-1 sm:gap-1.5">
-              <button
-                @click="showBreathingTubes = !showBreathingTubes"
-                class="px-2 sm:px-2.5 py-1 rounded-xl border text-[11px] font-black transition flex items-center gap-1 active:scale-95 cursor-pointer"
-                :class="showBreathingTubes ? 'bg-emerald-100 border-emerald-300 text-emerald-900 font-black' : 'bg-gray-50 border-gray-200 text-gray-600'"
-                title="开启/关闭具象化呼吸管道特效"
-              >
-                <Wind class="w-3 h-3 text-emerald-600" />
-                <span>呼吸管</span>
-              </button>
+              
 
               <button
                 @click="showLiberties = !showLiberties"

@@ -27,7 +27,7 @@ export const POETRY_LIBRARY: PoemItem[] = [
       },
       {
         "text": "曲项向天歌。",
-        "pinyin": "qǔ xiàng xiàng tiān gē 。"
+        "pinyin": "qū xiàng xiàng tiān gē 。"
       },
       {
         "text": "白毛浮绿水，",
@@ -213,7 +213,7 @@ export const POETRY_LIBRARY: PoemItem[] = [
       },
       {
         "text": "只在此山中，",
-        "pinyin": "zhī zài cǐ shān zhōng ，"
+        "pinyin": "zhǐ zài cǐ shān zhōng ，"
       },
       {
         "text": "云深不知处。",
@@ -413,7 +413,7 @@ export const POETRY_LIBRARY: PoemItem[] = [
     "lines": [
       {
         "text": "朝辞白帝彩云间，",
-        "pinyin": "cháo cí bái dì cǎi yún jiān ，"
+        "pinyin": "zhāo cí bái dì cǎi yún jiān ，"
       },
       {
         "text": "千里江陵一日还。",
@@ -465,7 +465,7 @@ export const POETRY_LIBRARY: PoemItem[] = [
     "lines": [
       {
         "text": "独在异乡为异客，",
-        "pinyin": "dú zài yì xiāng wèi yì kè ，"
+        "pinyin": "dú zài yì xiāng wéi yì kè ，"
       },
       {
         "text": "每逢佳节倍思亲。",
@@ -569,7 +569,7 @@ export const POETRY_LIBRARY: PoemItem[] = [
     "lines": [
       {
         "text": "少小离家老大回，",
-        "pinyin": "shǎo xiǎo lí jiā lǎo dà huí ，"
+        "pinyin": "shào xiǎo lí jiā lǎo dà huí ，"
       },
       {
         "text": "乡音无改鬓毛衰。",
@@ -629,7 +629,7 @@ export const POETRY_LIBRARY: PoemItem[] = [
       },
       {
         "text": "但使龙城飞将在，",
-        "pinyin": "dàn shǐ lóng chéng fēi jiāng zài ，"
+        "pinyin": "dàn shǐ lóng chéng fēi jiàng zài ，"
       },
       {
         "text": "不教胡马度阴山。",
@@ -785,7 +785,7 @@ export const POETRY_LIBRARY: PoemItem[] = [
       },
       {
         "text": "临行密密缝，",
-        "pinyin": "lín xíng mì mì fèng ，"
+        "pinyin": "lín xíng mì mì féng ，"
       },
       {
         "text": "意恐迟迟归。",
@@ -919,7 +919,7 @@ export const POETRY_LIBRARY: PoemItem[] = [
       },
       {
         "text": "天似穹庐，笼盖四野。",
-        "pinyin": "tiān sì qióng lú ， lóng gài sì yě 。"
+        "pinyin": "tiān sì qióng lú ， lǒng gài sì yě 。"
       },
       {
         "text": "天苍苍，野茫茫。",
@@ -927,7 +927,7 @@ export const POETRY_LIBRARY: PoemItem[] = [
       },
       {
         "text": "风吹草低见牛羊。",
-        "pinyin": "fēng chuī cǎo dī jiàn niú yáng 。"
+        "pinyin": "fēng chuī cǎo dī xiàn niú yáng 。"
       }
     ],
     "appreciation": "北朝民歌代表作，生动辽阔地勾勒出北方大草原苍茫雄浑的壮美风光。"

@@ -31,6 +31,8 @@ const TwoPlayerView = () => import('../views/TwoPlayerView.vue');
 const RhymesView = () => import('../views/RhymesView.vue');
 const RankExamView = () => import('../views/RankExamView.vue');
 const WorksheetView = () => import('../views/WorksheetView.vue');
+const ChineseCheckersView = () => import('../views/ChineseCheckersView.vue');
+const GomokuView = () => import('../views/GomokuView.vue');
 
 // 📚 Universal Multi-Subject Views (Lazy Loaded)
 const SubjectHubView = () => import('../views/SubjectHubView.vue');
@@ -69,6 +71,8 @@ const router = createRouter({
     { path: '/battle', name: 'battle', component: BattleView },
     { path: '/tsumego', name: 'tsumego', component: TsumegoView },
     { path: '/arcade', name: 'arcade', component: ArcadeView },
+    { path: '/checkers', name: 'checkers', component: ChineseCheckersView },
+    { path: '/gomoku', name: 'gomoku', component: GomokuView },
     { path: '/capture-go', name: 'capture-go', component: CaptureGoView },
     { path: '/mistakes', name: 'mistakes', component: MistakesView },
     { path: '/two-player', name: 'two-player', component: TwoPlayerView },

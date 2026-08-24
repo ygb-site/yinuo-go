@@ -24,7 +24,7 @@ onMounted(() => {
   <div class="min-h-screen flex flex-col bg-[#FDFBF7] font-sans antialiased text-gray-800">
     <Navbar />
     <!-- Hide bottom pb on immersive lesson view so content fits within 1 screen -->
-    <main class="flex-1" :class="isImmersiveView ? 'pb-2 lg:pb-0' : 'pb-20 lg:pb-0'">
+    <main class="flex-1" :class="isImmersiveView ? 'pb-2 lg:pb-0' : 'pb-24 lg:pb-6'">
       <router-view />
     </main>
     <!-- Hidden footer on mobile to keep view compact and neat -->

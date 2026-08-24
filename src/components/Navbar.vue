@@ -62,7 +62,7 @@ watch(() => route.fullPath, () => {
 // Multi-Subject Navigation Tabs
 const navItems = [
   { path: '/', name: '学堂大厅', shortName: '大厅', icon: Compass, badge: '全科' },
-  { path: '/learn', name: '围棋馆', shortName: '围棋', icon: Gamepad2, badge: '奕学' },
+  { path: '/learn', name: '棋艺馆', shortName: '棋艺', icon: Gamepad2, badge: '博弈' },
   { path: '/subject/math', name: '数理馆', shortName: '数学', icon: Flame, badge: '启思' },
   { path: '/subject/chinese', name: '语文馆', shortName: '语文', icon: Swords, badge: '博雅' },
   { path: '/subject/english', name: '英语馆', shortName: '英语', icon: Sparkles, badge: '灵犀' },

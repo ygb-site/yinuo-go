@@ -384,7 +384,6 @@ const resetDemoBoard = () => {
                   :highlightPoints="currentEntry.demoInteractiveMoves"
                   :showLiberties="true"
                   :showAtari="true"
-                  :showBreathingTubes="true"
                   :sizePx="320"
                   @move="handleDemoMove"
                 />

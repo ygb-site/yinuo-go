@@ -56,6 +56,9 @@ const isSubmitModalOpen = ref(false);
 // Filter in Result View: 'all' | 'wrong' | 'carry' | 'borrow'
 const resultFilter = ref<'all' | 'wrong' | 'carry' | 'borrow' | 'mixed'>('all');
 
+// Mobile view mode: 'keypad' | 'scratchpad'
+const mobileViewMode = ref<'keypad' | 'scratchpad'>('keypad');
+
 // Elapsed Timer
 const startTime = ref(0);
 const totalTimeMs = ref(0);
@@ -720,10 +723,41 @@ const goBack = () => {
       </div>
 
       <!-- Main Studio: Left Math Question & Input + Right Scratchpad Canvas -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+      <!-- Mobile Mode Switcher (Hidden on Tablet / Desktop >= md) -->
+      <div class="md:hidden flex items-center bg-blue-50/80 p-1 rounded-2xl border border-blue-200 shadow-2xs">
+        <button
+          @click="mobileViewMode = 'keypad'"
+          :class="[
+            'flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer',
+            mobileViewMode === 'keypad'
+              ? 'bg-white text-blue-800 shadow-sm'
+              : 'text-slate-600 hover:text-blue-700'
+          ]"
+        >
+          <span>🔢 答题键盘</span>
+        </button>
+        <button
+          @click="mobileViewMode = 'scratchpad'; nextTick(() => initCanvas())"
+          :class="[
+            'flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer',
+            mobileViewMode === 'scratchpad'
+              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm'
+              : 'text-slate-600 hover:text-amber-700'
+          ]"
+        >
+          <span>📝 验算草稿板</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+        </button>
+      </div>
+
+      <!-- Main Studio: Left Math Question & Input + Right Scratchpad Canvas -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-5 items-stretch">
         
         <!-- LEFT: Arithmetic Problem & Answer Keypad (占 5 列) -->
-        <div class="lg:col-span-5 flex flex-col justify-between space-y-4">
+        <div
+          class="md:col-span-5 flex-col justify-between space-y-3 sm:space-y-4"
+          :class="mobileViewMode === 'scratchpad' ? 'hidden md:flex' : 'flex'"
+        >
           <!-- Problem Equation Card -->
           <div class="rounded-3xl p-6 sm:p-7 border-3 border-blue-200 bg-white shadow-lg text-center flex flex-col items-center justify-center min-h-[170px] relative overflow-hidden">
             <!-- Category Tag -->
@@ -787,6 +821,14 @@ const goBack = () => {
             </div>
 
             <!-- Navigation Buttons: Previous & Next / Submit -->
+            <button
+              @click="mobileViewMode = 'scratchpad'; nextTick(() => initCanvas())"
+              class="md:hidden w-full py-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+            >
+              <span>📝 切换至手写草稿板（同屏演算不上下滑动）</span>
+            </button>
+
+            <!-- Navigation Buttons: Previous & Next / Submit -->
             <div class="flex items-center gap-2 pt-1">
               <button
                 @click="goToPrev"
@@ -820,7 +862,33 @@ const goBack = () => {
         </div>
 
         <!-- RIGHT: TABLET STYLUS SCRATCHPAD CANVAS (占 7 列) -->
-        <div class="lg:col-span-7 bg-white rounded-3xl p-4 sm:p-5 border-3 border-amber-300 shadow-xl flex flex-col justify-between min-h-[420px]">
+        <div
+          class="md:col-span-7 bg-white rounded-3xl p-3.5 sm:p-5 border-3 border-amber-300 shadow-xl flex-col justify-between min-h-[380px] sm:min-h-[420px]"
+          :class="mobileViewMode === 'keypad' ? 'hidden md:flex' : 'flex'"
+        >
+          <!-- Mobile Pinned Problem Header in Scratchpad Mode -->
+          <div class="md:hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white rounded-2xl p-2 px-3 mb-2 flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-[10px] font-black bg-white/20 px-2 py-0.5 rounded-full shrink-0">第 {{ currentIdx + 1 }} 题</span>
+              <span class="text-base font-black tracking-wider truncate">{{ currentQuestion.expression }} =</span>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <div
+                :class="[
+                  'min-w-[3rem] h-8 rounded-xl border-2 flex items-center justify-center px-2 text-base font-black',
+                  inputAnswer ? 'bg-white text-blue-900 border-white' : 'bg-white/15 text-white border-white/30'
+                ]"
+              >
+                {{ inputAnswer || '?' }}
+              </div>
+              <button
+                @click="mobileViewMode = 'keypad'"
+                class="px-2.5 py-1 bg-amber-400 hover:bg-amber-500 text-slate-900 text-xs font-black rounded-xl active:scale-95 transition-all shadow-xs cursor-pointer"
+              >
+                切回键盘
+              </button>
+            </div>
+          </div>
           
           <!-- Scratchpad Toolbar -->
           <div class="flex items-center justify-between pb-3 border-b border-amber-100 gap-2 flex-wrap">
@@ -913,7 +981,40 @@ const goBack = () => {
             </div>
           </div>
 
-          <div class="text-[11px] text-slate-400 font-bold flex items-center justify-between px-1">
+          <!-- Mobile Quick Numeric Ribbon (免切键盘直接输入答案并下一题) -->
+          <div class="md:hidden pt-2 border-t border-amber-100 flex items-center gap-1 overflow-x-auto no-scrollbar">
+            <button
+              v-for="num in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']"
+              :key="num"
+              @click="handleNumberInput(num)"
+              class="w-7 h-8 rounded-xl bg-slate-100 active:bg-blue-200 border border-slate-300 font-black text-sm text-slate-800 shrink-0 flex items-center justify-center active:scale-95 cursor-pointer"
+            >
+              {{ num }}
+            </button>
+            <button
+              @click="handleDelete"
+              class="px-2 h-8 rounded-xl bg-amber-100 active:bg-amber-200 text-amber-900 border border-amber-300 font-black text-xs shrink-0 flex items-center justify-center cursor-pointer"
+              title="删除"
+            >
+              ⌫
+            </button>
+            <button
+              @click="handleClear"
+              class="px-1.5 h-8 rounded-xl bg-rose-100 active:bg-rose-200 text-rose-800 border border-rose-300 font-black text-xs shrink-0 flex items-center justify-center cursor-pointer"
+              title="清空"
+            >
+              清
+            </button>
+            <button
+              @click="goToNext"
+              class="flex-1 min-w-[62px] h-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-xs shrink-0 flex items-center justify-center gap-0.5 shadow-xs ml-0.5 cursor-pointer"
+            >
+              <span>{{ currentIdx < questions.length - 1 ? '下一题' : '交卷' }}</span>
+              <ArrowRight class="w-3 h-3" />
+            </button>
+          </div>
+
+          <div class="hidden md:flex text-[11px] text-slate-400 font-bold items-center justify-between px-1">
             <span>💡 提示：可以在草稿纸上自由演算，写好后在左侧输入答案</span>
             <span class="text-amber-700 font-semibold">支持点击上方答题卡随意检查修改</span>
           </div>

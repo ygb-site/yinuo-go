@@ -148,7 +148,23 @@ export const UNLOCK_FEATURES: UnlockFeature[] = [
     desc: '自由摆设死活局、SGF棋谱导入导出与多分支复盘！'
   },
 
-  // 3. 对弈竞技 (Battle · 4项)
+  // 3. 对弈竞技 (Battle · 5项)
+  {
+    id: 'checkers',
+    name: '快乐六角跳棋',
+    nameEn: 'Chinese Checkers Fun',
+    icon: '⭐',
+    badge: '亲子畅玩 · 始终开放',
+    badgeColor: 'bg-amber-500',
+    gradient: 'from-amber-400 via-pink-500 to-indigo-600',
+    route: '/checkers',
+    category: 'battle',
+    lessonsRequired: 0,
+    chapterRequired: 0,
+    unlockTitle: '始终开放',
+    unlockTip: '始终开放，随时畅玩',
+    desc: '经典六角星中国跳棋！人机对战、亲子同屏、连跳解密闯关与6人派对，一键连跳起飞超好玩！'
+  },
   {
     id: 'capture-go',
     name: '吃子对弈场',

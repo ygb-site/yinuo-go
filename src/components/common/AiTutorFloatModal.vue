@@ -315,14 +315,14 @@ async function handleSaveConfig() {
   <!-- 1. 悬浮伴学助教按钮 (Floating Mascot Button) -->
   <div
     v-if="!tutorStore.isOpen"
-    class="fixed bottom-20 right-3.5 md:bottom-24 md:right-8 z-40 flex items-center group cursor-pointer select-none"
+    class="fixed bottom-20 right-3 md:bottom-22 md:right-5 z-40 flex items-center group cursor-pointer select-none"
     @mouseenter="isMascotHovered = true"
     @mouseleave="isMascotHovered = false"
     @click="tutorStore.openTutor('hints')"
   >
     <!-- 待机亲切气泡 -->
     <div
-      class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 mr-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-amber-200 text-xs font-bold text-amber-900 animate-bounce duration-1000"
+      class="hidden xl:flex items-center gap-1.5 px-3 py-1.5 mr-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-amber-200 text-xs font-bold text-amber-900 animate-bounce duration-1000"
     >
       <Lightbulb class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
       <span>有疑问？点我问小诺！</span>

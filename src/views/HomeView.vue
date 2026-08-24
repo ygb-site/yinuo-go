@@ -66,6 +66,14 @@ const navigateTo = (path: string) => {
 
 const quickPracticeHubs = [
   {
+    title: '快乐六角跳棋',
+    subject: '益智',
+    icon: '⭐',
+    tag: '少儿对战',
+    color: 'bg-amber-50 text-amber-700 border-amber-200',
+    route: '/checkers'
+  },
+  {
     title: '家长学情看板',
     subject: '报告',
     icon: '📊',
@@ -141,11 +149,11 @@ const quickPracticeHubs = [
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#FDFBF7] py-3 sm:py-8 px-2.5 sm:px-6 lg:px-8 select-none">
-    <div class="max-w-6xl mx-auto space-y-6 sm:space-y-8">
+  <div class="min-h-screen bg-[#FDFBF7] py-2.5 sm:py-4 lg:py-6 px-3 sm:px-5 lg:px-8 select-none">
+    <div class="max-w-6xl mx-auto space-y-4 sm:space-y-5 lg:space-y-6">
       
       <!-- Top Welcome Hero Banner -->
-      <div class="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 p-4 sm:p-8 lg:p-9 shadow-lg sm:shadow-xl border-2 sm:border-4 border-white">
+      <div class="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 p-4 sm:p-5 md:p-6 lg:p-7 shadow-md sm:shadow-lg border-2 sm:border-3 border-white">
         <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/15 rounded-full blur-2xl pointer-events-none"></div>
         <div class="absolute right-6 top-3 text-3xl sm:text-6xl opacity-20 pointer-events-none">🌟</div>
 
@@ -162,7 +170,7 @@ const quickPracticeHubs = [
             </div>
 
             <p class="text-xs sm:text-base text-white/95 font-bold max-w-xl leading-relaxed">
-              围棋博弈、数理思维、国学语文、趣味英语！选择你喜爱的学科馆，开启今天的智慧探险吧！
+              智趣棋艺（围棋/跳棋）、数理思维、国学语文、趣味英语！选择你喜爱的学科馆，开启今天的智慧探险吧！
             </p>
 
             <!-- Daily Action Pills -->
@@ -227,17 +235,17 @@ const quickPracticeHubs = [
           </span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5">
           <div
             v-for="sub in subjects"
             :key="sub.id"
             @click="navigateToSubject(sub.id)"
-            class="group bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border-2 sm:border-3 border-slate-200 hover:border-amber-400 shadow-sm hover:shadow-2xl transition-all transform hover:-translate-y-1 sm:hover:-translate-y-1.5 active:scale-98 cursor-pointer flex flex-col justify-between relative overflow-hidden"
+            class="group bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 md:p-5 lg:p-6 border-2 border-slate-200 hover:border-amber-400 shadow-xs hover:shadow-xl transition-all transform hover:-translate-y-1 active:scale-98 cursor-pointer flex flex-col justify-between relative overflow-hidden"
           >
             <div>
               <div class="flex items-center justify-between mb-3 sm:mb-4">
                 <div class="flex items-center gap-2.5 sm:gap-3">
-                  <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-2xl sm:text-3xl shadow-inner group-hover:scale-110 transition-transform shrink-0">
+                  <div class="w-11 h-11 sm:w-12 sm:h-12 md:w-13 md:h-13 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-xl sm:text-2xl md:text-3xl shadow-inner group-hover:scale-110 transition-transform shrink-0">
                     {{ sub.icon }}
                   </div>
                   <div class="min-w-0">
@@ -247,7 +255,7 @@ const quickPracticeHubs = [
                       </span>
                       <span class="text-[11px] sm:text-xs text-slate-400 font-bold truncate">{{ sub.ageRange }}</span>
                     </div>
-                    <h3 class="text-lg sm:text-2xl font-cartoon font-bold text-slate-900 mt-0.5 group-hover:text-amber-600 transition-colors tracking-wide truncate">
+                    <h3 class="text-base sm:text-lg md:text-xl lg:text-2xl font-cartoon font-bold text-slate-900 mt-0.5 group-hover:text-amber-600 transition-colors tracking-wide truncate">
                       {{ sub.title }}
                     </h3>
                   </div>
@@ -259,13 +267,13 @@ const quickPracticeHubs = [
               </p>
             </div>
 
-            <div class="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-slate-100">
+            <div class="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-slate-100">
               <div class="flex items-center justify-between text-[11px] sm:text-xs font-black text-slate-600 mb-1.5 sm:mb-2">
                 <span>进度 ({{ sub.completedLessons }}/{{ sub.totalLessons }})</span>
                 <span class="text-amber-600">{{ sub.progressPercent }}%</span>
               </div>
 
-              <div class="w-full bg-slate-100 h-2 sm:h-2.5 rounded-full overflow-hidden mb-3 sm:mb-4">
+              <div class="w-full bg-slate-100 h-2 sm:h-2.5 rounded-full overflow-hidden mb-2.5 sm:mb-3">
                 <div
                   :class="['h-full rounded-full transition-all duration-500 bg-gradient-to-r', sub.bgGradient]"
                   :style="{ width: sub.progressPercent + '%' }"
