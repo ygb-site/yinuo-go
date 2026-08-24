@@ -388,7 +388,7 @@ async function handleSaveConfig() {
           <button
             @click="tutorStore.setTab('hints')"
             :class="[
-              'py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer',
+              'py-1.5 sm:py-2 px-0.5 sm:px-1 rounded-xl font-black text-[11px] sm:text-xs transition-all flex items-center justify-center gap-0.5 sm:gap-1 whitespace-nowrap cursor-pointer',
               tutorStore.activeTab === 'hints'
                 ? 'bg-white text-amber-900 shadow-sm font-black'
                 : 'text-amber-800/70 hover:text-amber-900 hover:bg-white/40'
@@ -401,7 +401,7 @@ async function handleSaveConfig() {
           <button
             @click="tutorStore.setTab('chat')"
             :class="[
-              'py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer',
+              'py-1.5 sm:py-2 px-0.5 sm:px-1 rounded-xl font-black text-[11px] sm:text-xs transition-all flex items-center justify-center gap-0.5 sm:gap-1 whitespace-nowrap cursor-pointer',
               tutorStore.activeTab === 'chat'
                 ? 'bg-white text-amber-900 shadow-sm font-black'
                 : 'text-amber-800/70 hover:text-amber-900 hover:bg-white/40'
@@ -414,7 +414,7 @@ async function handleSaveConfig() {
           <button
             @click="tutorStore.setTab('variation')"
             :class="[
-              'py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer',
+              'py-1.5 sm:py-2 px-0.5 sm:px-1 rounded-xl font-black text-[11px] sm:text-xs transition-all flex items-center justify-center gap-0.5 sm:gap-1 whitespace-nowrap cursor-pointer',
               tutorStore.activeTab === 'variation'
                 ? 'bg-white text-amber-900 shadow-sm font-black'
                 : 'text-amber-800/70 hover:text-amber-900 hover:bg-white/40'
@@ -427,7 +427,7 @@ async function handleSaveConfig() {
           <button
             @click="tutorStore.setTab('settings')"
             :class="[
-              'py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer',
+              'py-1.5 sm:py-2 px-0.5 sm:px-1 rounded-xl font-black text-[11px] sm:text-xs transition-all flex items-center justify-center gap-0.5 sm:gap-1 whitespace-nowrap cursor-pointer',
               tutorStore.activeTab === 'settings'
                 ? 'bg-white text-amber-900 shadow-sm font-black'
                 : 'text-amber-800/70 hover:text-amber-900 hover:bg-white/40'

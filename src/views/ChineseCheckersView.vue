@@ -931,7 +931,7 @@ onUnmounted(() => {
           <div class="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center text-sm sm:text-xl shadow-md shrink-0">
             ⭐
           </div>
-          <h1 class="text-xs sm:text-base md:text-lg font-black tracking-wide bg-gradient-to-r from-amber-200 via-pink-200 to-cyan-200 bg-clip-text text-transparent truncate flex items-center gap-1.5">
+          <h1 class="text-xs sm:text-base md:text-lg font-black tracking-wide bg-gradient-to-r from-amber-200 via-pink-200 to-cyan-200 bg-clip-text text-transparent truncate flex items-center gap-1.5 max-w-[110px] sm:max-w-none">
             <span class="whitespace-nowrap">快乐六角跳棋</span>
             <span v-if="!isReplayMode" class="hidden md:inline-block text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 font-normal whitespace-nowrap">
               少儿益智版
@@ -1019,7 +1019,7 @@ onUnmounted(() => {
           <!-- 音效 Button -->
           <button
             @click="toggleAudio"
-            class="p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white border border-white/10 transition-all shrink-0"
+            class="p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white border border-white/10 transition-all shrink-0 hidden sm:flex"
           >
             <Volume2 v-if="!isMuted" class="w-3.5 h-3.5 text-emerald-400" />
             <VolumeX v-else class="w-3.5 h-3.5 text-slate-400" />
@@ -1138,10 +1138,10 @@ onUnmounted(() => {
 
         <!-- Normal Mode Tabs (When not in replay) -->
         <template v-else>
-          <div class="bg-black/30 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 flex grid grid-cols-4 gap-1">
+          <div class="bg-black/30 backdrop-blur-md rounded-2xl p-1 sm:p-1.5 border border-white/10 grid grid-cols-4 gap-1">
             <button
               @click="switchMode('ai')"
-              class="py-2 px-1 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1"
+              class="py-1.5 sm:py-2 px-0.5 sm:px-1 rounded-xl text-[10px] sm:text-xs font-black transition-all flex flex-col items-center gap-0.5 sm:gap-1 whitespace-nowrap"
               :class="currentMode === 'ai' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'"
             >
               <Bot class="w-4 h-4" />
@@ -1149,7 +1149,7 @@ onUnmounted(() => {
             </button>
             <button
               @click="switchMode('twoPlayer')"
-              class="py-2 px-1 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1"
+              class="py-1.5 sm:py-2 px-0.5 sm:px-1 rounded-xl text-[10px] sm:text-xs font-black transition-all flex flex-col items-center gap-0.5 sm:gap-1 whitespace-nowrap"
               :class="currentMode === 'twoPlayer' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'"
             >
               <Users class="w-4 h-4" />
@@ -1157,7 +1157,7 @@ onUnmounted(() => {
             </button>
             <button
               @click="switchMode('puzzle')"
-              class="py-2 px-1 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1"
+              class="py-1.5 sm:py-2 px-0.5 sm:px-1 rounded-xl text-[10px] sm:text-xs font-black transition-all flex flex-col items-center gap-0.5 sm:gap-1 whitespace-nowrap"
               :class="currentMode === 'puzzle' ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'"
             >
               <Puzzle class="w-4 h-4" />
@@ -1165,7 +1165,7 @@ onUnmounted(() => {
             </button>
             <button
               @click="switchMode('multiPlayer')"
-              class="py-2 px-1 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1"
+              class="py-1.5 sm:py-2 px-0.5 sm:px-1 rounded-xl text-[10px] sm:text-xs font-black transition-all flex flex-col items-center gap-0.5 sm:gap-1 whitespace-nowrap"
               :class="currentMode === 'multiPlayer' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'"
             >
               <Zap class="w-4 h-4" />

@@ -266,42 +266,46 @@ const goCampus = () => {
       </div>
 
       <!-- 🌟 Navigation Tabs for 3 Equal-Level Games + Review Hub -->
-      <div class="bg-white rounded-2xl p-1.5 sm:p-2 border-2 border-gray-200 shadow-xs flex items-center justify-between gap-1 sm:gap-2">
+      <div class="bg-white rounded-2xl p-1 sm:p-2 border-2 border-gray-200 shadow-xs flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar">
         <button
           @click="activeTab = 'checkers'"
-          class="flex-1 py-2.5 sm:py-3 px-2 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          class="flex-1 shrink-0 py-2 sm:py-3 px-2 sm:px-3 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap"
           :class="activeTab === 'checkers' ? 'bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 shadow-md transform scale-[1.02]' : 'text-gray-600 hover:bg-gray-100'"
         >
-          <span class="text-base sm:text-lg">⭐</span>
-          <span>快乐跳棋馆</span>
-          <span class="hidden sm:inline text-[10px] px-1.5 py-0.2 rounded-full bg-slate-950 text-amber-300 font-bold">推荐</span>
+          <span class="text-sm sm:text-base">⭐</span>
+          <span class="sm:hidden">六角跳棋</span>
+          <span class="hidden sm:inline">快乐跳棋馆</span>
+          <span class="hidden md:inline text-[10px] px-1.5 py-0.2 rounded-full bg-slate-950 text-amber-300 font-bold">推荐</span>
         </button>
 
         <button
           @click="activeTab = 'gomoku'"
-          class="flex-1 py-2.5 sm:py-3 px-2 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          class="flex-1 shrink-0 py-2 sm:py-3 px-2 sm:px-3 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap"
           :class="activeTab === 'gomoku' ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md transform scale-[1.02]' : 'text-gray-600 hover:bg-gray-100'"
         >
-          <span class="text-base sm:text-lg">⚪</span>
-          <span>经典五子棋</span>
+          <span class="text-sm sm:text-base">⚪</span>
+          <span class="sm:hidden">经典五子棋</span>
+          <span class="hidden sm:inline">经典五子棋</span>
         </button>
 
         <button
           @click="activeTab = 'go'"
-          class="flex-1 py-2.5 sm:py-3 px-2 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          class="flex-1 shrink-0 py-2 sm:py-3 px-2 sm:px-3 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap"
           :class="activeTab === 'go' ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md transform scale-[1.02]' : 'text-gray-600 hover:bg-gray-100'"
         >
-          <span class="text-base sm:text-lg">♟️</span>
-          <span>少儿围棋馆</span>
+          <span class="text-sm sm:text-base">♟️</span>
+          <span class="sm:hidden">少儿围棋</span>
+          <span class="hidden sm:inline">少儿围棋馆</span>
         </button>
 
         <button
           @click="activeTab = 'records'; refreshRecords()"
-          class="flex-1 py-2.5 sm:py-3 px-2 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          class="flex-1 shrink-0 py-2 sm:py-3 px-2 sm:px-3 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer whitespace-nowrap"
           :class="activeTab === 'records' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md transform scale-[1.02]' : 'text-gray-600 hover:bg-gray-100'"
         >
-          <History class="w-4 h-4" />
-          <span>全棋类复盘</span>
+          <History class="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span class="sm:hidden">对局复盘</span>
+          <span class="hidden sm:inline">全棋类复盘</span>
         </button>
       </div>
 

@@ -530,14 +530,14 @@ onUnmounted(() => {
       <!-- Left Column: Board & Mascot -->
       <div class="flex-1 flex flex-col items-center max-w-[min(94vw,520px)] w-full gap-3">
         <!-- Difficulty & Specs Pill Selector -->
-        <div class="w-full flex items-center justify-between gap-1.5 bg-white p-1 rounded-2xl border border-gray-200 shadow-2xs">
+        <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-2 bg-white p-1 sm:p-1.5 rounded-2xl border border-gray-200 shadow-2xs">
           <!-- Size Switchers -->
-          <div class="flex items-center gap-1">
+          <div class="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-1 bg-gray-50/80 sm:bg-transparent p-1 sm:p-0 rounded-xl">
             <button
               v-for="s in ([4, 6, 9] as SudokuSize[])"
               :key="s"
               @click="switchSize(s)"
-              class="px-2.5 py-1 rounded-xl text-xs font-black transition-all cursor-pointer"
+              class="flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap text-center"
               :class="currentSize === s ? 'bg-blue-600 text-white shadow-xs' : 'text-gray-600 hover:bg-gray-100'"
             >
               {{ s === 4 ? '4×4 萌宝' : s === 6 ? '6×6 启智' : '9×9 大师' }}
@@ -545,12 +545,12 @@ onUnmounted(() => {
           </div>
 
           <!-- Difficulty Switchers -->
-          <div class="flex items-center gap-1">
+          <div class="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-1 bg-gray-50/80 sm:bg-transparent p-1 sm:p-0 rounded-xl">
             <button
               v-for="d in ([{ id: 'easy', label: '简单' }, { id: 'medium', label: '进阶' }, { id: 'hard', label: '大师' }] as const)"
               :key="d.id"
               @click="switchDifficulty(d.id)"
-              class="px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
+              class="flex-1 sm:flex-initial px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap text-center"
               :class="currentDifficulty === d.id ? 'bg-amber-100 text-amber-900 border border-amber-300 font-black' : 'text-gray-400 hover:text-gray-600'"
             >
               {{ d.label }}
