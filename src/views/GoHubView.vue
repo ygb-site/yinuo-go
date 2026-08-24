@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import DailyQuestModal from '../components/common/DailyQuestModal.vue';
 import { useUserStore } from '../stores/useUserStore';
 import { useUnlockStore } from '../stores/unlockStore';
 import { sound } from '../utils/sound';
@@ -17,7 +16,6 @@ import {
 
 const router = useRouter();
 const route = useRoute();
-const showQuestModal = ref(false);
 const userStore = useUserStore();
 const unlockStore = useUnlockStore();
 
@@ -166,10 +164,11 @@ const goCategories = computed(() => [
   }
 ]);
 
-// All Recent Game Records for Replay
-const recentRecords = computed(() => {
-  return getLocalGameRecords('all');
-});
+// All Recent Game Records for Replay (Optimized on-demand loading)
+const recentRecords = ref(getLocalGameRecords('all'));
+const refreshRecords = () => {
+  recentRecords.value = getLocalGameRecords('all');
+};
 
 const navigate = (path: string) => {
   sound.playButtonSound();
@@ -287,7 +286,7 @@ const goCampus = () => {
         </button>
 
         <button
-          @click="activeTab = 'records'"
+          @click="activeTab = 'records'; refreshRecords()"
           class="flex-1 py-2.5 sm:py-3 px-2 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           :class="activeTab === 'records' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md transform scale-[1.02]' : 'text-gray-600 hover:bg-gray-100'"
         >
@@ -649,12 +648,6 @@ const goCampus = () => {
       </div>
 
     </div>
-
-    <!-- Daily Quest Modal -->
-    <DailyQuestModal
-      :is-open="showQuestModal"
-      @close="showQuestModal = false"
-    />
   </div>
 </template>
 

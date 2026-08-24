@@ -180,3 +180,44 @@ router.beforeEach((to) => {
 });
 
 export default router;
+
+
+// 🚀 High Performance Route Preloaders (消除网络延迟，点击秒开)
+export const routePreloaders: Record<string, () => Promise<unknown>> = {
+  "/": HomeView,
+  "/learn": GoHubView,
+  "/subject/math": SubjectHubView,
+  "/subject/chinese": SubjectHubView,
+  "/subject/english": SubjectHubView,
+  "/profile": ProfileView,
+  "/checkers": ChineseCheckersView,
+  "/gomoku": GomokuView,
+  "/adventure": AdventureView,
+  "/battle": BattleView,
+  "/tsumego": TsumegoView
+};
+
+export function preloadRoute(path: string) {
+  const cleanPath = path.split("?")[0];
+  const loader = routePreloaders[cleanPath];
+  if (loader) {
+    loader().catch(() => {});
+  }
+}
+
+export function preloadCoreRoutes() {
+  if (typeof window === "undefined") return;
+  const trigger = () => {
+    GoHubView().catch(() => {});
+    SubjectHubView().catch(() => {});
+    ProfileView().catch(() => {});
+    ChineseCheckersView().catch(() => {});
+    GomokuView().catch(() => {});
+  };
+
+  if ("requestIdleCallback" in window) {
+    (window as any).requestIdleCallback(trigger, { timeout: 3000 });
+  } else {
+    setTimeout(trigger, 1200);
+  }
+}

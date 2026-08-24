@@ -13,6 +13,12 @@ export const hasPwaUpdate = ref(false);
 let deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
 
 export function registerPwaServiceWorker() {
+  lockPortraitOrientation();
+  if (typeof window !== "undefined") {
+    const handleUserGesture = () => lockPortraitOrientation();
+    window.addEventListener("touchstart", handleUserGesture, { passive: true, once: true });
+    window.addEventListener("pointerdown", handleUserGesture, { passive: true, once: true });
+  }
   if (typeof window === 'undefined') return;
 
   // 1. Check if running as standalone PWA
@@ -96,4 +102,19 @@ export function applyPwaUpdate() {
     navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
     window.location.reload();
   }
+}
+
+/**
+ * 锁定移动端设备为竖屏方向 (Lock Screen to Portrait Orientation)
+ */
+export function lockPortraitOrientation() {
+  if (typeof window === "undefined" || !("screen" in window)) return;
+  try {
+    const orientation = (window.screen as any).orientation || (window.screen as any).mozOrientation || (window.screen as any).msOrientation;
+    if (orientation && typeof orientation.lock === "function") {
+      orientation.lock("portrait-primary").catch(() => {
+        orientation.lock("portrait").catch(() => {});
+      });
+    }
+  } catch {}
 }

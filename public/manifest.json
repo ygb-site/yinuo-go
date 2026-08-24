@@ -8,43 +8,72 @@
   "display": "standalone",
   "background_color": "#FDFBF7",
   "theme_color": "#FF7A00",
-  "orientation": "any",
-  "categories": ["education", "kids", "games"],
+  "orientation": "portrait",
+  "categories": [
+    "education",
+    "kids",
+    "games"
+  ],
   "shortcuts": [
     {
       "name": "学堂大厅",
       "short_name": "大厅",
       "description": "进入全科智趣大厅",
       "url": "/",
-      "icons": [{ "src": "/logo/logo-avatar-circle-144.png", "sizes": "144x144" }]
+      "icons": [
+        {
+          "src": "/logo/logo-avatar-circle-144.png",
+          "sizes": "144x144"
+        }
+      ]
     },
     {
       "name": "围棋学堂",
       "short_name": "围棋",
       "description": "进入围棋启蒙主线与死活宝库",
       "url": "/learn",
-      "icons": [{ "src": "/logo/logo-avatar-circle-144.png", "sizes": "144x144" }]
+      "icons": [
+        {
+          "src": "/logo/logo-avatar-circle-144.png",
+          "sizes": "144x144"
+        }
+      ]
     },
     {
       "name": "数学口算",
       "short_name": "数学",
       "description": "100以内进退位口算与速算挑战",
       "url": "/subject/math/drill",
-      "icons": [{ "src": "/logo/logo-primary-144.png", "sizes": "144x144" }]
+      "icons": [
+        {
+          "src": "/logo/logo-primary-144.png",
+          "sizes": "144x144"
+        }
+      ]
     },
     {
       "name": "错题攻坚",
       "short_name": "错题本",
       "description": "全学科错题诊断与变式消题",
       "url": "/mistakes",
-      "icons": [{ "src": "/logo/logo-avatar-circle-144.png", "sizes": "144x144" }]
+      "icons": [
+        {
+          "src": "/logo/logo-avatar-circle-144.png",
+          "sizes": "144x144"
+        }
+      ]
     },
     {
       "name": "学情看板",
       "short_name": "学情看板",
       "description": "家长与教师学情成长分析报告",
       "url": "/parent-dashboard",
-      "icons": [{ "src": "/logo/logo-primary-144.png", "sizes": "144x144" }]
+      "icons": [
+        {
+          "src": "/logo/logo-primary-144.png",
+          "sizes": "144x144"
+        }
+      ]
     }
   ],
   "icons": [

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { preloadRoute } from '../router';
+import { lockPortraitOrientation } from '../utils/pwa';
 import { useUserStore } from '../stores/useUserStore';
 import { playButtonSound } from '../lib/audio';
 import {
@@ -75,6 +77,7 @@ const toggleSound = () => {
 };
 
 const navigateTo = (path: string) => {
+  lockPortraitOrientation();
   showUserMenu.value = false;
   showThemeDropdown.value = false;
   playButtonSound();
@@ -168,6 +171,8 @@ const isNavActive = (itemPath: string) => {
             v-for="item in navItems"
             :key="item.path"
             @click="navigateTo(item.path)"
+            @pointerenter="preloadRoute(item.path)"
+            @touchstart.passive="preloadRoute(item.path)"
             class="flex items-center gap-1.5 px-3.5 xl:px-4 py-1.5 rounded-xl text-xs xl:text-[13px] font-bold transition-all duration-200 whitespace-nowrap flex-shrink-0 cursor-pointer"
             :class="
               isNavActive(item.path)
@@ -347,6 +352,8 @@ const isNavActive = (itemPath: string) => {
       v-for="item in navItems"
       :key="item.path"
       @click="navigateTo(item.path)"
+      @pointerenter="preloadRoute(item.path)"
+      @touchstart.passive="preloadRoute(item.path)"
       class="flex-1 flex flex-col items-center justify-center py-0.5 px-0.5 rounded-xl transition-all duration-150 active:scale-90 cursor-pointer min-w-0 relative group"
       :class="isNavActive(item.path) ? 'text-orange-600 font-black' : 'text-gray-400 hover:text-gray-600'"
     >

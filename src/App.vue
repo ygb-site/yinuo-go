@@ -9,6 +9,8 @@ import UnlockCelebrationModal from './components/common/UnlockCelebrationModal.v
 import AuthModal from './components/common/AuthModal.vue';
 import AiTutorFloatModal from './components/common/AiTutorFloatModal.vue';
 import { useUserStore } from './stores/useUserStore';
+import { preloadCoreRoutes } from './router';
+import { lockPortraitOrientation } from './utils/pwa';
 
 const userStore = useUserStore();
 const route = useRoute();
@@ -16,7 +18,9 @@ const route = useRoute();
 const isImmersiveView = computed(() => route.path.startsWith('/lesson/'));
 
 onMounted(() => {
+  lockPortraitOrientation();
   userStore.initCloudSession();
+  preloadCoreRoutes();
 });
 </script>
 
