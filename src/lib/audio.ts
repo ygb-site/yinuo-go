@@ -291,6 +291,7 @@ class AudioManager {
    * 粒子礼花庆祝动效 (Confetti Burst)
    */
   public triggerConfetti() {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
     confetti({
       particleCount: 80,
       spread: 70,
@@ -321,6 +322,7 @@ class AudioManager {
   }
 
   public fireMiniSparkles(x = 0.5, y = 0.5) {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
     confetti({
       particleCount: 25,
       spread: 40,

@@ -347,15 +347,38 @@ const handleGoQuest = (path: string) => {
   router.push(path);
 };
 
+const isClaimedToday = computed(() => {
+  if (!userStore.hasProfile) return false;
+  const today = new Date().toLocaleDateString("en-CA");
+  return userStore.currentProfile.lastDailyQuestsClaimDate === today;
+});
+
 const handleClaimAll = () => {
-  userStore.addCoins(50);
-  userStore.addExp(100);
+  if (isClaimedToday.value) {
+    showAlert({
+      message: "今日全勤通关大奖已经领取过啦！明天继续加油哦！",
+      type: "info",
+      title: "今日已领取"
+    });
+    return;
+  }
+
+  const res = userStore.claimDailyQuestsReward();
+  if (!res.success) {
+    showAlert({
+      message: "今日全勤通关大奖已经领取过啦！明天继续加油哦！",
+      type: "info",
+      title: "今日已领取"
+    });
+    return;
+  }
+
   playCoinSound();
   triggerConfetti();
   showAlert({
-    message: '🎉 太棒啦！你完成了当前学习阶段的全部 3 项成长目标！额外获得 50 金币与 100 棋力经验全勤大礼包！',
-    type: 'success',
-    title: '🏆 全勤大奖达成'
+    message: "🎉 太棒啦！你完成了当前学习阶段的全部 3 项成长目标！额外获得 50 金币与 100 棋力经验全勤大礼包！",
+    type: "success",
+    title: "🏆 全勤大奖达成"
   });
 };
 </script>
@@ -463,15 +486,24 @@ const handleClaimAll = () => {
           </div>
         </div>
 
-        <!-- Claim All Bonus Button -->
-        <button
-          v-if="isAllQuestsCompleted"
-          @click="handleClaimAll"
-          class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-rose-500 to-amber-500 text-white font-black text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer animate-bounce-subtle"
-        >
-          <Gift class="w-4 h-4" />
-          <span>领取今日全勤通关大奖 (+50金币 & +100经验) 🎁</span>
-        </button>
+        <!-- Claim All Bonus Button / Claimed Status -->
+        <div v-if="isAllQuestsCompleted" class="pt-1">
+          <button
+            v-if="!isClaimedToday"
+            @click="handleClaimAll"
+            class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-rose-500 to-amber-500 text-white font-black text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer animate-bounce-subtle"
+          >
+            <Gift class="w-4 h-4" />
+            <span>领取今日全勤通关大奖 (+50金币 & +100经验) 🎁</span>
+          </button>
+          <div
+            v-else
+            class="w-full py-3 sm:py-3.5 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-800 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-2xs"
+          >
+            <CheckCircle2 class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+            <span>今日全勤通关大奖已领取 (+50金币 & +100经验) ✨ 明日继续！</span>
+          </div>
+        </div>
 
       </div>
     </div>

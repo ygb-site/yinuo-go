@@ -208,7 +208,12 @@ function nextQuizQuestion() {
 // ==========================================
 // 📅 每日一谜状态 (Daily Riddle)
 // ==========================================
-const isDailyChecked = ref(false);
+const isDailyChecked = computed(() => {
+  if (!userStore.hasProfile) return false;
+  const today = new Date().toLocaleDateString("en-CA");
+  return userStore.currentProfile.lastDailyRiddleDate === today;
+});
+
 const dailyRiddle = computed<RiddleItem>(() => {
   const dayOfYear = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
   return RIDDLES_DATA[dayOfYear % RIDDLES_DATA.length] || RIDDLES_DATA[0];
@@ -216,12 +221,13 @@ const dailyRiddle = computed<RiddleItem>(() => {
 
 function handleClaimDaily() {
   if (isDailyChecked.value) return;
-  isDailyChecked.value = true;
-  sound.playWinSound();
-  userStore.addCoins(30, '每日一谜打卡奖励', '🎉');
-  try {
-    confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
-  } catch {}
+  const res = userStore.claimDailyRiddleReward();
+  if (res.success) {
+    sound.playWinSound();
+    try {
+      confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+    } catch {}
+  }
 }
 
 onMounted(() => {

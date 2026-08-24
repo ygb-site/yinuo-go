@@ -44,6 +44,8 @@ export interface ChildProfile {
   unlockedAvatars?: string[];
   mistakes?: string[];
   lastCheckInDate?: string;
+  lastDailyQuestsClaimDate?: string;
+  lastDailyRiddleDate?: string;
   checkInStreak?: number;
   solvedMistakes?: string[];
   mistakeRecords?: MistakeRecord[];
@@ -1219,6 +1221,34 @@ export const useUserStore = defineStore('userStore', {
         streak: newStreak,
         rewardCoins: coinsGained
       };
+    },
+
+
+    claimDailyQuestsReward(): { success: boolean; coins: number; exp: number } {
+      if (!this.hasProfile) return { success: false, coins: 0, exp: 0 };
+      const prof = this.currentProfile;
+      const today = new Date().toLocaleDateString("en-CA");
+      if (prof.lastDailyQuestsClaimDate === today) {
+        return { success: false, coins: 0, exp: 0 };
+      }
+      prof.lastDailyQuestsClaimDate = today;
+      this.addCoins(50, "每日全勤通关大奖", "🎁");
+      this.addExp(100);
+      this.touchSave();
+      return { success: true, coins: 50, exp: 100 };
+    },
+
+    claimDailyRiddleReward(): { success: boolean; coins: number } {
+      if (!this.hasProfile) return { success: false, coins: 0 };
+      const prof = this.currentProfile;
+      const today = new Date().toLocaleDateString("en-CA");
+      if (prof.lastDailyRiddleDate === today) {
+        return { success: false, coins: 0 };
+      }
+      prof.lastDailyRiddleDate = today;
+      this.addCoins(30, "每日一谜打卡奖励", "🎉");
+      this.touchSave();
+      return { success: true, coins: 30 };
     },
 
     toggleTouchConfirm() {
