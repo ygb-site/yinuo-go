@@ -85,6 +85,16 @@ const goCategories = computed(() => [
         isUnlocked: unlockStore.isFeatureUnlocked('tsumego')
       },
       {
+        id: "sudoku",
+        name: "智趣数独王国 (4/6/9宫格)",
+        nameEn: "Sudoku Logic",
+        icon: "🧩",
+        desc: "数字与水果萌宠四宫格、六宫格、九宫格逻辑大挑战",
+        route: "/sudoku",
+        badge: "思维探险",
+        isUnlocked: true
+      },
+      {
         id: 'arcade',
         name: '极速反应乐园 (60s)',
         nameEn: 'Speed Arcade',

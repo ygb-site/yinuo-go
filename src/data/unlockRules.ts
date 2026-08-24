@@ -66,7 +66,24 @@ export const UNLOCK_FEATURES: UnlockFeature[] = [
     desc: '金角银边草肚皮、棋逢断处生、有打有吃莫慌张，点击卡片即时动态演示！'
   },
 
-  // 2. 技能训练 (Practice · 5项)
+  // 2. 技能训练 (Practice)
+  {
+    id: "sudoku",
+    name: "智趣数独王国",
+    nameEn: "Sudoku Logic Camp",
+    icon: "🧩",
+    badge: "启智数理 · 始终开放",
+    badgeColor: "bg-blue-500",
+    gradient: "from-blue-400 via-indigo-500 to-purple-600",
+    route: "/sudoku",
+    category: "practice",
+    lessonsRequired: 0,
+    chapterRequired: 0,
+    unlockTitle: "始终开放",
+    unlockTip: "始终开放，随时畅玩",
+    desc: "4×4萌宝、6×6进阶与9×9经典数独！支持数字、水果与萌宠主题，智能提示与推导演练！"
+  },
+
   {
     id: 'arcade',
     name: '反应乐园',

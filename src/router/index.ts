@@ -43,6 +43,7 @@ const UniversalLessonPlayView = () => import('../views/UniversalLessonPlayView.v
 const MathDrillView = () => import('../views/math/MathDrillView.vue');
 const MathSpeedView = () => import('../views/math/MathSpeedView.vue');
 const TwentyFourView = () => import('../views/math/TwentyFourView.vue');
+const SudokuView = () => import('../views/SudokuView.vue');
 
 // 🏮 Chinese Specialized Features (Lazy Loaded)
 const ChinesePinyinView = () => import('../views/chinese/ChinesePinyinView.vue');
@@ -92,6 +93,8 @@ const router = createRouter({
     { path: '/subject/math/drill', name: 'math-drill', component: MathDrillView },
     { path: '/subject/math/speed', name: 'math-speed', component: MathSpeedView },
     { path: '/subject/math/twenty-four', name: 'math-twenty-four', component: TwentyFourView },
+    { path: '/sudoku', name: 'sudoku', component: SudokuView },
+    { path: '/subject/math/sudoku', redirect: '/sudoku' },
 
     // 🏮 Chinese Specialized Features
     { path: '/subject/chinese/pinyin', name: 'chinese-pinyin', component: ChinesePinyinView },
@@ -192,6 +195,7 @@ export const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/profile": ProfileView,
   "/checkers": ChineseCheckersView,
   "/gomoku": GomokuView,
+  "/sudoku": SudokuView,
   "/adventure": AdventureView,
   "/battle": BattleView,
   "/tsumego": TsumegoView

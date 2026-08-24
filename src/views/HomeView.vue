@@ -90,6 +90,14 @@ const quickPracticeHubs = [
     route: '/mistakes'
   },
   {
+    title: "智趣数独王国",
+    subject: "数理",
+    icon: "🧩",
+    tag: "四六九宫格",
+    color: "bg-blue-50 text-blue-700 border-blue-200",
+    route: "/sudoku"
+  },
+  {
     title: '口算天天练',
     subject: '数学',
     icon: '🧮',

@@ -118,6 +118,13 @@ export const SUBJECTS_CONFIG: Record<SubjectId, SubjectMeta> = {
         isReady: true
       },
       {
+        title: "智趣数独王国",
+        desc: "4×4萌宝、6×6进阶与9×9大师九宫格，数字与水果萌宠图案逻辑推导",
+        icon: "🧩",
+        route: "/sudoku",
+        isReady: true
+      },
+      {
         title: '24点四则运算风暴',
         desc: '加减乘除趣味扑克智力挑战',
         icon: '🧩',
