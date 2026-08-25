@@ -9,7 +9,6 @@ import { defineStore } from 'pinia';
 import { USER_RANKS, type UserRank, BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
 import { KNOWLEDGE_POINTS_REPOSITORY } from '../data/knowledgePointsData';
 import { sound } from '../utils/sound';
-import type { ThemeType } from '../engine/types';
 import {
   saveUserDataToCloud,
   fetchUserProfile,
@@ -17,6 +16,8 @@ import {
 } from '../services/cloudSyncService';
 import { isSupabaseConfigured, getSupabaseClient } from '../lib/supabase';
 import { useAiTutorStore } from './useAiTutorStore';
+import { buildRewardKey } from '../utils/rewardKey';
+import { toSafeErrorDigest } from '../utils/safeError';
 
 /**
  * 独立儿童用户档案 (Child Profile Data Structure)
@@ -30,6 +31,44 @@ export interface CoinLogEntry {
   icon: string;
 }
 
+/**
+ * 奖励发放请求：所有会增加金币/经验的学习行为都必须经由 grantRewardOnce 走这个结构，
+ * 而不是各页面自己调 addCoins/addExp。
+ */
+export interface RewardGrantSpec {
+  coins?: number;
+  exp?: number;
+  reason?: string;
+  icon?: string;
+  /** 同类行为的每日封顶标识；用于挡住「无限新建自建任务换新幂等键」这种绕过手法 */
+  dailyCapId?: string;
+  dailyCapLimit?: number;
+}
+
+export type RewardBlockedReason = 'no-profile' | 'invalid-key' | 'duplicate' | 'daily-cap';
+
+export interface RewardGrantResult {
+  granted: boolean;
+  blockedBy?: RewardBlockedReason;
+}
+
+/** 幂等账本保留上限，超出后裁剪最旧记录，避免档案无限膨胀 */
+const REWARD_LEDGER_MAX = 400;
+const REWARD_LEDGER_KEEP = 300;
+
+/** 攻克错题奖励额度：一条错题记录只结算一次 */
+const MISTAKE_RESOLVE_COINS = 30;
+const MISTAKE_RESOLVE_EXP = 40;
+
+/** 趣味闯关每日发奖上限：同一模式可无限重开，靠每日封顶挡住刷币 */
+const ARCADE_DAILY_REWARD_CAP = 10;
+
+/** 吃子棋每日发奖上限：小盘 1 子目标一分钟能打完一局，仅靠 matchId 幂等挡不住刷量 */
+const CAPTURE_GO_DAILY_REWARD_CAP = 20;
+
+/** 云端同步失败时对外展示的固定文案：原始异常不进儿童可见界面 */
+const CLOUD_SYNC_FAILED_TEXT = '云端同步暂时没成功，稍后会自动重试';
+
 export interface ChildProfile {
   id: string;
   nickname: string;
@@ -40,7 +79,6 @@ export interface ChildProfile {
   totalStars: number;
   badges: string[];
   solvedPuzzles: string[];
-  unlockedThemes?: string[];
   unlockedAvatars?: string[];
   mistakes?: string[];
   lastCheckInDate?: string;
@@ -63,6 +101,10 @@ export interface ChildProfile {
   coins: number;
   coinLog?: CoinLogEntry[];
   starLog?: CoinLogEntry[];
+  /** 奖励幂等账本：幂等键 -> 发放时间戳。存在即表示该行为已结算过，不再重复发放 */
+  rewardLedger?: Record<string, number>;
+  /** 每日封顶计数：`<capId>:<yyyy-mm-dd>` -> 当日已发放次数 */
+  rewardDailyCounters?: Record<string, number>;
   stats: {
     gamesPlayed: number;
     gamesWon: number;
@@ -88,7 +130,6 @@ const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
   totalStars: 0,
   badges: [],
   solvedPuzzles: [],
-  unlockedThemes: ['wood'],
   unlockedAvatars: ['🦁', '👶', '🐱', '🐼'],
   mistakes: [],
   solvedMistakes: [],
@@ -105,6 +146,8 @@ const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
   },
   exp: 0,
   coins: 0,
+  rewardLedger: {},
+  rewardDailyCounters: {},
   stats: {
     gamesPlayed: 0,
     gamesWon: 0,
@@ -115,6 +158,9 @@ const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
     totalStudyMinutes: 0
   }
 };
+
+/** 云端设置里允许恢复的 AI 配置字段白名单：apiKey 等密钥字段永远不在其中 */
+const CLOUD_AI_CONFIG_ALLOWED_KEYS = ['mode', 'endpoint', 'model', 'autoSpeech'] as const;
 
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -136,7 +182,6 @@ export const useUserStore = defineStore('userStore', {
     activeSubject: 'go' as SubjectId,
 
     // ⚙️ 游戏设置与个性化
-    theme: 'wood' as ThemeType,
     soundEnabled: true as boolean,
     volume: 0.8 as number,
     showLibertiesOverlay: true as boolean,
@@ -184,7 +229,6 @@ export const useUserStore = defineStore('userStore', {
       if (!found.badges) found.badges = [];
       if (!found.solvedPuzzles) found.solvedPuzzles = [];
       if (!found.progress) found.progress = {};
-      if (!found.unlockedThemes) found.unlockedThemes = ['wood'];
       if (!found.unlockedAvatars) found.unlockedAvatars = ['🦁', '👶', '🐱', '🐼'];
       if (!found.mistakes) found.mistakes = [];
       if (!found.solvedMistakes) found.solvedMistakes = [];
@@ -222,6 +266,8 @@ export const useUserStore = defineStore('userStore', {
       found.totalStars = Math.max(computedStars, found.totalStars || 0);
       if (!found.coinLog) found.coinLog = [];
       if (!found.starLog) found.starLog = [];
+      if (!found.rewardLedger) found.rewardLedger = {};
+      if (!found.rewardDailyCounters) found.rewardDailyCounters = {};
       return found;
     },
 
@@ -279,10 +325,6 @@ export const useUserStore = defineStore('userStore', {
       return this.currentProfile.solvedPuzzles || [];
     },
 
-    unlockedThemes(): string[] {
-      return this.currentProfile.unlockedThemes || ['wood'];
-    },
-
     unlockedAvatars(): string[] {
       return this.currentProfile.unlockedAvatars || ['🦁', '👶', '🐱', '🐼'];
     },
@@ -327,11 +369,10 @@ export const useUserStore = defineStore('userStore', {
         memory: { sum: 0, n: 0 }
       };
 
-      const subjectTotals: Record<string, { sum: number; n: number }> = {
-        math: { sum: 0, n: 0 },
-        chinese: { sum: 0, n: 0 },
-        english: { sum: 0, n: 0 },
-        go: { sum: 0, n: 0 }
+      const subjectTotals: Record<SubjectId, { sum: number; n: number }> = {
+        go: { sum: 0, n: 0 },
+        checkers: { sum: 0, n: 0 },
+        gomoku: { sum: 0, n: 0 }
       };
 
       for (const kp of KNOWLEDGE_POINTS_REPOSITORY) {
@@ -340,7 +381,7 @@ export const useUserStore = defineStore('userStore', {
         const score = rec.masteryRate * 100;
         dimensionTotals[kp.abilityDimension].sum += score;
         dimensionTotals[kp.abilityDimension].n += 1;
-        (subjectTotals[kp.subjectId] = subjectTotals[kp.subjectId] || { sum: 0, n: 0 }).sum += score;
+        subjectTotals[kp.subjectId].sum += score;
         subjectTotals[kp.subjectId].n += 1;
       }
 
@@ -356,11 +397,10 @@ export const useUserStore = defineStore('userStore', {
         memory: scoreOf(dimensionTotals.memory)
       };
 
-      const subjectMastery: Partial<Record<SubjectId, number>> = {
-        math: scoreOf(subjectTotals.math),
-        chinese: scoreOf(subjectTotals.chinese),
-        english: scoreOf(subjectTotals.english),
-        go: scoreOf(subjectTotals.go)
+      const subjectMastery: Record<SubjectId, number> = {
+        go: scoreOf(subjectTotals.go),
+        checkers: scoreOf(subjectTotals.checkers),
+        gomoku: scoreOf(subjectTotals.gomoku)
       };
 
       const weakKps = KNOWLEDGE_POINTS_REPOSITORY.filter(kp => {
@@ -506,18 +546,26 @@ export const useUserStore = defineStore('userStore', {
       this.currentUserEmail = email;
 
       const row = await fetchUserProfile(userId);
+      let hasLegacyCloudApiKey = false;
+
       if (row) {
         this.isAdmin = Boolean(row.is_admin);
         this.profiles = row.profiles_data || [];
         this.currentProfileId = row.active_profile_id || (this.profiles[0]?.id || '');
         if (row.settings_data) {
-          if (row.settings_data.theme) this.theme = row.settings_data.theme;
           if (typeof row.settings_data.soundEnabled === 'boolean') this.soundEnabled = row.settings_data.soundEnabled;
           if (typeof row.settings_data.volume === 'number') this.volume = row.settings_data.volume;
-          if (row.settings_data.aiConfig && typeof row.settings_data.aiConfig === 'object') {
+
+          const remoteAiConfig = row.settings_data.aiConfig;
+          if (remoteAiConfig && typeof remoteAiConfig === 'object') {
+            hasLegacyCloudApiKey = typeof remoteAiConfig.apiKey === 'string' && remoteAiConfig.apiKey.trim().length > 0;
             try {
-              const tutorStore = useAiTutorStore();
-              tutorStore.saveConfig(row.settings_data.aiConfig);
+              // 只按白名单恢复非密钥字段，历史云端数据里的 apiKey 一律丢弃
+              const safeConfig: Record<string, unknown> = {};
+              for (const field of CLOUD_AI_CONFIG_ALLOWED_KEYS) {
+                if (remoteAiConfig[field] !== undefined) safeConfig[field] = remoteAiConfig[field];
+              }
+              useAiTutorStore().applyRemoteConfig(safeConfig);
             } catch (e) {
               console.warn('[AI Config Cloud Restore Warn]', e);
             }
@@ -526,6 +574,11 @@ export const useUserStore = defineStore('userStore', {
       }
 
       this.lastSavedAt = Date.now();
+
+      // 历史版本曾把第三方密钥写进 settings_data：登录后立即用不含密钥的 payload 覆盖写回，完成云端清理
+      if (hasLegacyCloudApiKey) {
+        await this.syncToCloudNow();
+      }
     },
 
     clearCloudUser() {
@@ -538,8 +591,7 @@ export const useUserStore = defineStore('userStore', {
       this.lastSavedAt = null;
       this.syncError = null;
       try {
-        const tutorStore = useAiTutorStore();
-        tutorStore.config.apiKey = '';
+        useAiTutorStore().clearApiKey();
       } catch {}
     },
 
@@ -581,13 +633,12 @@ export const useUserStore = defineStore('userStore', {
           this.profiles,
           this.currentProfileId,
           {
-            theme: this.theme,
             soundEnabled: this.soundEnabled,
             volume: this.volume,
+            // 不上传 apiKey：第三方模型密钥不进入云端存储
             aiConfig: {
               mode: useAiTutorStore().config.mode,
               endpoint: useAiTutorStore().config.endpoint,
-              apiKey: useAiTutorStore().config.apiKey,
               model: useAiTutorStore().config.model,
               autoSpeech: useAiTutorStore().config.autoSpeech
             }
@@ -599,13 +650,20 @@ export const useUserStore = defineStore('userStore', {
         if (res.success) {
           this.lastSavedAt = res.timestamp || Date.now();
           return true;
-        } else {
-          this.syncError = res.error || '云端保存失败';
-          return false;
         }
-      } catch (err: any) {
+
+        // syncError 会直接显示在孩子看得到的页面上，只放固定文案；原始原因仅在开发环境落日志
+        this.syncError = CLOUD_SYNC_FAILED_TEXT;
+        if (import.meta.env?.DEV) {
+          console.warn('[Cloud Sync Failed]', toSafeErrorDigest(res.error));
+        }
+        return false;
+      } catch (err) {
         this.isSyncing = false;
-        this.syncError = err?.message || '网络连接异常';
+        this.syncError = CLOUD_SYNC_FAILED_TEXT;
+        if (import.meta.env?.DEV) {
+          console.warn('[Cloud Sync Failed]', toSafeErrorDigest(err));
+        }
         return false;
       }
     },
@@ -649,7 +707,6 @@ export const useUserStore = defineStore('userStore', {
         totalStars: 0,
         badges: [],
         solvedPuzzles: [],
-        unlockedThemes: ['wood'],
         unlockedAvatars: Array.from(new Set(['🦁', '👶', '🐱', '🐼', pickedAvatar])),
         mistakes: [],
         solvedMistakes: [],
@@ -668,6 +725,8 @@ export const useUserStore = defineStore('userStore', {
         coins: 0,
         coinLog: [],
         starLog: [],
+        rewardLedger: {},
+        rewardDailyCounters: {},
         stats: {
           gamesPlayed: 0,
           gamesWon: 0,
@@ -844,6 +903,75 @@ export const useUserStore = defineStore('userStore', {
       if (list.length > 40) list.length = 40;
     },
 
+    /**
+     * 查询某个奖励幂等键是否已经结算过（供 UI 判断是否还要展示奖励动效）
+     */
+    isRewardGranted(idempotencyKey: string): boolean {
+      if (!this.hasProfile || !idempotencyKey) return false;
+      return Boolean(this.currentProfile.rewardLedger?.[idempotencyKey]);
+    },
+
+    /**
+     * 统一幂等奖励入口：一次真实学习行为只结算一次奖励。
+     *
+     * 幂等键落在儿童档案里，随本地持久化与云端 profiles_data 一起走，
+     * 因此 toggle、刷新、重开页面、换设备都无法重复领取。
+     */
+    grantRewardOnce(idempotencyKey: string, spec: RewardGrantSpec): RewardGrantResult {
+      if (!this.hasProfile) return { granted: false, blockedBy: 'no-profile' };
+
+      const key = (idempotencyKey || '').trim();
+      if (!key) return { granted: false, blockedBy: 'invalid-key' };
+
+      const prof = this.currentProfile;
+      if (!prof.rewardLedger) prof.rewardLedger = {};
+      if (prof.rewardLedger[key]) return { granted: false, blockedBy: 'duplicate' };
+
+      let capKey = '';
+      if (spec.dailyCapId && spec.dailyCapLimit && spec.dailyCapLimit > 0) {
+        if (!prof.rewardDailyCounters) prof.rewardDailyCounters = {};
+        capKey = spec.dailyCapId + ':' + new Date().toLocaleDateString('en-CA');
+        if ((prof.rewardDailyCounters[capKey] || 0) >= spec.dailyCapLimit) {
+          return { granted: false, blockedBy: 'daily-cap' };
+        }
+      }
+
+      // 先记账再发钱：即便后续发放环节抛错，也不会留下"可再次领取"的窗口
+      prof.rewardLedger[key] = Date.now();
+      if (capKey) {
+        prof.rewardDailyCounters![capKey] = (prof.rewardDailyCounters![capKey] || 0) + 1;
+      }
+      this.pruneRewardBookkeeping(prof);
+
+      if (spec.exp) this.addExp(spec.exp);
+      if (spec.coins) this.addCoins(spec.coins, spec.reason || '学习奖励', spec.icon || '🪙');
+      this.touchSave();
+
+      return { granted: true };
+    },
+
+    /**
+     * 裁剪幂等账本与每日计数，避免档案体积随时间无限增长
+     */
+    pruneRewardBookkeeping(prof: ChildProfile) {
+      const ledger = prof.rewardLedger;
+      if (ledger) {
+        const entries = Object.entries(ledger);
+        if (entries.length > REWARD_LEDGER_MAX) {
+          entries.sort((a, b) => b[1] - a[1]);
+          prof.rewardLedger = Object.fromEntries(entries.slice(0, REWARD_LEDGER_KEEP));
+        }
+      }
+
+      const counters = prof.rewardDailyCounters;
+      if (counters) {
+        const today = new Date().toLocaleDateString('en-CA');
+        for (const counterKey of Object.keys(counters)) {
+          if (!counterKey.endsWith(':' + today)) delete counters[counterKey];
+        }
+      }
+    },
+
     addCoins(amount: number, reason = '获得金币', icon = '🪙') {
       if (!this.hasProfile || !amount) return;
       const prof = this.currentProfile;
@@ -938,26 +1066,6 @@ export const useUserStore = defineStore('userStore', {
       }
     },
 
-    buyTheme(themeId: ThemeType, price: number): boolean {
-      if (!this.hasProfile) return false;
-      const prof = this.currentProfile;
-      if (!prof.unlockedThemes) prof.unlockedThemes = ['wood'];
-      if (prof.unlockedThemes.includes(themeId)) {
-        this.setTheme(themeId);
-        return true;
-      }
-      if (this.spendCoins(price, '兑换棋盘皮肤', '🎨')) {
-        prof.unlockedThemes.push(themeId);
-        this.setTheme(themeId);
-        this.touchSave();
-        sound.playWinSound();
-        sound.fireCelebrationConfetti();
-        return true;
-      }
-      sound.playErrorSound();
-      return false;
-    },
-
     buyAvatar(avatar: string, price: number): boolean {
       if (!this.hasProfile) return false;
       const prof = this.currentProfile;
@@ -993,12 +1101,24 @@ export const useUserStore = defineStore('userStore', {
       if (score > (prof.arcadeHighScores[gameType] || 0)) {
         prof.arcadeHighScores[gameType] = score;
       }
-      if (coinsEarned > 0) this.addCoins(coinsEarned, '趣味闯关奖励', '🎮');
-      this.addExp(Math.round(score * 2));
+
+      // 闯关没有天然业务 id：用「模式 + 当天 + 本局得分」当稳定标识，
+      // 同一局重复结算算出同一个键，换局刷分则由每日封顶兜住
+      this.grantRewardOnce(
+        buildRewardKey('arcade', gameType, new Date().toLocaleDateString('en-CA'), score),
+        {
+          coins: Math.max(0, coinsEarned),
+          exp: Math.round(score * 2),
+          reason: '趣味闯关奖励',
+          icon: '🎮',
+          dailyCapId: 'arcade:' + gameType,
+          dailyCapLimit: ARCADE_DAILY_REWARD_CAP
+        }
+      );
       this.touchSave();
     },
 
-    recordCaptureGoWin(coinsEarned: number, expEarned: number) {
+    recordCaptureGoWin(coinsEarned: number, expEarned: number, rewardKey: string) {
       if (!this.hasProfile) return;
       const prof = this.currentProfile;
       if (!prof.captureGoStats) {
@@ -1006,8 +1126,14 @@ export const useUserStore = defineStore('userStore', {
       }
       prof.captureGoStats.matches++;
       prof.captureGoStats.wins++;
-      this.addCoins(coinsEarned, '吃子游戏获胜', '🦁');
-      this.addExp(expEarned);
+      this.grantRewardOnce(rewardKey, {
+        coins: coinsEarned,
+        exp: expEarned,
+        reason: '吃子游戏获胜',
+        icon: '🦁',
+        dailyCapId: 'capture-go-win',
+        dailyCapLimit: CAPTURE_GO_DAILY_REWARD_CAP
+      });
       this.touchSave();
     },
 
@@ -1049,7 +1175,7 @@ export const useUserStore = defineStore('userStore', {
         if (payload.errorReason) existing.errorReason = payload.errorReason;
         if (payload.options) existing.options = payload.options;
         if (payload.template) existing.template = payload.template;
-        if (payload.latex) existing.latex = payload.latex;
+        
         if (payload.questionType) existing.questionType = payload.questionType;
       }
 
@@ -1070,6 +1196,21 @@ export const useUserStore = defineStore('userStore', {
       }
     },
 
+    /**
+     * 攻克错题奖励统一入口：按错题记录 id 幂等。
+     *
+     * 错题记录在「再次答错」时会被复用并重置 resolved，
+     * 因此只靠 resolved 标记无法阻止「答错→攻克→再答错→再攻克」的循环刷奖。
+     */
+    grantMistakeResolveReward(recordId: string) {
+      this.grantRewardOnce(buildRewardKey('mistake', recordId), {
+        coins: MISTAKE_RESOLVE_COINS,
+        exp: MISTAKE_RESOLVE_EXP,
+        reason: '攻克错题(双倍金币)',
+        icon: '💪'
+      });
+    },
+
     resolveSubjectMistake(recordId: string, removeImmediately = true) {
       const prof = this.currentProfile;
       if (!prof.mistakeRecords) prof.mistakeRecords = [];
@@ -1080,8 +1221,7 @@ export const useUserStore = defineStore('userStore', {
           if (item.knowledgePointId) {
             this.recordKnowledgePractice(item.knowledgePointId, true);
           }
-          this.addCoins(30, '攻克错题(双倍金币)', '💪');
-          this.addExp(40);
+          this.grantMistakeResolveReward(item.id);
         }
         if (removeImmediately) {
           prof.mistakeRecords.splice(idx, 1);
@@ -1104,14 +1244,14 @@ export const useUserStore = defineStore('userStore', {
       );
       if (idx >= 0) {
         const item = prof.mistakeRecords[idx];
+        const resolvedRecordId = item.id;
         if (removeImmediately) {
           prof.mistakeRecords.splice(idx, 1);
         } else {
           item.resolved = true;
           item.resolvedAt = Date.now();
         }
-        this.addCoins(30, '攻克错题(双倍金币)', '💪');
-        this.addExp(40);
+        this.grantMistakeResolveReward(resolvedRecordId);
         this.touchSave();
       }
     },
@@ -1144,10 +1284,12 @@ export const useUserStore = defineStore('userStore', {
       prof.totalStars = 0;
       prof.coinLog = [];
       prof.starLog = [];
+      // 家长主动重置进度视为重新开始学习，幂等账本一并清空
+      prof.rewardLedger = {};
+      prof.rewardDailyCounters = {};
       prof.progress = {};
       prof.badges = [];
       prof.solvedPuzzles = [];
-      prof.unlockedThemes = ['wood'];
       prof.unlockedAvatars = ['🦁', '👶', '🐱', '🐼'];
       prof.mistakes = [];
       prof.solvedMistakes = [];
@@ -1164,12 +1306,6 @@ export const useUserStore = defineStore('userStore', {
         totalQuestionsAnswered: 0,
         totalStudyMinutes: 0
       };
-      this.touchSave();
-      sound.playButtonSound();
-    },
-
-    setTheme(theme: ThemeType) {
-      this.theme = theme;
       this.touchSave();
       sound.playButtonSound();
     },
@@ -1259,5 +1395,9 @@ export const useUserStore = defineStore('userStore', {
 
   persist: true
 });
+
+
+
+
 
 

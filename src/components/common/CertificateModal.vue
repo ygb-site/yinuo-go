@@ -7,19 +7,18 @@ import {
   Printer
 } from 'lucide-vue-next';
 
-export type CertificateType = 'go' | 'math' | 'chinese' | 'english';
+export type CertificateType = 'go' | 'checkers' | 'gomoku';
 
 const props = withDefaults(
   defineProps<{
     isOpen: boolean;
     rankTitle?: string;
-    rankLevel?: number;
-    initialType?: CertificateType;
+    certType?: CertificateType;
   }>(),
   {
-    rankTitle: '活棋智多星 5K',
-    rankLevel: 5,
-    initialType: 'go'
+    isOpen: false,
+    rankTitle: '少儿围棋初段 · 弈林小名士',
+    certType: 'go'
   }
 );
 
@@ -28,205 +27,186 @@ const emit = defineEmits<{
 }>();
 
 const userStore = useUserStore();
-const currentCertType = ref<CertificateType>(props.initialType);
+const currentCertType = ref<CertificateType>(props.certType);
 
+// Dynamic certificate themes based on game mode
 const certConfig = computed(() => {
   switch (currentCertType.value) {
-    case 'math':
+
+    case 'checkers':
       return {
-        id: 'math',
-        title: '小学数学口算速算小状元荣誉证书',
-        enTitle: 'YINUO ACADEMY · MATH SPEED MASTER',
-        sealTitle: '一诺数理',
-        sealSubtitle: '速算小能手',
-        awardTitle: '🏅 口算天天练·百题特等奖',
-        desc: '在【一诺启思数理思维馆】完成100以内进退位加减法与口算极限冲刺考验，思维敏捷，计算精准，特授予：',
-        themeBorder: 'border-blue-500',
-        goldBorder: 'border-blue-600',
-        textGold: 'text-blue-900',
-        gradient: 'from-[#F0F7FF] via-[#E8F3FF] to-[#DBEDFF]'
-      };
-    case 'chinese':
-      return {
-        id: 'chinese',
-        title: '国学经典诗词博雅小名士荣誉证书',
-        enTitle: 'YINUO ACADEMY · CHINESE POETRY SCHOLAR',
-        sealTitle: '一诺博雅',
-        sealSubtitle: '诗词小博士',
-        awardTitle: '🏅 部编古诗词背诵·卓越博雅之星',
-        desc: '在【一诺博雅国学语文馆】完成唐诗三百首与部编版经典诗词背诵点读，字正腔圆，博闻强记，特授予：',
+        id: 'checkers',
+        title: '快乐六角跳棋小棋圣荣誉证书',
+        enTitle: 'YINUO ACADEMY · CHINESE CHECKERS CHAMPION',
+        sealTitle: '一诺跳棋',
+        sealSubtitle: '连跳冠军',
+        awardTitle: '🏅 六角跳棋步法策略·卓越棋艺之星',
+        desc: '在【一诺六角跳棋乐园】完成多局博弈对决与连环跳步法推演，运筹帷幄，身手矫捷，特授予：',
         themeBorder: 'border-amber-500',
         goldBorder: 'border-amber-600',
         textGold: 'text-amber-900',
         gradient: 'from-[#FFFDF5] via-[#FFF9E6] to-[#FFF3CC]'
       };
-    case 'english':
+    case 'gomoku':
       return {
-        id: 'english',
-        title: '少儿英语自然拼读探索之星荣誉证书',
-        enTitle: 'YINUO ACADEMY · PHONICS EXPLORER',
-        sealTitle: '一诺灵犀',
-        sealSubtitle: 'Phonics之星',
-        awardTitle: '🏅 自然拼读·地道口语卓越勋章',
-        desc: '在【一诺灵犀少儿英语馆】完成26字母Phonics自然拼读与核心高频词大挑战，发音标准，自信开口，特授予：',
-        themeBorder: 'border-purple-500',
-        goldBorder: 'border-purple-600',
-        textGold: 'text-purple-900',
-        gradient: 'from-[#FAF5FF] via-[#F3E8FF] to-[#E9D5FF]'
+        id: 'gomoku',
+        title: '欢乐五子棋连珠大师荣誉证书',
+        enTitle: 'YINUO ACADEMY · GOMOKU GRANDMASTER',
+        sealTitle: '一诺连珠',
+        sealSubtitle: '五子大师',
+        awardTitle: '🏅 五子连珠攻防策略·卓越棋道之星',
+        desc: '在【一诺欢乐五子棋馆】掌握先手制胜、双三攻防与冲四布局，眼明手快，攻守兼备，特授予：',
+        themeBorder: 'border-teal-500',
+        goldBorder: 'border-teal-600',
+        textGold: 'text-teal-900',
+        gradient: 'from-[#F0FDF4] via-[#DCFCE7] to-[#BBF7D0]'
       };
     case 'go':
     default:
       return {
         id: 'go',
-        title: '少儿围棋段级位荣誉证书',
-        enTitle: 'YINUO GO ACADEMY · HONOR CERTIFICATE',
+        title: '少儿围棋段级位官方模拟认证证书',
+        enTitle: 'YINUO GO ACADEMY · OFFICIAL RANK CERTIFICATE',
         sealTitle: '一诺弈学',
-        sealSubtitle: '段位认证',
-        awardTitle: `🏅 ${props.rankTitle} 称号`,
-        desc: '在【一诺弈学少儿启蒙学院】完成系统修习与死活对战考验，棋理通达，手筋敏锐，特授予：',
-        themeBorder: 'border-amber-400',
-        goldBorder: 'border-[#C99700]',
-        textGold: 'text-[#5C3800]',
-        gradient: 'from-[#FFFDF7] via-[#FFF8E7] to-[#FFF3D6]'
+        sealSubtitle: '官方定级',
+        awardTitle: '🏅 围棋博弈通关·卓越棋士荣誉',
+        desc: '在【一诺奕学少儿围棋学堂】完成死活题训练、主线关卡与人机对弈实战考核，棋艺精湛，特授予：',
+        themeBorder: 'border-emerald-500',
+        goldBorder: 'border-emerald-600',
+        textGold: 'text-emerald-900',
+        gradient: 'from-[#F0FDF4] via-[#DCFCE7] to-[#BBF7D0]'
       };
   }
 });
 
-const certificateNo = computed(() => {
-  const prefix = currentCertType.value.toUpperCase();
-  return `YN${prefix}-` + new Date().getFullYear() + '-' + Math.abs(userStore.currentProfile.createdAt % 100000).toString().padStart(6, '0');
-});
-
-const issueDate = computed(() => {
+const todayStr = computed(() => {
   const d = new Date();
   return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
 });
 
-const handlePrint = () => {
+const certCode = computed(() => {
+  const idStr = (userStore.currentUserId || 'KID').slice(0, 4).toUpperCase();
+  const time = Date.now().toString().slice(-6);
+  return `YN-${currentCertType.value.toUpperCase()}-${idStr}-${time}`;
+});
+
+const printCert = () => {
   window.print();
 };
 </script>
 
 <template>
-  <Teleport to="body">
+  <div
+    v-if="isOpen"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+  >
     <div
-      v-if="isOpen"
-      class="fixed inset-0 z-[9999] overflow-hidden bg-black/70 no-scrollbar modal-overlay backdrop-blur-md select-none animate-fade-in flex items-center justify-center p-4"
-      @click.self="emit('close')"
+      class="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border-4 border-amber-300 flex flex-col max-h-[92vh]"
     >
-      <div class="relative w-full max-w-2xl bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-amber-400 space-y-5 animate-pop-in print:border-none print:shadow-none print:m-0">
-        
-        <!-- Close Button -->
-        <button
-          @click="emit('close')"
-          class="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition print:hidden cursor-pointer"
-        >
-          <X class="w-5 h-5" />
-        </button>
+      <!-- Top Action Bar -->
+      <div class="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white shrink-0">
+        <div class="flex items-center gap-2">
+          <Award class="w-6 h-6 text-amber-200 animate-bounce" />
+          <h3 class="text-lg font-black tracking-wide">🏆 荣誉证书颁发殿堂</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            @click="printCert"
+            class="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <Printer class="w-4 h-4" />
+            <span>打印证书</span>
+          </button>
+          <button
+            @click="emit('close')"
+            class="p-1.5 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
 
-        <!-- Certificate Type Selector (Hidden in print) -->
-        <div class="flex items-center justify-center gap-2 print:hidden overflow-x-auto no-scrollbar pt-2">
+      <!-- Cert Type Switcher Tabs -->
+      <div class="p-3 bg-amber-50/70 border-b border-amber-200 shrink-0">
+        <div class="flex items-center justify-center gap-2 print:hidden overflow-x-auto no-scrollbar pt-1">
           <button
             v-for="tab in [
-              { id: 'go', name: '♟️ 围棋段位证书' },
-              { id: 'math', name: '🔢 口算状元证书' },
-              { id: 'chinese', name: '🏮 诗词小名士证书' },
-              { id: 'english', name: '🔤 英语拼读证书' }
+              { id: 'go', name: '♟️ 围棋考级证书' },
+              { id: 'checkers', name: '⭐ 六角跳棋证书' },
+              { id: 'gomoku', name: '⚪ 五子连珠证书' }
             ]"
             :key="tab.id"
             @click="currentCertType = tab.id as any"
             :class="[
               'px-3.5 py-1.5 rounded-xl font-black text-xs transition-all cursor-pointer whitespace-nowrap',
               currentCertType === tab.id
-                ? 'bg-amber-500 text-white shadow-sm scale-103'
-                : 'bg-slate-100 text-slate-600 hover:bg-amber-50'
+                ? 'bg-amber-500 text-white shadow-sm scale-105'
+                : 'bg-white text-slate-600 hover:bg-amber-100 border border-amber-200'
             ]"
           >
             {{ tab.name }}
           </button>
         </div>
+      </div>
 
-        <!-- Printable Certificate Body -->
+      <!-- Printable Certificate Canvas Area -->
+      <div class="p-6 sm:p-8 overflow-y-auto print:p-0 flex items-center justify-center">
         <div
           :class="[
-            'relative p-6 sm:p-10 rounded-2xl border-4 text-center space-y-5 shadow-inner overflow-hidden bg-gradient-to-br',
-            certConfig.goldBorder,
-            certConfig.gradient
+            'w-full bg-gradient-to-b rounded-2xl p-6 sm:p-8 relative border-8 shadow-inner text-center select-none',
+            certConfig.gradient,
+            certConfig.goldBorder
           ]"
         >
-          <!-- Corner Flourishes -->
-          <div class="absolute top-2 left-2 text-xl select-none opacity-70">╔══</div>
-          <div class="absolute top-2 right-2 text-xl select-none opacity-70">══╗</div>
-          <div class="absolute bottom-2 left-2 text-xl select-none opacity-70">╚══</div>
-          <div class="absolute bottom-2 right-2 text-xl select-none opacity-70">══╝</div>
-
-          <!-- Top Seal Badge -->
-          <div class="flex justify-center">
-            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-500 to-amber-600 p-1 shadow-lg border-2 border-white flex items-center justify-center">
-              <Award class="w-10 h-10 sm:w-12 sm:h-12 text-white drop-shadow" />
-            </div>
-          </div>
-
-          <!-- Header Titles -->
+          <!-- Certificate Header -->
           <div class="space-y-1">
-            <div class="text-[11px] font-black tracking-widest uppercase opacity-75">
+            <div class="text-[10px] font-black tracking-widest text-slate-400 uppercase">
               {{ certConfig.enTitle }}
             </div>
-            <h1 class="text-2xl sm:text-3xl font-cartoon font-bold tracking-wider" :class="certConfig.textGold">
+            <h2 class="text-xl sm:text-2xl font-cartoon font-black tracking-wider text-slate-900">
               {{ certConfig.title }}
-            </h1>
+            </h2>
           </div>
 
-          <!-- Student & Award Text -->
-          <div class="py-3.5 px-4 sm:px-6 bg-white/80 rounded-2xl border border-amber-200/80 space-y-3 shadow-xs">
-            <p class="text-sm sm:text-base font-bold text-gray-800 leading-relaxed">
-              兹证明学员 <span class="text-xl sm:text-2xl font-black text-orange-600 underline decoration-amber-400 underline-offset-4 px-2">{{ userStore.nickname }}</span>（{{ userStore.avatar }}）
-            </p>
-            <p class="text-xs sm:text-sm text-gray-700 font-medium leading-relaxed">
-              {{ certConfig.desc }}
-            </p>
-            <div class="inline-block py-2 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-lg sm:text-2xl font-cartoon font-bold shadow-md">
-              {{ certConfig.awardTitle }}
-            </div>
+          <!-- Recipient Name -->
+          <div class="mt-4 pb-2 border-b-2 border-dashed border-amber-300 inline-block px-8">
+            <span class="text-2xl sm:text-3xl font-black text-slate-800 tracking-wide">
+              {{ userStore.nickname }}
+            </span>
+            <span class="text-xs font-bold text-slate-500 ml-2">小棋手</span>
           </div>
 
-          <!-- Footer Seals & Dates -->
-          <div class="pt-4 border-t border-amber-300/80 flex items-center justify-between text-left text-xs font-bold text-gray-600">
-            <div>
-              <div>证书编号：<span class="font-mono text-gray-800 font-bold">{{ certificateNo }}</span></div>
-              <div class="mt-0.5">发证日期：{{ issueDate }}</div>
-            </div>
+          <!-- Certificate Body Description -->
+          <p class="mt-4 text-xs sm:text-sm text-slate-700 leading-relaxed font-bold max-w-lg mx-auto">
+            {{ certConfig.desc }}
+          </p>
 
-            <!-- Red Seal Stamp -->
-            <div class="w-18 h-18 sm:w-20 sm:h-20 rounded-full border-4 border-rose-600 text-rose-600 flex flex-col items-center justify-center rotate-[-12deg] p-1 font-black shadow-xs bg-white/60">
-              <div class="text-[9px] leading-tight">{{ certConfig.sealTitle }}</div>
-              <div class="text-xs font-black my-0.5">⭐ 导师小诺 ⭐</div>
-              <div class="text-[8px] leading-tight">{{ certConfig.sealSubtitle }}</div>
-            </div>
+          <!-- Awarded Rank / Honor Pill -->
+          <div class="mt-4">
+            <span class="inline-block px-5 py-2 rounded-2xl bg-amber-400 text-slate-900 font-cartoon font-black text-sm sm:text-base shadow-md border-2 border-white">
+              {{ rankTitle || certConfig.awardTitle }}
+            </span>
           </div>
 
+          <!-- Certificate Footer & Stamp Seal -->
+          <div class="mt-8 pt-4 flex items-end justify-between text-left text-xs font-bold text-slate-500 border-t border-amber-200/60">
+            <div class="space-y-0.5">
+              <div>证书编号：<span class="font-mono text-slate-700 font-black">{{ certCode }}</span></div>
+              <div>发证机构：一诺未来学堂 · 棋艺与益智博弈认证委员会</div>
+              <div>颁发日期：<span class="text-slate-700">{{ todayStr }}</span></div>
+            </div>
+
+            <!-- Official Seal Badge -->
+            <div class="w-18 h-18 sm:w-20 sm:h-20 rounded-full border-3 border-red-500 text-red-500 flex flex-col items-center justify-center p-1 font-black transform -rotate-12 select-none shadow-sm opacity-90">
+              <div class="text-[9px] border-b border-red-400 pb-0.5">{{ certConfig.sealTitle }}</div>
+              <div class="text-xs font-black my-0.5">★ 官方认证 ★</div>
+              <div class="text-[9px] border-t border-red-400 pt-0.5">{{ certConfig.sealSubtitle }}</div>
+            </div>
+          </div>
         </div>
-
-        <!-- Action Buttons (Print & Close) -->
-        <div class="flex flex-col sm:flex-row gap-3 pt-1 print:hidden">
-          <button
-            @click="handlePrint"
-            class="flex-1 py-3.5 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <Printer class="w-4 h-4" />
-            <span>🖨️ 打印 / 另存为 PDF 证书</span>
-          </button>
-          
-          <button
-            @click="emit('close')"
-            class="flex-1 py-3.5 px-4 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-sm transition active:scale-95 flex items-center justify-center cursor-pointer"
-          >
-            返回成长中心
-          </button>
-        </div>
-
       </div>
     </div>
-  </Teleport>
+  </div>
 </template>
+
 

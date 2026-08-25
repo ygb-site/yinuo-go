@@ -1,101 +1,161 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 import { stopSpeech } from '../utils/speech';
 import { useUnlockStore } from '../stores/unlockStore';
 import { useUserStore } from '../stores/useUserStore';
+import { useLoadingStore } from '../stores/useLoadingStore';
 import { UNLOCK_FEATURES } from '../data/unlockRules';
 import { CHAPTERS_DATA, type Lesson } from '../data/chapters';
 import { sound } from '../utils/sound';
 import { showAlert } from '../utils/alert';
 
-// 🌟 Core Views (Lazy Loaded)
 const HomeView = () => import('../views/HomeView.vue');
-const ProfileView = () => import('../views/ProfileView.vue');
-const ParentDashboardView = () => import('../views/ParentDashboardView.vue');
-const AdminView = () => import('../views/AdminView.vue');
-const ShopView = () => import('../views/ShopView.vue');
-const MistakesView = () => import('../views/MistakesView.vue');
-
-// 📸 K12 Academic Core (Homework & Exam Generator)
-const HomeworkAssistantView = () => import('../views/HomeworkAssistantView.vue');
-const ExamGeneratorView = () => import('../views/ExamGeneratorView.vue');
-
-// ♟️ Go & Strategy Games (棋艺馆保留)
 const GoHubView = () => import('../views/GoHubView.vue');
+const MatchCreateView = () => import('../views/MatchCreateView.vue');
+const ProfileView = () => import('../views/ProfileView.vue');
+const ModuleInventoryView = () => import('../views/ModuleInventoryView.vue');
+
 const AdventureView = () => import('../views/AdventureView.vue');
 const LessonPlayView = () => import('../views/LessonPlayView.vue');
-const PracticeView = () => import('../views/PracticeView.vue');
-const BattleView = () => import('../views/BattleView.vue');
 const TsumegoView = () => import('../views/TsumegoView.vue');
-const AiMatchView = () => import('../views/AiMatchView.vue');
-const FreeBoardView = () => import('../views/FreeBoardView.vue');
 const DictionaryView = () => import('../views/DictionaryView.vue');
-const ArcadeView = () => import('../views/ArcadeView.vue');
-const CaptureGoView = () => import('../views/CaptureGoView.vue');
 const TwoPlayerView = () => import('../views/TwoPlayerView.vue');
 const RhymesView = () => import('../views/RhymesView.vue');
-const RankExamView = () => import('../views/RankExamView.vue');
-const WorksheetView = () => import('../views/WorksheetView.vue');
 const ChineseCheckersView = () => import('../views/ChineseCheckersView.vue');
 const GomokuView = () => import('../views/GomokuView.vue');
 
-// 🧰 Selected Essential Subject Tools (精选保留工具)
-const MathDrillView = () => import('../views/math/MathDrillView.vue');
-const ChineseHanziView = () => import('../views/chinese/ChineseHanziView.vue');
-const EnglishPhonicsView = () => import('../views/english/EnglishPhonicsView.vue');
+const MistakesView = () => import('../views/MistakesView.vue');
+const ShopView = () => import('../views/ShopView.vue');
+const ParentDashboardView = () => import('../views/ParentDashboardView.vue');
+const AdminView = () => import('../views/AdminView.vue');
+
+const routes: RouteRecordRaw[] = [
+  {
+    path: '/',
+    name: 'home',
+    component: HomeView,
+    meta: { mode: 'child', section: 'today', title: '今天', label: '一诺未来学堂' }
+  },
+  {
+    path: '/learn',
+    name: 'learn',
+    component: GoHubView,
+    meta: { mode: 'child', section: 'learn', title: '少儿围棋', label: '少儿围棋天地' }
+  },
+  {
+    path: '/match',
+    name: 'match',
+    component: MatchCreateView,
+    meta: { mode: 'child', section: 'play', title: '创建对局', label: '创建对局中心' }
+  },
+  {
+    path: '/puzzle',
+    redirect: '/match'
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: ProfileView,
+    meta: { mode: 'child', section: 'me', title: '成长中心', label: '成长中心' }
+  },
+  {
+    path: '/modules',
+    name: 'modules',
+    component: ModuleInventoryView,
+    meta: { mode: 'child', section: 'lab', title: '模块清单', label: '项目模块清单' }
+  },
+
+  {
+    path: '/adventure',
+    name: 'adventure',
+    component: AdventureView,
+    meta: { mode: 'child', section: 'learn', title: '主线地图', label: '围棋主线地图' }
+  },
+  {
+    path: '/lesson/:id',
+    name: 'lesson-play',
+    component: LessonPlayView,
+    meta: { mode: 'immersive', section: 'learn', title: '关卡实战', miniStatus: '关卡学习中' }
+  },
+  {
+    path: '/adventure/:id',
+    redirect: (to) => `/lesson/${to.params.id}`
+  },
+
+  {
+    path: '/checkers',
+    name: 'checkers',
+    component: ChineseCheckersView,
+    meta: { mode: 'child', section: 'play', title: '六角跳棋', label: '跳棋对局' }
+  },
+  {
+    path: '/gomoku',
+    name: 'gomoku',
+    component: GomokuView,
+    meta: { mode: 'child', section: 'play', title: '欢乐五子棋', label: '五子棋对局' }
+  },
+  {
+    path: '/two-player',
+    name: 'two-player',
+    component: TwoPlayerView,
+    meta: { mode: 'child', section: 'play', title: '亲子双人对弈', label: '少儿围棋对局' }
+  },
+  {
+    path: '/tsumego',
+    name: 'tsumego',
+    component: TsumegoView,
+    meta: { mode: 'child', section: 'learn', title: '每日死活题', label: '每日死活训练营' }
+  },
+  { path: '/practice', redirect: '/tsumego' },
+  { path: '/battle', redirect: '/learn' },
+  {
+    path: '/dictionary',
+    name: 'dictionary',
+    component: DictionaryView,
+    meta: { mode: 'child', section: 'learn', title: '围棋小词典', label: '双语围棋词典' }
+  },
+  {
+    path: '/rhymes',
+    name: 'rhymes',
+    component: RhymesView,
+    meta: { mode: 'child', section: 'learn', title: '棋理口诀歌', label: '经典口诀歌' }
+  },
+  {
+    path: '/mistakes',
+    name: 'mistakes',
+    component: MistakesView,
+    meta: { mode: 'child', section: 'me', title: '智能错题本', label: '全科智能错题本' }
+  },
+  {
+    path: '/shop',
+    name: 'shop',
+    component: ShopView,
+    meta: { mode: 'child', section: 'me', title: '装扮商城', label: '装扮商城' }
+  },
+
+  {
+    path: '/parent-dashboard',
+    name: 'parent-dashboard',
+    component: ParentDashboardView,
+    meta: { mode: 'parent', section: 'parent', title: '家长学情空间', label: '学情看板' }
+  },
+  {
+    path: '/dashboard',
+    redirect: '/parent-dashboard'
+  },
+  {
+    path: '/admin',
+    name: 'admin',
+    component: AdminView,
+    meta: { mode: 'parent', section: 'parent', title: '系统管理', label: '系统管理后台' }
+  },
+
+  { path: '/subject/:pathMatch(.*)*', redirect: '/learn' },
+  { path: '/:pathMatch(.*)*', redirect: '/' }
+];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes: [
-    // 🌟 1. Campus Central Hub (学堂首页)
-    { path: '/', name: 'home', component: HomeView },
-
-    // 📸 2. K12 Daily Homework & Exam Center
-    { path: '/homework', name: 'homework', component: HomeworkAssistantView },
-    { path: '/exam', name: 'exam', component: ExamGeneratorView },
-    { path: '/mistakes', name: 'mistakes', component: MistakesView },
-
-    // 🧰 3. Preserved Essential Subject Tools
-    { path: '/subject/math/drill', name: 'math-drill', component: MathDrillView },
-    { path: '/subject/chinese/hanzi', name: 'chinese-hanzi', component: ChineseHanziView },
-    { path: '/subject/english/phonics', name: 'english-phonics', component: EnglishPhonicsView },
-
-    // ♟️ 4. Go & Board Games Dedicated Routes (棋艺馆完好保留)
-    { path: '/learn', name: 'learn', component: GoHubView },
-    { path: '/subject/go', redirect: '/learn' },
-    { path: '/adventure', name: 'adventure', component: AdventureView },
-    { path: '/lesson/:id', name: 'lesson-play', component: LessonPlayView },
-    { path: '/adventure/:id', redirect: to => `/lesson/${to.params.id}` },
-    { path: '/practice', name: 'practice', component: PracticeView },
-    { path: '/battle', name: 'battle', component: BattleView },
-    { path: '/tsumego', name: 'tsumego', component: TsumegoView },
-    { path: '/arcade', name: 'arcade', component: ArcadeView },
-    { path: '/checkers', name: 'checkers', component: ChineseCheckersView },
-    { path: '/gomoku', name: 'gomoku', component: GomokuView },
-    { path: '/capture-go', name: 'capture-go', component: CaptureGoView },
-    { path: '/two-player', name: 'two-player', component: TwoPlayerView },
-    { path: '/rhymes', name: 'rhymes', component: RhymesView },
-    { path: '/rank-exam', name: 'rank-exam', component: RankExamView },
-    { path: '/worksheet', name: 'worksheet', component: WorksheetView },
-    { path: '/ai-match', name: 'ai-match', component: AiMatchView },
-    { path: '/free-board', name: 'free-board', component: FreeBoardView },
-    { path: '/dictionary', name: 'dictionary', component: DictionaryView },
-
-    // 👑 5. User Center & Parent Analytics
-    { path: '/shop', name: 'shop', component: ShopView },
-    { path: '/profile', name: 'profile', component: ProfileView },
-    { path: '/parent-dashboard', name: 'parent-dashboard', component: ParentDashboardView },
-    { path: '/dashboard', redirect: '/parent-dashboard' },
-    { path: '/admin', name: 'admin', component: AdminView },
-
-    // Legacy Fallback Redirects (无缝重定向到新中枢，避免死链)
-    { path: '/subject/math', redirect: '/subject/math/drill' },
-    { path: '/subject/chinese', redirect: '/subject/chinese/hanzi' },
-    { path: '/subject/english', redirect: '/subject/english/phonics' },
-    { path: '/subject/:id', redirect: '/homework' },
-    { path: '/subject/:subjectId/learn', redirect: '/homework' },
-    { path: '/subject/:subjectId/lesson/:lessonId', redirect: '/homework' },
-    { path: '/:pathMatch(.*)*', redirect: '/' }
-  ],
+  routes,
   scrollBehavior() {
     return { top: 0 };
   }
@@ -103,8 +163,11 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   stopSpeech();
+  try {
+    const loadingStore = useLoadingStore();
+    loadingStore.startLoading('小诺正在加载精彩页面...');
+  } catch {}
 
-  // 1. Check Admin Route Access
   if (to.path === '/admin') {
     const userStore = useUserStore();
     if (!userStore.isLoggedIn || !userStore.isAdmin) {
@@ -118,8 +181,7 @@ router.beforeEach((to) => {
     }
   }
 
-  // 2. Check feature unlock rules for Go features
-  const matchedFeature = UNLOCK_FEATURES.find(f => f.route === to.path);
+  const matchedFeature = UNLOCK_FEATURES.find((f) => f.route === to.path);
   if (matchedFeature && matchedFeature.lessonsRequired > 0) {
     const unlockStore = useUnlockStore();
     if (!unlockStore.isFeatureUnlocked(matchedFeature.id)) {
@@ -133,7 +195,6 @@ router.beforeEach((to) => {
     }
   }
 
-  // 3. Check progressive lesson unlock for Go
   if (to.name === 'lesson-play' || to.path.startsWith('/lesson/')) {
     const lessonId = to.params.id as string;
     if (lessonId && lessonId !== 'lesson_1_1' && lessonId !== 'c1_l1') {
@@ -142,7 +203,7 @@ router.beforeEach((to) => {
       for (const c of CHAPTERS_DATA) {
         allLessons.push(...c.lessons);
       }
-      const idx = allLessons.findIndex(l => l.id === lessonId);
+      const idx = allLessons.findIndex((l) => l.id === lessonId);
       if (idx > 0) {
         const prev = allLessons[idx - 1];
         const isPrevCompleted = !!userStore.progress[prev.id]?.completed;
@@ -160,21 +221,29 @@ router.beforeEach((to) => {
   }
 });
 
+router.afterEach((to) => {
+  const title = (to.meta.title as string) || '一诺未来学堂';
+  document.title = `${title} · 一诺未来学堂`;
+  try {
+    const loadingStore = useLoadingStore();
+    loadingStore.finishLoading();
+  } catch {}
+});
+
 export default router;
 
-// 🚀 High Performance Route Preloaders
 export const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/": HomeView,
-  "/homework": HomeworkAssistantView,
-  "/exam": ExamGeneratorView,
   "/learn": GoHubView,
-  "/mistakes": MistakesView,
+  "/match": MatchCreateView,
+  "/puzzle": MatchCreateView,
   "/profile": ProfileView,
+  "/adventure": AdventureView,
+  "/tsumego": TsumegoView,
   "/checkers": ChineseCheckersView,
   "/gomoku": GomokuView,
-  "/adventure": AdventureView,
-  "/battle": BattleView,
-  "/tsumego": TsumegoView
+  "/mistakes": MistakesView,
+  "/two-player": TwoPlayerView
 };
 
 export function preloadRoute(path: string) {
@@ -188,10 +257,10 @@ export function preloadRoute(path: string) {
 export function preloadCoreRoutes() {
   if (typeof window === "undefined") return;
   const trigger = () => {
-    HomeworkAssistantView().catch(() => {});
-    ExamGeneratorView().catch(() => {});
     GoHubView().catch(() => {});
     ProfileView().catch(() => {});
+    ChineseCheckersView().catch(() => {});
+    GomokuView().catch(() => {});
     MistakesView().catch(() => {});
   };
 
@@ -201,4 +270,3 @@ export function preloadCoreRoutes() {
     setTimeout(trigger, 1200);
   }
 }
-

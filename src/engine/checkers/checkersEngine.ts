@@ -19,6 +19,33 @@ export interface MoveOption {
 
 export type CampId = 0 | 1 | 2 | 3 | 4 | 5;
 
+export type CheckersPlayerCount = 2 | 3 | 4 | 5 | 6;
+
+/**
+ * 六角星营地座次（对应玩家定义 id 1..6）
+ * 2/3 人隔座对坐，4 人两对对坐，5 人空出东南角以免两家挤同一目标营
+ */
+export const CHECKERS_SEATS: Record<CheckersPlayerCount, number[]> = {
+  2: [1, 2],
+  3: [1, 3, 5],
+  4: [1, 2, 3, 4],
+  5: [1, 2, 3, 4, 5],
+  6: [1, 2, 3, 4, 5, 6]
+};
+
+export function getCheckersSeats(count: number): number[] {
+  if (count === 3 || count === 4 || count === 5 || count === 6) {
+    return CHECKERS_SEATS[count];
+  }
+  return CHECKERS_SEATS[2];
+}
+
+export function parseCheckersPlayerCount(raw: unknown): CheckersPlayerCount {
+  const n = Number(raw);
+  if (n === 3 || n === 4 || n === 5 || n === 6) return n;
+  return 2;
+}
+
 export interface PlayerConfig {
   id: number; // 1..6
   campId: CampId;

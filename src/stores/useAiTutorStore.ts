@@ -4,6 +4,7 @@ import {
   CustomOpenAIProvider,
   LocalRuleAIProvider,
   SupabaseEdgeAIProvider,
+  KID_SAFE_AI_FALLBACK_TEXT,
   type AiTutorStepHint,
   type AiVariationQuiz,
   type AiTutorStudentContext
@@ -12,6 +13,7 @@ import type { SubjectId } from '../types/curriculum';
 import { useUserStore } from './useUserStore';
 import { sound } from '../utils/sound';
 import { speakText, stopSpeech } from '../utils/speech';
+import { toSafeErrorDigest } from '../utils/safeError';
 
 export interface ChatMessage {
   id: string;
@@ -29,40 +31,30 @@ export interface AiTutorConfig {
 }
 
 /**
- * 根据当前所在学科生成针对性的默认知识点探究上下文
+ * 根据当前棋艺项目生成针对性的默认知识点探究上下文
  */
 export function getDefaultContextForSubject(subjectId: SubjectId = 'go'): AiTutorStudentContext {
-  if (subjectId === 'math') {
+
+  if (subjectId === 'checkers') {
     return {
-      subjectId: 'math',
-      questionPrompt: '38 + 47 = ? (两位数进位加法探究)',
-      userAnswer: '75',
-      correctAnswer: '85',
-      knowledgePointTitle: '两位数进位加法',
-      lessonTitle: '进位加法巧算',
-      errorReason: '个位相加 8 + 7 = 15 满十，向十位进 1，十位计算为 3 + 4 + 1 = 8。'
+      subjectId: 'checkers',
+      questionPrompt: '六角跳棋：借助相邻棋子连续跳跃，争先占领对角目标阵地！',
+      userAnswer: '未作答',
+      correctAnswer: '搭建连续跳跃桥梁',
+      knowledgePointTitle: '跳棋跳跃与搭桥手筋',
+      lessonTitle: '跳棋步法策略',
+      errorReason: '前方有相邻棋子且其正后方为空位时，可以直接跳过去！提前搭好“连环跳桥”可以一步千里。'
     };
   }
-  if (subjectId === 'chinese') {
+  if (subjectId === 'gomoku') {
     return {
-      subjectId: 'chinese',
-      questionPrompt: '汉字笔画顺序与间架结构规范探究',
+      subjectId: 'gomoku',
+      questionPrompt: '欢乐五子棋：横、竖、斜任意方向连成五子即获胜，注意防守活三和冲四！',
       userAnswer: '未作答',
-      correctAnswer: '先横后竖，从上到下',
-      knowledgePointTitle: '汉字笔顺规范',
-      lessonTitle: '汉字偏旁与笔顺',
-      errorReason: '笔顺口诀：先横后竖，先撇后捺，从上到下，从左到右，先中间后两边。'
-    };
-  }
-  if (subjectId === 'english') {
-    return {
-      subjectId: 'english',
-      questionPrompt: 'Phonics 自然拼读发音与音节拼读规律',
-      userAnswer: '未作答',
-      correctAnswer: '根据发音规律拆分音节',
-      knowledgePointTitle: '自然拼读法',
-      lessonTitle: '元音与辅音发音',
-      errorReason: '注意长短元音区别与自然拼读发音规律，按音节拆分拼读。'
+      correctAnswer: '先手抢占双三或活四',
+      knowledgePointTitle: '五子棋连珠攻防',
+      lessonTitle: '五子棋制胜要诀',
+      errorReason: '在己方做活三的同时，一定要时刻盯紧对方的连子，形成“四三胜”或“双三胜”锁定胜局。'
     };
   }
   // 🌟 默认围棋主线上下文 (一诺弈学核心学科)
@@ -80,28 +72,69 @@ export function getDefaultContextForSubject(subjectId: SubjectId = 'go'): AiTuto
 export function detectActiveSubjectFromRoute(): SubjectId {
   if (typeof window === 'undefined') return 'go';
   const path = window.location.pathname || '';
-  if (path.includes('/subject/math') || path.includes('/drill') || path.includes('/twenty-four') || path.includes('/speed')) {
-    return 'math';
-  }
-  if (path.includes('/subject/chinese') || path.includes('/pinyin') || path.includes('/hanzi') || path.includes('/poetry') || path.includes('/idiom') || path.includes('/riddles')) {
-    return 'chinese';
-  }
-  if (path.includes('/subject/english') || path.includes('/phonics') || path.includes('/flashcards')) {
-    return 'english';
-  }
+  if (path.includes('/checkers')) return 'checkers';
+  if (path.includes('/gomoku')) return 'gomoku';
   return 'go';
 }
 
 const DEFAULT_FALLBACK_CONTEXT: AiTutorStudentContext = getDefaultContextForSubject('go');
 
-if (typeof window !== 'undefined' && window.localStorage) {
-  try {
-    ['aiTutorStore', 'yinuo_go_ai_tutor', 'yinuo_go_ai_tutor_v2'].forEach(k => {
-      const raw = window.localStorage.getItem(k);
-      if (raw && (raw.includes('api.openai.com') || raw.includes('gpt-4o-mini'))) {
-        window.localStorage.removeItem(k);
+export const AI_TUTOR_PERSIST_KEY = 'yinuo_go_ai_tutor_v3';
+
+/**
+ * 允许落盘的字段白名单。
+ * apiKey 永远不在其中：第三方模型密钥只存活于当前会话的内存。
+ */
+export const AI_TUTOR_PERSISTED_FIELDS = [
+  'config.mode',
+  'config.endpoint',
+  'config.model',
+  'config.autoSpeech'
+] as const;
+
+/** 历史版本用过的持久化 key，升级路径上一并清理 */
+const LEGACY_PERSIST_KEYS = [AI_TUTOR_PERSIST_KEY, 'yinuo_go_ai_tutor_v2', 'yinuo_go_ai_tutor'];
+
+/**
+ * 清除浏览器存储里历史版本落盘的第三方密钥。
+ *
+ * pick 只能保证「今后不再写入」，已经存在于 localStorage 的旧 JSON 仍带着 apiKey，
+ * 必须主动改写掉，否则密钥会一直躺在用户磁盘上。
+ */
+export function purgeLegacyPersistedApiKey(): void {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+
+  for (const storageKey of LEGACY_PERSIST_KEYS) {
+    let raw: string | null = null;
+    try {
+      raw = window.localStorage.getItem(storageKey);
+    } catch {
+      return;
+    }
+    if (!raw || !raw.includes('apiKey')) continue;
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed?.config && typeof parsed.config === 'object' && 'apiKey' in parsed.config) {
+        delete parsed.config.apiKey;
+        window.localStorage.setItem(storageKey, JSON.stringify(parsed));
+      } else if ('apiKey' in (parsed || {})) {
+        delete parsed.apiKey;
+        window.localStorage.setItem(storageKey, JSON.stringify(parsed));
       }
-    });
+    } catch {
+      // 旧数据结构无法解析时直接丢弃整条，宁可丢配置也不留密钥
+      try {
+        window.localStorage.removeItem(storageKey);
+      } catch {}
+    }
+  }
+
+  // sessionStorage 从来不是设计中的存放位置，出现即视为历史脏数据
+  try {
+    for (const storageKey of LEGACY_PERSIST_KEYS) {
+      window.sessionStorage?.removeItem(storageKey);
+    }
   } catch {}
 }
 
@@ -117,17 +150,19 @@ export const useAiTutorStore = defineStore('aiTutorStore', {
       {
         id: 'welcome_1',
         role: 'assistant',
-        text: '嗨！我是你的 AI 伴学小导师「小诺」🐼！遇到不会的题目或者想探究解题思路，随时都可以问我哦！',
+        text: '嗨！我是你的 AI 伴学小导师「小诺」🐼！在下棋、做死活题或棋艺对弈时遇到疑问，随时都可以问我哦！',
         time: Date.now()
       }
     ] as ChatMessage[],
     isAiThinking: false,
     config: {
+      // builtin 对应离线本地规则引擎（local-rule）：默认不把儿童提问送出设备
       mode: 'builtin' as 'builtin' | 'custom_api' | 'cloud',
       endpoint: 'https://api.deepseek.com/v1/chat/completions',
       apiKey: '',
       model: 'deepseek-v4-flash',
-      autoSpeech: true
+      // 自动朗读默认关闭：默认开启会在未经家长确认的情况下直接出声
+      autoSpeech: false
     } as AiTutorConfig
   }),
 
@@ -152,7 +187,6 @@ export const useAiTutorStore = defineStore('aiTutorStore', {
 
   actions: {
     initProvider() {
-      // 自动修正并确保默认写入 DeepSeek 官方接口规范与模型
       if (!this.config.endpoint || this.config.endpoint.includes('api.openai.com')) {
         this.config.endpoint = 'https://api.deepseek.com/v1/chat/completions';
       }
@@ -160,7 +194,8 @@ export const useAiTutorStore = defineStore('aiTutorStore', {
         this.config.model = 'deepseek-v4-flash';
       }
 
-      if (this.config.mode === 'custom_api' && this.config.apiKey) {
+      // 默认（含配置缺失、密钥为空、云端不可用）一律回落到离线本地规则引擎 local-rule
+      if (this.config.mode === 'custom_api' && this.config.apiKey.trim()) {
         AiTutorService.setProvider(
           new CustomOpenAIProvider(this.config.endpoint, this.config.apiKey, this.config.model)
         );
@@ -230,7 +265,6 @@ export const useAiTutorStore = defineStore('aiTutorStore', {
         this.setContext(ctx);
       } else {
         const detectedSub = detectActiveSubjectFromRoute();
-        // 如果当前未设置上下文，或当前上下文与当前页面所属学科不一致，自动切换到当前学科的默认知识点
         if (!this.currentContext || this.currentContext.subjectId !== detectedSub) {
           this.setContext(getDefaultContextForSubject(detectedSub));
         } else {
@@ -290,7 +324,6 @@ export const useAiTutorStore = defineStore('aiTutorStore', {
       const q = questionText.trim();
       if (!q) return;
 
-      // 提取提问前的历史多轮对话上下文 (最近 6 轮)
       const prevHistory = this.chatMessages
         .filter(m => m.id !== 'welcome_1')
         .map(m => ({ role: m.role, text: m.text }));
@@ -319,13 +352,17 @@ export const useAiTutorStore = defineStore('aiTutorStore', {
         if (this.config.autoSpeech) {
           speakText(reply);
         }
-      } catch (err: any) {
+      } catch (err) {
+        // 儿童只看到统一兜底文案；原始异常仅在开发环境脱敏后落本地日志
         this.chatMessages.push({
           id: 'bot_' + Date.now(),
           role: 'assistant',
-          text: '小诺在努力思考中，遇到了一点小网络问题：' + (err.message || '未知错误') + '。别灰心，我们再试一次！',
+          text: KID_SAFE_AI_FALLBACK_TEXT,
           time: Date.now()
         });
+        if (import.meta.env?.DEV) {
+          console.warn('[AiTutor Ask Failed]', toSafeErrorDigest(err));
+        }
       } finally {
         this.isAiThinking = false;
       }
@@ -340,12 +377,54 @@ export const useAiTutorStore = defineStore('aiTutorStore', {
           userStore.touchSave();
         }
       } catch {}
+    },
+
+    /**
+     * 应用来自云端/外部的配置：只接受非密钥字段。
+     *
+     * 历史版本曾把 apiKey 写进云端 settings_data，这里必须显式忽略，
+     * 否则「不持久化」会被云端恢复链路重新打穿。
+     */
+    applyRemoteConfig(cfg: Record<string, unknown>) {
+      if (!cfg || typeof cfg !== 'object') return;
+
+      if (cfg.mode === 'builtin' || cfg.mode === 'custom_api' || cfg.mode === 'cloud') {
+        this.config.mode = cfg.mode;
+      }
+      if (typeof cfg.endpoint === 'string' && cfg.endpoint.trim()) {
+        this.config.endpoint = cfg.endpoint.trim();
+      }
+      if (typeof cfg.model === 'string' && cfg.model.trim()) {
+        this.config.model = cfg.model.trim();
+      }
+      if (typeof cfg.autoSpeech === 'boolean') {
+        this.config.autoSpeech = cfg.autoSpeech;
+      }
+
+      this.initProvider();
+    },
+
+    /**
+     * 清空当前会话内存中的第三方密钥
+     */
+    clearApiKey() {
+      this.config.apiKey = '';
+      this.initProvider();
     }
   },
 
   persist: {
-    key: 'yinuo_go_ai_tutor_v3',
-    pick: ['config.mode', 'config.endpoint', 'config.apiKey', 'config.model', 'config.autoSpeech']
+    key: AI_TUTOR_PERSIST_KEY,
+    // apiKey 刻意不落盘：第三方模型密钥只在当前会话的内存中存活
+    pick: [...AI_TUTOR_PERSISTED_FIELDS],
+    afterHydrate(ctx) {
+      // 清除历史版本明文写入 localStorage 的密钥（内存 + 已落盘的 JSON 都要清）
+      if (ctx.store.config.apiKey) {
+        ctx.store.config.apiKey = '';
+      }
+      purgeLegacyPersistedApiKey();
+    }
   }
 });
+
 

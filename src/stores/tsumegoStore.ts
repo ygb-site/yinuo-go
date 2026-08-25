@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { useUserStore } from './userStore';
+import { useUserStore } from './useUserStore';
 import { sound } from '../utils/sound';
 import { TSUMEGO_PUZZLES } from '../data/tsumegoLibrary';
 
@@ -58,4 +58,5 @@ export const useTsumegoStore = defineStore('tsumego', {
     storage: localStorage
   }
 });
+
 

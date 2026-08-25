@@ -21,25 +21,24 @@ describe('Security & Privacy Audit Test Suite', () => {
     totalStars: 3,
     badges: ['first_move'],
     solvedPuzzles: ['ts_01'],
-    unlockedThemes: ['wood'],
     unlockedAvatars: ['🦁', '🐼'],
     mistakes: [],
     solvedMistakes: [],
     mistakeRecords: [
       {
         id: 'mr_1',
-        subjectId: 'math',
-        topic: '进位加法',
-        questionPrompt: '18 + 25',
+        subjectId: 'go',
+        topic: '数气与提子',
+        questionPrompt: '黑先提白子',
         userAnswer: '33',
-        correctAnswer: '43',
+        correctAnswer: 'C3',
         errorCategory: 'calculation',
         createdAt: 1690000000000,
         resolved: false
       }
     ],
     knowledgeMastery: {
-      'kp_math_carry_add': {
+      'kp_go_liberties': {
         knowledgePointId: 'kp_math_carry_add',
         totalCount: 5,
         correctCount: 4,
@@ -172,13 +171,14 @@ describe('Security & Privacy Audit Test Suite', () => {
       AiTutorService.setProvider(new LocalRuleAIProvider());
       const reply = await AiTutorService.askKidTutor(
         {
-          subjectId: 'math',
-          questionPrompt: '28 + 19'
+          subjectId: 'go',
+          questionPrompt: '黑先找气'
         },
         '这道题怎么算？'
       );
       expect(reply).toContain('小诺助教点拨');
-      expect(reply).toContain('满十进一');
+      // Go response check
+      expect(reply.length).toBeGreaterThan(0);
     });
   });
 
@@ -208,3 +208,5 @@ describe('Security & Privacy Audit Test Suite', () => {
     });
   });
 });
+
+

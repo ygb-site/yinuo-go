@@ -1,17 +1,3 @@
-import type { ThemeType } from '../engine/types';
-
-export interface ShopThemeItem {
-  id: ThemeType;
-  name: string;
-  nameEn: string;
-  desc: string;
-  price: number;
-  icon: string;
-  previewBg: string;
-  borderColor: string;
-  lineColor: string;
-}
-
 export interface ShopAvatarItem {
   id: string;
   avatar: string;
@@ -20,75 +6,6 @@ export interface ShopAvatarItem {
   desc: string;
   price: number;
 }
-
-export const SHOP_THEMES: ShopThemeItem[] = [
-  {
-    id: 'wood',
-    name: '经典原木',
-    nameEn: 'Classic Kaya Wood',
-    desc: '传统榧木温润质感，棋院标准木纹色泽',
-    price: 0,
-    icon: '🪵',
-    previewBg: 'bg-[#DEB887]',
-    borderColor: '#B47B36',
-    lineColor: '#6B3E11'
-  },
-  {
-    id: 'candy',
-    name: '糖果梦境',
-    nameEn: 'Sweet Candy Dream',
-    desc: '草莓与马卡龙粉嫩梦幻色调，甜美活泼',
-    price: 60,
-    icon: '🍬',
-    previewBg: 'bg-[#FFE4E1]',
-    borderColor: '#F472B6',
-    lineColor: '#F472B6'
-  },
-  {
-    id: 'jade',
-    name: '翡翠温玉',
-    nameEn: 'Imperial Jade',
-    desc: '江南碧玉青竹雅致风骨，护眼清新',
-    price: 80,
-    icon: '🍵',
-    previewBg: 'bg-[#D1FAE5]',
-    borderColor: '#10B981',
-    lineColor: '#059669'
-  },
-  {
-    id: 'galaxy',
-    name: '赛博星空',
-    nameEn: 'Cosmic Nebula',
-    desc: '深邃璀璨宇宙星云，泛光紫晶线条',
-    price: 120,
-    icon: '🌌',
-    previewBg: 'bg-[#2E1065]',
-    borderColor: '#A855F7',
-    lineColor: '#C084FC'
-  },
-  {
-    id: 'forest',
-    name: '青草森林',
-    nameEn: 'Fresh Meadow',
-    desc: '大自然青葱草坪，生机盎然与阳光气息',
-    price: 90,
-    icon: '🍀',
-    previewBg: 'bg-[#DCFCE7]',
-    borderColor: '#22C55E',
-    lineColor: '#15803D'
-  },
-  {
-    id: 'gold',
-    name: '皇家金砂',
-    nameEn: 'Royal Golden Amber',
-    desc: '华贵耀金琉璃沙质感，大师尊贵专属',
-    price: 150,
-    icon: '👑',
-    previewBg: 'bg-[#FEF3C7]',
-    borderColor: '#F59E0B',
-    lineColor: '#B45309'
-  }
-];
 
 export const SHOP_AVATARS: ShopAvatarItem[] = [
   {
@@ -172,4 +89,3 @@ export const SHOP_AVATARS: ShopAvatarItem[] = [
     price: 150
   }
 ];
-

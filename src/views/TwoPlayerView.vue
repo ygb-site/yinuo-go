@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { GoGame } from '../engine/GoGame';
-import type { Point, BoardSize, StoneColor, ScoreBreakdown } from '../engine/types';
+import {
+  GO_MATCH_BOARD_SIZES,
+  isGoMatchBoardSize,
+  type Point,
+  type BoardSize,
+  type StoneColor,
+  type ScoreBreakdown
+} from '../engine/types';
 import { useUserStore } from '../stores/useUserStore';
 import {
   playStoneSound,
@@ -20,6 +27,8 @@ import GoHistoryModal from '../components/board/GoHistoryModal.vue';
 import { saveGoGame, type SavedGoGame } from '../services/goHistoryService';
 import GoMoveFeedback from '../components/board/GoMoveFeedback.vue';
 import { evaluateLiveMove, type LiveMoveEvaluation } from '../services/goReviewService';
+import { buildMatchRewardKey, isRewardableMatch } from '../utils/matchReward';
+import { AppSelect, type AppSelectOption } from '../design-system';
 import {
   Users,
   BookOpen,
@@ -39,6 +48,7 @@ import {
 } from 'lucide-vue-next';
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 
 const isZenMode = ref(false);
@@ -58,13 +68,22 @@ const goBack = async () => {
   if (window.history.length > 1) {
     router.back();
   } else {
-    router.push('/learn');
+    router.push('/match');
   }
 };
 
 const STORAGE_KEY = 'yinuo_active_twoplayer_match';
 
+/** 每盘棋的稳定标识，作为奖励幂等键；随对局状态一起持久化，刷新/续局都不会变 */
+const matchId = ref<string>('');
+
+const newMatchId = () => 'm_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+
 const boardSize = ref<BoardSize>(9);
+const goSizeOptions: AppSelectOption<BoardSize>[] = GO_MATCH_BOARD_SIZES.map((s) => ({
+  value: s,
+  label: s + '×' + s + ' 路'
+}));
 const komi = ref<number>(3.5); // 9路默认贴3.5目或5.5目
 const game = ref<GoGame>(new GoGame(9, 3.5));
 const lastMove = ref<Point | null>(null);
@@ -138,6 +157,8 @@ const handleReviewFromHistory = (saved: SavedGoGame) => {
 };
 
 const handleLoadGameFromHistory = (saved: SavedGoGame) => {
+  // 载入棋谱沿用该棋谱自身的标识：反复「载入 → 点目」拿到的是同一个幂等键，刷不出重复奖励
+  matchId.value = 'saved_' + saved.id;
   boardSize.value = saved.boardSize;
   komi.value = saved.komi;
   blackName.value = saved.blackName;
@@ -176,6 +197,7 @@ const saveMatchState = () => {
     return;
   }
   const payload = {
+    matchId: matchId.value,
     boardSize: boardSize.value,
     komi: komi.value,
     history: game.value.history,
@@ -197,6 +219,7 @@ const restoreMatchState = (): boolean => {
     const data = JSON.parse(raw);
     if (!data.history || data.history.length === 0) return false;
 
+    matchId.value = typeof data.matchId === 'string' && data.matchId ? data.matchId : newMatchId();
     boardSize.value = data.boardSize || 9;
     komi.value = data.komi || 3.5;
     blackSeconds.value = data.blackSeconds || 0;
@@ -235,6 +258,7 @@ const initGame = (isFresh = false) => {
   }
 
   localStorage.removeItem(STORAGE_KEY);
+  matchId.value = newMatchId();
   const k = boardSize.value <= 7 ? 2.5 : boardSize.value === 9 ? 3.5 : 5.5;
   komi.value = k;
   game.value = new GoGame(boardSize.value, k);
@@ -252,6 +276,10 @@ const initGame = (isFresh = false) => {
 };
 
 onMounted(() => {
+  const qSize = Number(route.query.size);
+  if (isGoMatchBoardSize(qSize)) {
+    boardSize.value = qSize;
+  }
   initGame(false);
 
   if (timer) clearInterval(timer);
@@ -369,12 +397,20 @@ const triggerScoringSettlement = (reasonDesc: string) => {
   // Record user stats if active profile exists
   if (userStore.hasProfile) {
     userStore.recordGameEnd(score.winner === 'B', score.winner === 'B' ? blackCaptures.value : whiteCaptures.value, game.value.history.length);
-    userStore.addCoins(30);
-    userStore.addExp(60);
+    if (isRewardableMatch(game.value.history.length, Boolean(resignedPlayerColor.value))) {
+      userStore.grantRewardOnce(buildMatchRewardKey('local', matchId.value, 'win'), {
+        exp: 60,
+        coins: 30,
+        reason: '完成一盘双人面对面对弈',
+        icon: '🏆'
+      });
+    }
   }
 };
 
 const handleManualCountScore = () => {
+  // 终局后再次点目不重新结算：认输后点目曾是绕开「认输不发奖」的通道
+  if (isGameOver.value) return;
   triggerScoringSettlement('主动申请裁判点目数子判定胜负！');
 };
 
@@ -425,6 +461,7 @@ const handleUndo = () => {
 };
 
 const changeSize = (size: BoardSize) => {
+  if (!isGoMatchBoardSize(size)) return;
   boardSize.value = size;
   initGame(true);
 };
@@ -437,10 +474,10 @@ const toggleZenMode = () => {
 
 <template>
   <div
-    class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] select-none transition-all"
-    :class="isZenMode ? 'p-1 sm:p-3 bg-[#F8F5EE]' : 'py-3 sm:py-8 px-2.5 sm:px-6 lg:px-8'"
+    class="min-h-[calc(100vh-4rem)] bg-[#F8F6F2] select-none transition-all"
+    :class="isZenMode ? 'p-1 sm:p-3' : 'py-3 sm:py-5 lg:py-6 px-2.5 sm:px-5 lg:px-6'"
   >
-    <div class="max-w-6xl mx-auto space-y-3 sm:space-y-4">
+    <div class="max-w-7xl mx-auto space-y-3 sm:space-y-4">
 
       <!-- =========================================================
            MODE 1: 🧘 ZEN / ZONE 纯净沉浸模式 (极简紧凑 · 专为手机优化)
@@ -538,7 +575,6 @@ const toggleZenMode = () => {
             :showLiberties="showLiberties"
             :showAtari="showAtari"
             :showTerritory="showTerritory"
-            :theme="userStore.theme"
             :highlightPoints="highlightPoints"
             :lastMove="lastMove"
             :sizePx="580"
@@ -610,69 +646,61 @@ const toggleZenMode = () => {
            MODE 2: 🖥️ FULL DESKTOP LAYOUT (完整模式)
            ========================================================= -->
       <template v-else>
-        <!-- Header Banner -->
-        <div class="bg-white rounded-3xl p-4 sm:p-7 border-2 border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
-          <div class="space-y-1 text-center md:text-left">
-            <div class="flex items-center gap-2 flex-wrap justify-center md:justify-start">
-              <button
-                @click="goBack"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-black transition active:scale-95 cursor-pointer border border-orange-200 shadow-2xs"
-                title="返回对弈竞技"
-              >
-                <ArrowLeft class="w-3.5 h-3.5" />
-                <span>返回对弈竞技</span>
-              </button>
-
-              <button
-                @click="toggleZenMode"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-black transition active:scale-95 cursor-pointer shadow-2xs hover:from-amber-600"
-                title="切换到纯净专注下棋模式"
-              >
-                <Maximize2 class="w-3.5 h-3.5" />
-                <span>🧘 专注模式 (Zone)</span>
-              </button>
-
-              <button
-                @click="showHistoryModal = true"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-black transition active:scale-95 cursor-pointer shadow-2xs border border-amber-300"
-                title="查看历史对局与已保存棋谱"
-              >
-                <BookOpen class="w-3.5 h-3.5 text-amber-700" />
-                <span>📜 棋谱档案</span>
-              </button>
-
-              <div class="inline-flex items-center gap-2 bg-purple-100 text-purple-900 px-3 py-1 rounded-full text-xs font-black">
-                <Users class="w-3.5 h-3.5 text-purple-700" />
-                <span>亲子面对面对弈</span>
-              </div>
+        <div class="bg-white rounded-2xl p-2.5 sm:p-3 border-2 border-slate-200/90 shadow-2xs flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg border border-emerald-200 shrink-0">
+              ⚫️
             </div>
-            <h1 class="text-xl sm:text-3xl font-cartoon font-bold text-gray-900 tracking-wide">
-              双人同屏对战棋盘
-            </h1>
-            <p class="text-xs sm:text-sm text-gray-600 font-medium max-w-xl">
-              支持 5x5 到 13x13 棋盘、双人计时钟、断线与防误刷自动恢复、终局自动点目数子！
-            </p>
+            <div class="flex items-center gap-1.5 min-w-0 truncate">
+              <h2 class="text-sm sm:text-base font-black text-slate-900 truncate">少儿围棋</h2>
+              <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap bg-purple-50 text-purple-800 border border-purple-200">亲子同屏</span>
+            </div>
           </div>
-
-          <!-- Size Switchers -->
-          <div class="flex items-center bg-amber-50 p-1 sm:p-1.5 rounded-2xl border border-orange-200 shadow-inner gap-1">
+          <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
-              v-for="s in [5, 7, 9, 13]"
-              :key="s"
-              @click="changeSize(s as BoardSize)"
-              class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs font-black transition cursor-pointer"
-              :class="boardSize === s ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm' : 'text-gray-600 hover:text-orange-600'"
+              @click="handleUndo"
+              :disabled="isGameOver || game.history.length === 0"
+              class="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm flex items-center gap-1.5 border border-slate-200/80 disabled:opacity-40 transition-all cursor-pointer active:scale-95"
             >
-              {{ s }}x{{ s }} 盘
+              <RotateCcw class="w-3.5 h-3.5" />
+              <span>悔棋</span>
+            </button>
+            <button
+              @click="handlePass"
+              :disabled="isGameOver"
+              class="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm flex items-center gap-1.5 border border-slate-200/80 disabled:opacity-40 transition-all cursor-pointer active:scale-95"
+            >
+              <Flag class="w-3.5 h-3.5" />
+              <span class="hidden sm:inline">停一手</span>
+            </button>
+            <button
+              @click="handleManualCountScore"
+              class="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer active:scale-95"
+            >
+              <Scale class="w-3.5 h-3.5" />
+              <span class="hidden sm:inline">点目</span>
+            </button>
+            <button
+              @click="showHistoryModal = true"
+              class="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold text-xs sm:text-sm flex items-center gap-1 border border-indigo-200 transition-all cursor-pointer active:scale-95"
+            >
+              <BookOpen class="w-3.5 h-3.5" />
+              <span class="hidden sm:inline">记录</span>
+            </button>
+            <button
+              @click="toggleZenMode"
+              class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-800 font-bold text-xs sm:text-sm flex items-center gap-1 border border-cyan-200 transition-all cursor-pointer active:scale-95"
+              title="超大棋盘"
+            >
+              <Maximize2 class="w-3.5 h-3.5" />
+              <span class="hidden sm:inline">放大</span>
             </button>
           </div>
         </div>
 
-        <!-- Main Play Layout: On mobile, board is prioritized at top (order-1) -->
+        <!-- 棋盘在左、控制区在右；顶对齐。窄屏棋盘在上 -->
         <div class="flex flex-col lg:grid lg:grid-cols-12 gap-4 sm:gap-6 items-start">
-          
-          <!-- Right / Top: Interactive GoBoard (order-1 on mobile, 8 cols on desktop) -->
-          <div class="order-1 lg:order-2 lg:col-span-8 bg-white rounded-3xl p-4 sm:p-6 border-2 border-orange-100 shadow-sm flex flex-col items-center justify-center space-y-4 w-full">
+          <div class="order-1 lg:col-span-8 bg-white rounded-3xl p-4 sm:p-6 border-2 border-slate-200/90 shadow-2xs flex flex-col items-center justify-start space-y-4 w-full min-w-0">
             
             <!-- 🌟 Real-time AI Win Rate Tug-of-War Bar -->
             <GoWinRateBar
@@ -695,7 +723,6 @@ const toggleZenMode = () => {
               :showLiberties="showLiberties"
               :showAtari="showAtari"
                 :showTerritory="showTerritory"
-              :theme="userStore.theme"
               :highlightPoints="highlightPoints"
               :lastMove="lastMove"
               :sizePx="520"
@@ -726,8 +753,26 @@ const toggleZenMode = () => {
             </div>
           </div>
 
-          <!-- Left / Bottom: Match Control & Players Info (order-2 on mobile, 4 cols on desktop) -->
-          <div class="order-2 lg:order-1 lg:col-span-4 space-y-3.5 sm:space-y-4 w-full">
+          <div class="order-2 lg:col-span-4 space-y-3.5 sm:space-y-4 w-full">
+
+            <div class="bg-white rounded-2xl p-1.5 border-2 border-slate-200/90 shadow-2xs">
+              <div class="py-2 px-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1 bg-purple-600 text-white shadow-xs">
+                <Users class="w-4 h-4" />
+                <span>亲子同屏</span>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-3 border-2 border-slate-200/90 shadow-2xs space-y-2">
+              <label class="text-xs font-bold text-slate-700" for="two-player-go-size">棋盘路数</label>
+              <AppSelect
+                id="two-player-go-size"
+                v-model="boardSize"
+                :options="goSizeOptions"
+                size="sm"
+                aria-label="棋盘路数"
+                @change="changeSize"
+              />
+            </div>
             
             <!-- White Player Card (Player 2) -->
             <div
@@ -832,7 +877,7 @@ const toggleZenMode = () => {
             </div>
 
             <!-- Controls Box -->
-            <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-orange-100 shadow-sm space-y-3">
+            <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-slate-200/90 shadow-2xs space-y-3">
               <div class="text-xs font-black text-gray-500 uppercase tracking-wide flex items-center justify-between">
                 <span>对局操作与辅助</span>
                 <span class="text-orange-600 font-bold">贴 {{ komi }} 目</span>

@@ -5,6 +5,7 @@ import { useUserStore } from '../../stores/useUserStore';
 import { sound } from '../../utils/sound';
 import { speakText, stopSpeech } from '../../utils/speech';
 import { showAlert } from '../../utils/alert';
+import { buildRewardKey, stableHash } from '../../utils/rewardKey';
 import {
   startSpeechRecognition,
   stopSpeechRecognition,
@@ -52,57 +53,45 @@ const isMobile = computed(() => {
 const subjectName = computed(() => {
   const s = tutorStore.currentContext?.subjectId;
   if (s === 'go') return '围棋';
-  if (s === 'math') return '数学';
-  if (s === 'chinese') return '语文';
-  if (s === 'english') return '英语';
-  return '全科学堂';
+  if (s === 'checkers') return '跳棋';
+  if (s === 'gomoku') return '五子棋';
+  return '棋艺学堂';
 });
 
 const subjectIcon = computed(() => {
   const s = tutorStore.currentContext?.subjectId;
   if (s === 'go') return '♟️';
-  if (s === 'math') return '🔢';
-  if (s === 'chinese') return '🏮';
-  if (s === 'english') return '🔤';
-  return '📚';
+  if (s === 'checkers') return '⭐';
+  if (s === 'gomoku') return '⚪';
+  return '♟️';
 });
 
 // 少儿免打字场景化快捷提问卡片
 const kidQuickCards = computed(() => {
   const s = tutorStore.currentContext?.subjectId;
-  if (s === 'math') {
+  if (s === 'checkers') {
     return [
-      { text: '这道算式怎么算呀？', icon: '💡' },
-      { text: '为什么这里要进位/退位？', icon: '🔍' },
-      { text: '用吃苹果做个比喻吧！', icon: '🍎' },
-      { text: '有什么好记的速算口诀吗？', icon: '🎵' },
-      { text: '小诺快读这道题给我听！', icon: '🗣️' },
+      { text: '怎么搭桥才能连续跳跃？', icon: '⭐' },
+      { text: '哪颗棋子应该先出发？', icon: '🏃' },
+      { text: '怎么防守不让对方借跳？', icon: '🛡️' },
       { text: '小诺夸夸我，给我加加油！', icon: '🌟' }
     ];
   }
-  if (s === 'go') {
+  if (s === 'gomoku') {
     return [
-      { text: '这步棋应该下在哪里呀？', icon: '💡' },
-      { text: '我的棋子还剩几口气？', icon: '🌬️' },
-      { text: '什么是真眼和假眼呀？', icon: '👁️' },
-      { text: '对方叫吃我该怎么逃跑？', icon: '🏃' },
-      { text: '这道死活题有什么要诀？', icon: '📜' },
+      { text: '对方要连成四子了怎么办？', icon: '🚨' },
+      { text: '怎么同时做出两个活三？', icon: '⚔️' },
+      { text: '先手抢占哪个点最好？', icon: '🎯' },
       { text: '小诺夸夸我，给我加加油！', icon: '🌟' }
     ];
   }
-  if (s === 'chinese') {
-    return [
-      { text: '这个字怎么读、怎么写？', icon: '✍️' },
-      { text: '有什么好记的笔顺口诀吗？', icon: '💡' },
-      { text: '这个字的偏旁代表什么？', icon: '🔍' },
-      { text: '能把这首诗读给我听听吗？', icon: '🗣️' },
-      { text: '小诺夸夸我，给我加加油！', icon: '🌟' }
-    ];
-  }
+  // Default Go cards
   return [
-    { text: '这个单词怎么发音呀？', icon: '🔊' },
-    { text: '这个字母组合怎么拼读？', icon: '🔤' },
-    { text: '能读一遍例句给我听吗？', icon: '🗣️' },
+    { text: '这步棋应该下在哪里呀？', icon: '💡' },
+    { text: '我的棋子还剩几口气？', icon: '🌬️' },
+    { text: '什么是真眼和假眼呀？', icon: '👁️' },
+    { text: '对方叫吃我该怎么逃跑？', icon: '🏃' },
+    { text: '这道死活题有什么要诀？', icon: '📜' },
     { text: '小诺夸夸我，给我加加油！', icon: '🌟' }
   ];
 });
@@ -245,14 +234,29 @@ function handleChooseVariationOption(optionId: string) {
   if (optionId === tutorStore.variationQuiz.correctId) {
     variationResult.value = 'correct';
     sound.playWinSound();
-    userStore.addCoins(10, '变式题挑战成功', '🌟');
-    try {
-      confetti({
-        particleCount: 40,
-        spread: 60,
-        origin: { y: 0.7 }
-      });
-    } catch {}
+
+    // 幂等键取题目内容哈希：刷新变式题拿到同一道题时不再重复发奖
+    const quiz = tutorStore.variationQuiz;
+    const granted = userStore.grantRewardOnce(
+      buildRewardKey('ai-variation', stableHash(quiz.prompt + '|' + quiz.correctId)),
+      {
+        coins: 10,
+        reason: '变式题挑战成功',
+        icon: '🌟',
+        dailyCapId: 'ai-variation',
+        dailyCapLimit: 10
+      }
+    ).granted;
+
+    if (granted) {
+      try {
+        confetti({
+          particleCount: 40,
+          spread: 60,
+          origin: { y: 0.7 }
+        });
+      } catch {}
+    }
   } else {
     variationResult.value = 'wrong';
     sound.playErrorSound();
@@ -289,13 +293,14 @@ async function handleSaveConfig() {
       sound.playWinSound();
       showAlert({
         title: '云端同步成功 ☁️',
-        message: '大模型配置与 API Key 已成功保存，并实时同步至您的家长云端账号！在手机、平板等任意设备登录均会自动生效。',
+        message: '大模型配置已同步至您的家长云端账号，在任意设备登录均会生效。\n\n🔐 出于安全考虑，API Key 不会被保存或上传，刷新页面后需要重新填写。',
         type: 'success'
       });
     } else {
       showAlert({
         title: '已保存至本地 💾',
-        message: '大模型配置已成功保存至当前浏览器（刷新不会丢失）。云端同步遇到微小网络波动：' + (userStore.syncError || '稍后会自动重试'),
+        // 不拼接 userStore.syncError：那是原始异常文本，不进儿童可见界面
+        message: '大模型配置已保存至当前浏览器（API Key 除外，仅本次会话有效）。云端同步遇到微小网络波动，稍后会自动重试。',
         type: 'info'
       });
     }
@@ -304,7 +309,7 @@ async function handleSaveConfig() {
     sound.playWinSound();
     showAlert({
       title: '已保存至本地 💾',
-      message: '大模型配置与 API Key 已成功保存于当前浏览器，刷新页面不会丢失！\n\n💡 提示：登录家长账号后可自动多端云同步，换设备免重复输入。',
+      message: '大模型配置已保存于当前浏览器。\n\n🔐 API Key 只保留在本次会话的内存中，不写入浏览器存储、不上传云端，刷新页面后需重新填写。',
       type: 'info'
     });
   }
@@ -787,9 +792,9 @@ async function handleSaveConfig() {
                   </button>
                 </div>
 
-                <div class="mt-1.5 p-2 rounded-xl text-[10px] leading-relaxed flex items-start gap-1.5" :class="userStore.isLoggedIn ? 'bg-emerald-50 border border-emerald-200 text-emerald-900' : 'bg-amber-50 border border-amber-200 text-amber-900'">
-                  <span class="flex-shrink-0">{{ userStore.isLoggedIn ? '☁️' : '💡' }}</span>
-                  <span>{{ userStore.isLoggedIn ? 'API Key 已安全保存于本地与云端，刷新或换设备均无需重新输入！' : 'API Key 已自动保存于当前浏览器，刷新页面不会丢失。登录家长账号可跨设备同步！' }}</span>
+                <div class="mt-1.5 p-2 rounded-xl text-[10px] leading-relaxed flex items-start gap-1.5 bg-amber-50 border border-amber-200 text-amber-900">
+                  <span class="flex-shrink-0">🔐</span>
+                  <span>出于安全考虑，API Key 只保存在当前页面的内存中，不会写入浏览器存储，也不会上传云端。刷新页面后需要重新填写。</span>
                 </div>
               </div>
 
@@ -849,4 +854,7 @@ async function handleSaveConfig() {
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 </style>
+
+
+
 

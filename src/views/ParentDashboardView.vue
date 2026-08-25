@@ -1,30 +1,33 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useUserStore, type ChildProfile } from '../stores/useUserStore';
-import { AiTutorService } from '../services/aiTutorService';
 import { sound } from '../utils/sound';
 import { createSafeProfileArchive, validateAndSanitizeArchive } from '../services/dataArchiveService';
 import { showAlert } from '../utils/alert';
-import { canInstallPwa, promptInstallPwa } from '../utils/pwa';
+import {
+  AppCard,
+  AppButton,
+  AppBadge,
+  AppProgress,
+  AppAvatar,
+  AppSection,
+  AppEmptyState
+} from '../design-system';
+import { buildAbilityProfile } from '../domain/ability/abilityEngine';
+import type { AbilityEvent, AbilityDimensionId } from '../domain/ability/types';
 import {
   ShieldCheck,
   Clock,
-  TrendingUp,
-  Brain,
   Download,
   Upload,
-  Copy,
-  Printer,
-  CheckCircle,
-  AlertTriangle,
-  ArrowRight,
-  Cloud,
-  RefreshCw
+  Sparkles
 } from 'lucide-vue-next';
 
+const router = useRouter();
 const userStore = useUserStore();
 
-// 1. 家长验证锁 (Parental Gate)
+// 1. Parental Gate
 const isUnlocked = ref(false);
 const gateNum1 = ref(7);
 const gateNum2 = ref(8);
@@ -54,13 +57,13 @@ onMounted(() => {
   generateGateQuestion();
 });
 
-// 当前学员数据
+// Current student profile
 const profile = computed<ChildProfile>(() => userStore.currentProfile);
 
-// 统计指标
+// Overall Learning Metrics
 const completedLessonsCount = computed(() => {
   const p = profile.value.progress || {};
-  return Object.values(p).filter(v => v.completed).length;
+  return Object.values(p).filter((v) => v.completed).length;
 });
 
 const totalStudyMinutes = computed(() => {
@@ -68,598 +71,370 @@ const totalStudyMinutes = computed(() => {
 });
 
 const totalQuestionsCount = computed(() => {
-  return profile.value.stats?.totalQuestionsAnswered || (completedLessonsCount.value * 8 + (profile.value.mistakeRecords?.length || 0));
+  return (
+    profile.value.stats?.totalQuestionsAnswered ||
+    completedLessonsCount.value * 8 + (profile.value.mistakeRecords?.length || 0)
+  );
 });
 
 const mistakeStats = computed(() => {
   const list = profile.value.mistakeRecords || [];
   const total = list.length;
-  const resolved = list.filter(m => m.resolved).length;
+  const resolved = list.filter((m) => m.resolved).length;
   const rate = total > 0 ? Math.round((resolved / total) * 100) : 100;
   return { total, resolved, pending: total - resolved, rate };
 });
 
-// 四大学科能力雷达图数据 (0 ~ 100 分)
-const subjectCompetencies = computed(() => {
-  const p = profile.value;
+// Ability Analysis derived from real learning records
+const abilityProfile = computed(() => {
+  const events: AbilityEvent[] = [];
+  const now = Date.now();
+
+  // Convert solved mistakes to positive ability signals
+  const mistakes = profile.value.mistakeRecords || [];
+  for (const m of mistakes) {
+    const dim: AbilityDimensionId =
+      m.topic?.includes('气') ? 'calculation' :
+      m.topic?.includes('眼') ? 'spatial' : 'logic';
+
+    events.push({
+      id: 'm_' + m.id,
+      profileId: profile.value.id,
+      at: m.createdAt || now,
+      dimensionId: dim,
+      skillId: 'go.topic.' + (m.topic || 'basic'),
+      performance: m.resolved ? 1.0 : 0.4,
+      difficulty: (m.difficulty || 2) as 1 | 2 | 3 | 4 | 5,
+      weight: 1.0
+    });
+  }
+
+  // Convert completed lessons to spatial and logic signals
+  const progress = profile.value.progress || {};
+  for (const [k, v] of Object.entries(progress)) {
+    if (v.completed) {
+      events.push({
+        id: 'p_sp_' + k,
+        profileId: profile.value.id,
+        at: v.completedAt ? new Date(v.completedAt).getTime() : now,
+        dimensionId: 'spatial',
+        skillId: 'go.lesson.' + k,
+        performance: v.stars ? v.stars / 3 : 1.0,
+        difficulty: 2,
+        weight: 1.0
+      });
+      events.push({
+        id: 'p_log_' + k,
+        profileId: profile.value.id,
+        at: v.completedAt ? new Date(v.completedAt).getTime() : now,
+        dimensionId: 'logic',
+        skillId: 'go.lesson.' + k,
+        performance: v.stars ? v.stars / 3 : 1.0,
+        difficulty: 2,
+        weight: 1.0
+      });
+    }
+  }
+
+  return buildAbilityProfile(profile.value.id, events, [], now);
+});
+
+// Weekly Diagnostic Story & Advice
+const weeklyStory = computed(() => {
+  const name = profile.value.nickname || '孩子';
+  const mins = totalStudyMinutes.value;
   const lessons = completedLessonsCount.value;
-  
-  const goScore = Math.min(100, Math.max(30, lessons * 12 + (p.stats.gamesWon || 0) * 8));
-  const mathScore = Math.min(100, Math.max(35, Math.round(mistakeStats.value.rate * 0.7 + lessons * 5)));
-  const chineseScore = Math.min(100, Math.max(40, (p.checkInStreak || 1) * 10 + lessons * 4));
-  const englishScore = Math.min(100, Math.max(35, lessons * 8 + 30));
 
   return [
-    { subject: '围棋棋力', score: goScore, key: 'go', color: '#F59E0B' },
-    { subject: '数学数感', score: mathScore, key: 'math', color: '#3B82F6' },
-    { subject: '语文素养', score: chineseScore, key: 'chinese', color: '#EF4444' },
-    { subject: '英语拼读', score: englishScore, key: 'english', color: '#8B5CF6' }
+    `本周 ${name} 累计专注学习 ${mins} 分钟，已通关 ${lessons} 个启蒙主线关卡。`,
+    `在空间棋形与死活识别上展现出良好的思考习惯，遇到困难时能主动通过小诺启发式点拨进行订正。`,
+    `建议家长周末可陪伴进行 1 局面对面对弈，鼓励孩子复述“真假眼”或“气的连接”要领，巩固思维成长！`
   ];
 });
 
-// SVG 雷达图计算
-const radarPoints = computed(() => {
-  const center = 110;
-  const radius = 85;
-  const comps = subjectCompetencies.value;
-  const angleStep = (Math.PI * 2) / comps.length;
-
-  return comps.map((c, i) => {
-    const angle = i * angleStep - Math.PI / 2;
-    const r = (c.score / 100) * radius;
-    const x = center + r * Math.cos(angle);
-    const y = center + r * Math.sin(angle);
-    return x.toFixed(1) + ',' + y.toFixed(1);
-  }).join(' ');
-});
-
-// 过去 7 天学习时长数据 (趋势)
-const weeklyTimeData = computed(() => {
-  const days = ['周一', '周二', '周三', '周四', '周五', '周六', '今天'];
-  const baseMin = Math.round(totalStudyMinutes.value / 6);
-  return days.map((day, idx) => {
-    const factor = idx === 6 ? 1.2 : (idx === 5 ? 1.4 : 0.8 + (idx % 3) * 0.2);
-    const mins = Math.max(10, Math.round(baseMin * factor));
-    return { day, minutes: mins };
-  });
-});
-
-// AI 学情分析与建议
-const aiReport = computed(() => {
-  const today = new Date().toLocaleDateString('zh-CN');
-  const records = profile.value.mistakeRecords || [];
-  return AiTutorService.generateDailyParentReport(
-    today,
-    completedLessonsCount.value,
-    records,
-    mistakeStats.value.resolved
-  );
-});
-
-// 复制报告到剪贴板 (发微信)
-const copySuccess = ref(false);
-function copyReportText() {
-  const reportText = '🏆【一诺弈学 · 学情成长日报】\n' +
-    '👤 学员：' + (profile.value.nickname || '小宝贝') + '\n' +
-    '📅 日期：' + aiReport.value.date + '\n' +
-    '⏱️ 今日专注时长：' + aiReport.value.totalMinutes + ' 分钟\n' +
-    '🎯 通关关卡：' + completedLessonsCount.value + ' 关 | 累计星星：' + profile.value.totalStars + ' 颗\n' +
-    '🌟 掌握核心知识点：' + aiReport.value.masteredKnowledgePoints.join('、') + '\n' +
-    '💡 错题攻坚率：' + mistakeStats.value.rate + '% (已攻克 ' + mistakeStats.value.resolved + '/' + mistakeStats.value.total + ')\n' +
-    '🐼 小诺助教评价：' + aiReport.value.parentAdvice + '\n' +
-    '✨ 明日建议：\n' +
-    aiReport.value.tomorrowRecommendations.map((r, i) => ' ' + (i + 1) + '. ' + r).join('\n') + '\n' +
-    '---\n' +
-    '🎉 一诺弈学 · 激发孩子一生的专注力与逻辑思维！';
-
-  navigator.clipboard.writeText(reportText).then(() => {
-    copySuccess.value = true;
-    sound.playStarSound();
-    showAlert({
-      title: '复制成功',
-      message: '学情成长报告已复制到剪贴板！可直接粘贴发送到微信家长群或朋友圈打卡！',
-      type: 'success'
-    });
-    setTimeout(() => {
-      copySuccess.value = false;
-    }, 3000);
-  });
-}
-
-function handlePrintReport() {
+// Archive Export / Import
+const exportArchive = () => {
   sound.playButtonSound();
-  window.print();
-}
-
-// 导出 JSON 备份
-function handleExportBackup() {
   const archive = createSafeProfileArchive(profile.value);
-  const dataStr = JSON.stringify(archive, null, 2);
-  const blob = new Blob([dataStr], { type: 'application/json' });
+  const jsonStr = JSON.stringify(archive, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'yinuo-go-backup-' + (profile.value.nickname || 'student') + '-' + Date.now() + '.json';
+  a.download = `yinuo_profile_${profile.value.nickname}_${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  showAlert({
-    title: '导出成功',
-    message: '学员完整学习数据已安全脱敏并备份至本地 JSON 文件！',
-    type: 'success'
-  });
-}
+};
 
-// 导入 JSON 备份
-function handleImportBackup(e: Event) {
+const handleImportArchive = (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (!file) return;
 
-  if (file.size > 2 * 1024 * 1024) {
-    showAlert({
-      title: '文件过大',
-      message: '导入文件不能超过 2MB。',
-      type: 'warning'
-    });
-    return;
-  }
-
   const reader = new FileReader();
-  reader.onload = (ev) => {
+  reader.onload = (event) => {
     try {
-      const rawText = (ev.target?.result as string) || '';
+      const rawText = event.target?.result as string;
       const result = validateAndSanitizeArchive(rawText);
-
-      if (!result.valid || !result.profile) {
+      if (result.valid && result.profile) {
+        const current = userStore.currentProfile;
+        if (current && current.id) {
+          Object.assign(current, result.profile);
+          userStore.touchSave();
+        }
+        sound.playWinSound();
         showAlert({
-          title: '导入校验未通过',
-          message: result.error || '备份文件格式不符合安全规范，请选择有效的学员备份。',
-          type: 'warning'
+          title: '档案导入成功',
+          message: `已成功恢复 ${result.profile.nickname} 的全部成长记录！`,
+          type: 'success'
         });
-        return;
+      } else {
+        throw new Error(result.error || '档案格式验证未通过');
       }
-
-      const clean = result.profile;
-      const cur = userStore.currentProfile;
-      cur.nickname = clean.nickname;
-      cur.avatar = clean.avatar;
-      cur.gradeLevel = clean.gradeLevel;
-      cur.progress = clean.progress;
-      cur.totalStars = clean.totalStars;
-      cur.badges = clean.badges;
-      cur.solvedPuzzles = clean.solvedPuzzles;
-      cur.unlockedThemes = clean.unlockedThemes;
-      cur.unlockedAvatars = clean.unlockedAvatars;
-      cur.mistakes = clean.mistakes;
-      cur.solvedMistakes = clean.solvedMistakes;
-      cur.mistakeRecords = clean.mistakeRecords;
-      cur.knowledgeMastery = clean.knowledgeMastery;
-      cur.arcadeHighScores = clean.arcadeHighScores;
-      cur.captureGoStats = clean.captureGoStats;
-      cur.exp = clean.exp;
-      cur.coins = clean.coins;
-      cur.stats = clean.stats;
-
-      userStore.touchSave();
-      sound.playWinSound();
+    } catch (err: any) {
+      sound.playErrorSound();
       showAlert({
-        title: '恢复成功',
-        message: '已成功安全导入并恢复学员【' + (clean.nickname || '宝贝') + '】的全部学习数据！',
-        type: 'success'
-      });
-    } catch {
-      showAlert({
-        title: '导入失败',
-        message: '备份文件解析失败，请检查文件完整性。',
-        type: 'warning'
+        title: '档案解析失败',
+        message: err?.message || '请选择正确的合法 JSON 档案备份文件！',
+        type: 'error'
       });
     }
   };
   reader.readAsText(file);
-}
-
-// 云端同步触发
-const isSyncing = ref(false);
-async function handleCloudSync() {
-  isSyncing.value = true;
-  sound.playButtonSound();
-  await userStore.touchSave();
-  setTimeout(() => {
-    isSyncing.value = false;
-    showAlert({
-      title: '云端同步完成',
-      message: '最新学习进度、星星、错题记录已成功同步到云端！',
-      type: 'success'
-    });
-  }, 1000);
-}
+};
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto px-4 py-6 sm:py-8 space-y-6">
-
-    <!-- 1. 家长验证锁弹窗 (Parental Gate Modal) -->
+  <div class="space-y-6 md:space-y-8 select-none">
+    <!-- 🔒 1. Parental Gate Screen -->
     <div
       v-if="!isUnlocked"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      class="max-w-md mx-auto my-12 bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-5"
     >
-      <div class="bg-white max-w-md w-full rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-amber-300 text-center space-y-5">
-        <div class="w-16 h-16 rounded-full bg-amber-100 border-2 border-amber-300 mx-auto flex items-center justify-center text-3xl shadow-inner">
-          🔒
-        </div>
-        <div>
-          <h2 class="text-xl font-black text-gray-800">家长 / 教师安全验证</h2>
-          <p class="text-xs text-gray-500 mt-1">请解答下方的算术题，以确认您是家长或教师：</p>
+      <div class="w-14 h-14 mx-auto rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+        <ShieldCheck class="w-8 h-8" />
+      </div>
+
+      <div class="space-y-1">
+        <h2 class="text-xl font-bold text-slate-900">家长验证安全锁</h2>
+        <p class="text-sm text-slate-500">
+          为了保护孩子的自主学习环境，进入学情空间请先回答下面的数学题：
+        </p>
+      </div>
+
+      <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-2xl font-bold text-slate-800">
+        {{ gateNum1 }} × {{ gateNum2 }} = ?
+      </div>
+
+      <div class="space-y-3">
+        <input
+          v-model="gateAnswer"
+          type="number"
+          placeholder="请输入计算结果"
+          class="w-full h-11 text-center text-lg font-bold border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+          @keyup.enter="verifyParentGate"
+        />
+
+        <div v-if="gateError" class="text-xs text-rose-500 font-bold">
+          计算答案有误，请重新计算新的题目哦！
         </div>
 
-        <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-2xl font-black text-amber-900 tracking-wider">
-          {{ gateNum1 }} × {{ gateNum2 }} = ?
-        </div>
-
-        <div class="space-y-2">
-          <input
-            v-model="gateAnswer"
-            type="number"
-            placeholder="输入计算结果"
-            @keyup.enter="verifyParentGate"
-            class="w-full px-4 py-3 text-center text-lg font-bold border-2 border-amber-300 rounded-2xl focus:outline-none focus:border-amber-500"
-            autofocus
-          />
-          <p v-if="gateError" class="text-xs font-bold text-red-500 animate-shake">
-            计算结果不正确，已更换题目，请重新输入！
-          </p>
-        </div>
-
-        <div class="flex gap-3">
-          <router-link
-            to="/"
-            class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl text-sm transition"
-          >
-            返回学堂
-          </router-link>
-          <button
-            @click="verifyParentGate"
-            class="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black rounded-2xl text-sm shadow-md transition active:scale-95"
-          >
-            验证进入
-          </button>
-        </div>
+        <AppButton variant="primary" size="lg" block @click="verifyParentGate">
+          验证并进入家长空间
+        </AppButton>
       </div>
     </div>
 
-    <!-- 2. 主页面内容 (Verified Parent Dashboard) -->
-    <div v-else class="space-y-6">
-
-      <!-- Header 标题栏 -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden">
-        <div class="relative z-10 space-y-1">
-          <div class="flex items-center gap-2">
-            <span class="text-2xl">📊</span>
-            <h1 class="text-2xl sm:text-3xl font-black tracking-wide drop-shadow-sm">家长与教师学情全景看板</h1>
-          </div>
-          <p class="text-xs sm:text-sm text-amber-100 font-medium">
-            全维度学情监控 · 知识点薄弱项诊断 · AI 家长报告生成 · 多端云端备份
-          </p>
-        </div>
-
-        <div class="relative z-10 flex flex-wrap items-center gap-2">
-          <!-- PWA 安装提示 -->
-          <button
-            v-if="canInstallPwa"
-            @click="promptInstallPwa"
-            class="px-3.5 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-2xl text-xs font-bold flex items-center gap-1.5 transition border border-white/40 shadow-sm"
-          >
-            <Download class="w-3.5 h-3.5" />
-            <span>安装桌面 App</span>
-          </button>
-
-          <!-- 云端同步按钮 -->
-          <button
-            @click="handleCloudSync"
-            :disabled="isSyncing"
-            class="px-3.5 py-2 bg-white text-amber-900 rounded-2xl text-xs font-black flex items-center gap-1.5 shadow-md hover:bg-amber-50 transition active:scale-95"
-          >
-            <RefreshCw :class="['w-3.5 h-3.5 text-amber-600', isSyncing ? 'animate-spin' : '']" />
-            <span>{{ isSyncing ? '同步中...' : '云端同步' }}</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 学员概览卡片 -->
-      <div class="bg-white rounded-3xl p-6 shadow-sm border border-amber-200/80 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div class="flex items-center gap-4">
-          <div class="w-16 h-16 rounded-full bg-amber-100 border-2 border-amber-300 flex items-center justify-center text-3xl shadow-inner">
-            {{ profile.avatar || '👶' }}
-          </div>
+    <!-- 📊 2. Parent Learning Dashboard (Unlocked) -->
+    <div v-else class="space-y-8">
+      <!-- Top Title & Child Info -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div class="flex items-center gap-3">
+          <AppAvatar :emoji="profile.avatar || '🐼'" size="lg" ring="brand" />
           <div>
             <div class="flex items-center gap-2">
-              <h2 class="text-xl font-black text-gray-800">{{ profile.nickname || '小棋手' }}</h2>
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                连续打卡 {{ profile.checkInStreak || 1 }} 天 🔥
-              </span>
+              <h2 class="text-2xl font-bold text-slate-900">{{ profile.nickname }}</h2>
+              <AppBadge variant="brand" size="sm">少儿学员</AppBadge>
             </div>
-            <p class="text-xs text-gray-500 mt-1">
-              创建于 {{ profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('zh-CN') : '近期' }} · 学员档案 ID: {{ profile.id }}
+            <p class="text-xs text-slate-500 mt-0.5">
+              档案创建于 {{ new Date(profile.createdAt || Date.now()).toLocaleDateString() }} · 围棋启蒙主线阶段
             </p>
           </div>
         </div>
 
-        <!-- 关键核心指标 -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-auto">
-          <div class="bg-amber-50/80 p-3 rounded-2xl border border-amber-200/60 text-center min-w-[90px]">
-            <div class="text-xs font-bold text-amber-800">已通关</div>
-            <div class="text-lg font-black text-amber-950 mt-0.5">{{ completedLessonsCount }} <span class="text-xs font-normal">关</span></div>
-          </div>
-          <div class="bg-blue-50/80 p-3 rounded-2xl border border-blue-200/60 text-center min-w-[90px]">
-            <div class="text-xs font-bold text-blue-800">做题总数</div>
-            <div class="text-lg font-black text-blue-950 mt-0.5">{{ totalQuestionsCount }} <span class="text-xs font-normal">道</span></div>
-          </div>
-          <div class="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200/60 text-center min-w-[90px]">
-            <div class="text-xs font-bold text-emerald-800">总学时</div>
-            <div class="text-lg font-black text-emerald-950 mt-0.5">{{ totalStudyMinutes }} <span class="text-xs font-normal">分钟</span></div>
-          </div>
-          <div class="bg-purple-50/80 p-3 rounded-2xl border border-purple-200/60 text-center min-w-[90px]">
-            <div class="text-xs font-bold text-purple-800">获得星星</div>
-            <div class="text-lg font-black text-purple-950 mt-0.5 flex items-center justify-center gap-1">
-              <span>⭐</span>{{ profile.totalStars }}
+        <!-- Action Tools: Export / Import -->
+        <div class="flex items-center gap-2">
+          <AppButton variant="secondary" size="sm" @click="exportArchive">
+            <template #icon><Download class="w-4 h-4" /></template>
+            导出学情档案
+          </AppButton>
+
+          <label class="cursor-pointer">
+            <input type="file" accept=".json" class="hidden" @change="handleImportArchive" />
+            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-bold transition">
+              <Upload class="w-4 h-4" />
+              <span>导入备份</span>
             </div>
-          </div>
+          </label>
         </div>
       </div>
 
-      <!-- 四大学科能力雷达图与诊断 -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        <!-- 左侧：SVG 能力雷达图 -->
-        <div class="lg:col-span-5 bg-white rounded-3xl p-6 shadow-sm border border-amber-200/80 flex flex-col items-center justify-between">
-          <div class="w-full flex items-center justify-between mb-2">
-            <div class="flex items-center gap-2">
-              <Brain class="w-5 h-5 text-amber-500" />
-              <h3 class="font-extrabold text-gray-800 text-base">四大维度素养雷达图</h3>
+      <!-- Section 1: Weekly Story & Growth Highlights (结论先行) -->
+      <AppSection title="本周学情结论与陪伴建议" icon="book-open" tone="learning">
+        <AppCard variant="outlined" padding="lg" class="bg-blue-50/40 border-blue-100 space-y-3">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+              <Sparkles class="w-4 h-4" />
             </div>
-            <span class="text-xs text-gray-400 font-medium">综合能力模型</span>
-          </div>
-
-          <!-- SVG Radar Visual -->
-          <div class="relative w-64 h-64 my-2 flex items-center justify-center">
-            <svg class="w-full h-full" viewBox="0 0 220 220">
-              <!-- 背景蛛网同心圆 -->
-              <polygon points="110,25 195,110 110,195 25,110" fill="none" stroke="#FDE68A" stroke-width="1.5" />
-              <polygon points="110,50 170,110 110,170 50,110" fill="none" stroke="#FEF3C7" stroke-width="1" />
-              <polygon points="110,75 145,110 110,145 75,110" fill="none" stroke="#FEF3C7" stroke-width="1" />
-              
-              <!-- 轴线 -->
-              <line x1="110" y1="25" x2="110" y2="195" stroke="#FDE68A" stroke-width="1" stroke-dasharray="3,3" />
-              <line x1="25" y1="110" x2="195" y2="110" stroke="#FDE68A" stroke-width="1" stroke-dasharray="3,3" />
-
-              <!-- 数据雷达多边形 -->
-              <polygon
-                :points="radarPoints"
-                fill="rgba(245, 158, 11, 0.35)"
-                stroke="#F59E0B"
-                stroke-width="2.5"
-                class="transition-all duration-700 ease-out"
-              />
-
-              <!-- 轴标签 -->
-              <text x="110" y="16" text-anchor="middle" font-size="11" font-weight="bold" fill="#D97706">♟️ 围棋 ({{ subjectCompetencies[0].score }})</text>
-              <text x="212" y="114" text-anchor="start" font-size="11" font-weight="bold" fill="#2563EB">🔢 数学 ({{ subjectCompetencies[1].score }})</text>
-              <text x="110" y="212" text-anchor="middle" font-size="11" font-weight="bold" fill="#DC2626">🏮 语文 ({{ subjectCompetencies[2].score }})</text>
-              <text x="8" y="114" text-anchor="end" font-size="11" font-weight="bold" fill="#7C3AED">🔤 英语 ({{ subjectCompetencies[3].score }})</text>
-            </svg>
-          </div>
-
-          <!-- 评级标签 -->
-          <div class="grid grid-cols-2 gap-2 w-full mt-2">
-            <div
-              v-for="item in subjectCompetencies"
-              :key="item.key"
-              class="p-2 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-between text-xs"
-            >
-              <span class="font-bold text-gray-700">{{ item.subject }}</span>
-              <span class="font-black" :style="{ color: item.color }">{{ item.score }} 分</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 右侧：学时分布与错题诊断 -->
-        <div class="lg:col-span-7 space-y-6">
-
-          <!-- 1. 过去 7 天学习趋势 -->
-          <div class="bg-white rounded-3xl p-6 shadow-sm border border-amber-200/80 space-y-4">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <Clock class="w-5 h-5 text-blue-500" />
-                <h3 class="font-extrabold text-gray-800 text-base">近 7 天学习专注时长 (分钟)</h3>
-              </div>
-              <span class="text-xs text-blue-600 font-bold">总计 {{ totalStudyMinutes }} 分钟</span>
-            </div>
-
-            <div class="grid grid-cols-7 gap-2 items-end h-32 pt-4">
-              <div
-                v-for="(day, idx) in weeklyTimeData"
-                :key="idx"
-                class="flex flex-col items-center gap-1.5 h-full justify-end"
-              >
-                <div class="text-[10px] font-bold text-gray-500">{{ day.minutes }}m</div>
-                <div
-                  class="w-full max-w-[28px] rounded-t-xl bg-gradient-to-t from-blue-500 to-indigo-400 transition-all duration-500"
-                  :style="{ height: Math.min(100, Math.max(15, day.minutes * 2.5)) + '%' }"
-                ></div>
-                <div class="text-[11px] font-bold text-gray-600">{{ day.day }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 2. 错题本攻坚情况 -->
-          <div class="bg-white rounded-3xl p-6 shadow-sm border border-amber-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="space-y-1.5 text-center sm:text-left">
-              <div class="flex items-center gap-2 justify-center sm:justify-start">
-                <CheckCircle class="w-5 h-5 text-emerald-500" />
-                <h3 class="font-extrabold text-gray-800 text-base">错题攻坚与消灭率</h3>
-              </div>
-              <p class="text-xs text-gray-500">
-                收录错题 {{ mistakeStats.total }} 道 · 已攻克 {{ mistakeStats.resolved }} 道 · 待复习 {{ mistakeStats.pending }} 道
+            <div class="space-y-2 text-sm text-slate-700 leading-relaxed font-medium">
+              <p v-for="(line, idx) in weeklyStory" :key="idx">
+                {{ line }}
               </p>
             </div>
+          </div>
+        </AppCard>
+      </AppSection>
 
-            <div class="flex items-center gap-4">
-              <div class="text-right">
-                <div class="text-2xl font-black text-emerald-600">{{ mistakeStats.rate }}%</div>
-                <div class="text-[11px] text-gray-400 font-medium">掌握率</div>
+      <!-- Section 2: Core Learning Metrics (四大核心指标) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <AppCard variant="outlined" padding="md" class="bg-white">
+          <div class="text-caption text-slate-400 font-bold uppercase">累计专注时长</div>
+          <div class="text-2xl font-bold text-slate-900 mt-1">
+            {{ totalStudyMinutes }} <span class="text-xs text-slate-400 font-normal">分钟</span>
+          </div>
+          <div class="text-[11px] text-emerald-600 font-bold mt-2 flex items-center gap-1">
+            <Clock class="w-3 h-3" />
+            <span>自律学习习惯持续养成</span>
+          </div>
+        </AppCard>
+
+        <AppCard variant="outlined" padding="md" class="bg-white">
+          <div class="text-caption text-slate-400 font-bold uppercase">主线关卡通关</div>
+          <div class="text-2xl font-bold text-slate-900 mt-1">
+            {{ completedLessonsCount }} <span class="text-xs text-slate-400 font-normal">/ 22 关</span>
+          </div>
+          <div class="text-[11px] text-blue-600 font-bold mt-2">
+            通关进度 {{ Math.round((completedLessonsCount / 22) * 100) }}%
+          </div>
+        </AppCard>
+
+        <AppCard variant="outlined" padding="md" class="bg-white">
+          <div class="text-caption text-slate-400 font-bold uppercase">累计解答手筋</div>
+          <div class="text-2xl font-bold text-slate-900 mt-1">
+            {{ totalQuestionsCount }} <span class="text-xs text-slate-400 font-normal">道</span>
+          </div>
+          <div class="text-[11px] text-amber-600 font-bold mt-2">
+            含死活训练与关卡实战
+          </div>
+        </AppCard>
+
+        <AppCard variant="outlined" padding="md" class="bg-white">
+          <div class="text-caption text-slate-400 font-bold uppercase">弱点攻克率</div>
+          <div class="text-2xl font-bold text-slate-900 mt-1">
+            {{ mistakeStats.rate }}%
+          </div>
+          <div class="text-[11px] text-emerald-600 font-bold mt-2">
+            已攻克 {{ mistakeStats.resolved }} / {{ mistakeStats.total }} 处
+          </div>
+        </AppCard>
+      </div>
+
+      <!-- Section 3: Six-Dimension Ability Analysis (六维能力评估与降级展示) -->
+      <AppSection title="六维思维能力评估与发展" icon="target" tone="growth">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <AppCard
+            v-for="(st, dimKey) in abilityProfile.dimensions"
+            :key="dimKey"
+            variant="outlined"
+            padding="md"
+            class="bg-white flex flex-col justify-between"
+          >
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-base font-bold text-slate-900">{{ st.name }}</h4>
+                <AppBadge
+                  :variant="st.confidence === 'high' ? 'success' : st.confidence === 'medium' ? 'brand' : 'neutral'"
+                  size="sm"
+                >
+                  {{ st.confidence === 'high' ? '高置信' : st.confidence === 'medium' ? '参考值' : '积累中' }}
+                </AppBadge>
               </div>
-              <router-link
-                to="/mistakes"
-                class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl text-xs font-black shadow-sm transition active:scale-95 flex items-center gap-1"
+
+              <!-- Case A: Sufficient Samples -> Show Score & Bar -->
+              <div v-if="st.score !== null" class="space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-500">评估得分</span>
+                  <span class="text-lg font-bold text-slate-900">{{ st.score }} 分</span>
+                </div>
+                <AppProgress :value="st.score" tone="growth" size="sm" />
+                <p class="text-xs text-slate-500 mt-2">
+                  基于 {{ st.sampleCount }} 次实战与手筋作答表现评估得出
+                </p>
+              </div>
+
+              <!-- Case B: Insufficient Samples -> Honest Degradation -->
+              <div v-else class="py-4 text-center space-y-1">
+                <div class="text-sm font-bold text-slate-400">正在积累样本</div>
+                <p class="text-xs text-slate-400">
+                  {{ dimKey === 'language' ? '当前围棋阶段暂无语言测评数据' : `已累计 ${st.sampleCount}/5 次练习，暂不展示估分` }}
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
+              <span>状态：{{ st.trend === 'up' ? '稳步提升 ↑' : st.trend === 'down' ? '建议强化 ↓' : '平稳发展' }}</span>
+              <span v-if="st.lastUpdatedAt">更新于 {{ new Date(st.lastUpdatedAt).toLocaleDateString() }}</span>
+            </div>
+          </AppCard>
+        </div>
+      </AppSection>
+
+      <!-- Section 4: Weakness & Mistakes Evidence (薄弱点与错题证据) -->
+      <AppSection title="近期待消灭弱点与错题" icon="sparkle" tone="challenge">
+        <AppCard v-if="(profile.mistakeRecords?.length || 0) === 0" variant="outlined" padding="lg" class="bg-white">
+          <AppEmptyState
+            variant="empty"
+            title="当前没有未消灭的错题"
+            description="学员在做题与对弈中表现非常专注，状态极佳！"
+          />
+        </AppCard>
+
+        <div v-else class="space-y-3">
+          <AppCard
+            v-for="m in (profile.mistakeRecords || []).slice(0, 3)"
+            :key="m.id"
+            variant="outlined"
+            padding="md"
+            class="bg-white"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-bold text-slate-900">{{ m.topic || '死活手筋' }}</span>
+                  <AppBadge :variant="m.resolved ? 'success' : 'danger'" size="sm">
+                    {{ m.resolved ? '已攻克' : '待复习' }}
+                  </AppBadge>
+                </div>
+                <p class="text-xs text-slate-500">{{ m.questionPrompt }}</p>
+                <div class="text-xs text-slate-400 pt-1">
+                  误选：<span class="text-rose-500 font-bold">{{ m.userAnswer }}</span> ·
+                  正解：<span class="text-emerald-600 font-bold">{{ m.correctAnswer }}</span>
+                </div>
+              </div>
+
+              <AppButton
+                v-if="!m.resolved"
+                variant="brandSoft"
+                size="sm"
+                @click="router.push('/mistakes')"
               >
-                <span>前往错题本</span>
-                <ArrowRight class="w-3.5 h-3.5" />
-              </router-link>
+                去错题本攻克
+              </AppButton>
             </div>
-          </div>
-
+          </AppCard>
         </div>
-      </div>
-
-      <!-- 3. AI 家长学情成长日报生成与一键分享卡片 -->
-      <div class="bg-gradient-to-br from-amber-50 via-orange-50/50 to-white rounded-3xl p-6 sm:p-8 shadow-md border-2 border-amber-200 space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-200/80 pb-4">
-          <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-2xl shadow-md">
-              🐼
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h3 class="text-lg font-black text-gray-900">小诺 AI 今日学情成长档案</h3>
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-200 text-amber-900">
-                  {{ aiReport.date }}
-                </span>
-              </div>
-              <p class="text-xs text-gray-600 mt-0.5">智能提炼学习亮点、薄弱知识点诊断与定制化辅导建议</p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button
-              @click="copyReportText"
-              class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-xs font-black shadow-sm transition active:scale-95 flex items-center gap-1.5"
-            >
-              <Copy class="w-3.5 h-3.5" />
-              <span>{{ copySuccess ? '已复制！' : '一键复制发微信' }}</span>
-            </button>
-            <button
-              @click="handlePrintReport"
-              class="px-3.5 py-2.5 bg-white hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-2xl text-xs font-bold shadow-sm transition active:scale-95 flex items-center gap-1.5"
-            >
-              <Printer class="w-3.5 h-3.5" />
-              <span>打印/PDF</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 报告内容区块 -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- 核心已掌握知识点 -->
-          <div class="bg-white p-4 rounded-2xl border border-amber-200/80 shadow-sm space-y-2">
-            <div class="flex items-center gap-1.5 text-xs font-black text-emerald-700">
-              <CheckCircle class="w-4 h-4 text-emerald-500" />
-              <span>🌟 今日熟练掌握要点</span>
-            </div>
-            <ul class="text-xs text-gray-700 space-y-1 pl-4 list-disc font-medium">
-              <li v-for="(p, i) in aiReport.masteredKnowledgePoints" :key="i">{{ p }}</li>
-            </ul>
-          </div>
-
-          <!-- 薄弱待攻坚知识点 -->
-          <div class="bg-white p-4 rounded-2xl border border-amber-200/80 shadow-sm space-y-2">
-            <div class="flex items-center gap-1.5 text-xs font-black text-amber-700">
-              <AlertTriangle class="w-4 h-4 text-amber-500" />
-              <span>💡 建议巩固薄弱项</span>
-            </div>
-            <ul class="text-xs text-gray-700 space-y-1 pl-4 list-disc font-medium">
-              <li v-for="(p, i) in aiReport.weakKnowledgePoints" :key="i">{{ p }}</li>
-            </ul>
-          </div>
-
-          <!-- 明日推荐计划 -->
-          <div class="bg-white p-4 rounded-2xl border border-amber-200/80 shadow-sm space-y-2">
-            <div class="flex items-center gap-1.5 text-xs font-black text-blue-700">
-              <TrendingUp class="w-4 h-4 text-blue-500" />
-              <span>🚀 明日学习规划推荐</span>
-            </div>
-            <ul class="text-xs text-gray-700 space-y-1 pl-4 list-decimal font-medium">
-              <li v-for="(p, i) in aiReport.tomorrowRecommendations" :key="i">{{ p }}</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- 小诺伴学辅导寄语 -->
-        <div class="p-4 bg-amber-100/70 rounded-2xl border border-amber-300/80 text-amber-950 text-xs sm:text-sm font-medium leading-relaxed flex items-start gap-3">
-          <span class="text-xl">🗣️</span>
-          <div>
-            <span class="font-black">家长辅导寄语：</span>
-            <span>{{ aiReport.parentAdvice }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. 数据安全与云端备份面板 (Data Management & Cloud Hub) -->
-      <div class="bg-white rounded-3xl p-6 shadow-sm border border-amber-200/80 space-y-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <ShieldCheck class="w-5 h-5 text-indigo-500" />
-            <h3 class="font-extrabold text-gray-800 text-base">学习档案安全与备份</h3>
-          </div>
-          <span class="text-xs text-gray-400 font-medium">本地与多端云同步支持</span>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          <!-- 导出备份 -->
-          <button
-            @click="handleExportBackup"
-            class="p-4 rounded-2xl border-2 border-gray-200 hover:border-amber-300 hover:bg-amber-50/30 text-left transition flex items-center justify-between"
-          >
-            <div>
-              <div class="font-black text-xs sm:text-sm text-gray-800">📥 导出本地 JSON 备份</div>
-              <div class="text-[11px] text-gray-500 mt-0.5">保存学员全部进度到电脑/手机</div>
-            </div>
-            <Download class="w-4 h-4 text-gray-400" />
-          </button>
-
-          <!-- 导入备份 -->
-          <label class="p-4 rounded-2xl border-2 border-gray-200 hover:border-amber-300 hover:bg-amber-50/30 text-left transition flex items-center justify-between cursor-pointer">
-            <div>
-              <div class="font-black text-xs sm:text-sm text-gray-800">📤 恢复本地 JSON 备份</div>
-              <div class="text-[11px] text-gray-500 mt-0.5">从已保存的 JSON 文件还原数据</div>
-            </div>
-            <Upload class="w-4 h-4 text-gray-400" />
-            <input type="file" accept=".json" class="hidden" @change="handleImportBackup" />
-          </label>
-
-          <!-- 家长云端管理 -->
-          <button
-            @click="userStore.openAuthModal"
-            class="p-4 rounded-2xl border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 text-left transition flex items-center justify-between"
-          >
-            <div>
-              <div class="font-black text-xs sm:text-sm text-gray-800">☁️ 家长云端账号管理</div>
-              <div class="text-[11px] text-gray-500 mt-0.5">多设备多端自动无缝同步</div>
-            </div>
-            <Cloud class="w-4 h-4 text-blue-500" />
-          </button>
-        </div>
-      </div>
-
+      </AppSection>
     </div>
   </div>
 </template>
 
-<style scoped>
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-6px); }
-  40%, 80% { transform: translateX(6px); }
-}
-.animate-shake {
-  animation: shake 0.4s ease-in-out;
-}
-</style>
+

@@ -1,1134 +1,327 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import {
-  useCustomCurriculumStore,
-  type DaySubjectTask
-} from '../stores/customCurriculumStore';
 import { useUserStore } from '../stores/useUserStore';
-import { useAiTutorStore } from '../stores/useAiTutorStore';
-import { GRADE_LEVELS, type SchoolStage, type ExamRegion, type ExamQuestion } from '../types/curriculum';
-import { generateHomeworkSmartQuiz } from '../data/k12Curriculum';
-import { playButtonSound, playWinSound, playErrorSound } from '../lib/audio';
-import { showAlert, showConfirm } from '../utils/alert';
-import confetti from 'canvas-confetti';
+import { CHAPTERS_DATA, type Lesson } from '../data/chapters';
 import {
-  Plus,
-  Trash2,
-  Calendar,
-  Camera,
-  Sparkles,
-  ArrowRight,
-  Bot,
-  Calculator,
-  PenTool,
-  Volume2,
-  BookMarked,
-  BookOpen,
-  X
+  AppButton,
+  AppIcon,
+  AppEmptyState
+} from '../design-system';
+import { sound } from '../utils/sound';
+import {
+  Calendar
 } from 'lucide-vue-next';
 
 const router = useRouter();
-const curriculumStore = useCustomCurriculumStore();
 const userStore = useUserStore();
-const tutorStore = useAiTutorStore();
 
-// =========================================================================
-// 1. Modal States
-// =========================================================================
-// Create Grade Modal
-const showCreateGradeModal = ref(false);
-const newGradeStage = ref<SchoolStage>('primary');
-const newGradeName = ref<string>('一年级上册');
-const newGradeRegion = ref<ExamRegion>('hengshui');
-const newGradeInitTextbooks = ref<boolean>(true);
-
-// Create Day Modal
-
-
-// Add Subject to Day Modal
-const showAddSubjectToDayModal = ref(false);
-const availableSubjectOptions = [
-  { key: 'math', name: '数学', icon: '🔢' },
-  { key: 'chinese', name: '语文', icon: '🏮' },
-  { key: 'english', name: '英语', icon: '🔤' },
-  { key: 'science', name: '科学', icon: '🔬' },
-  { key: 'ethics', name: '道德与法治', icon: '⚖️' },
-  { key: 'physics', name: '物理', icon: '⚡' },
-  { key: 'chemistry', name: '化学', icon: '🧪' },
-  { key: 'biology', name: '生物', icon: '🧬' },
-  { key: 'history', name: '历史', icon: '📜' },
-  { key: 'geography', name: '地理', icon: '🌏' }
-];
-
-// Textbook Library Modal
-const showTextbookModal = ref(false);
-const selectedTbSubjectKey = ref<string>('math');
-const newChapterUnit = ref<string>('');
-const newChapterTitle = ref<string>('');
-const newChapterPages = ref<string>('');
-
-// Active Quiz Practicing State
-const practicingTask = ref<DaySubjectTask | null>(null);
-const isGeneratingQuiz = ref<boolean>(false);
-const userAnswers = ref<Record<string, string>>({});
-const questionResults = ref<Record<string, boolean>>({});
-const showQuizModal = ref<boolean>(false);
-const quizStep = ref<'practicing' | 'result'>('practicing');
-
-// Filtered grade options based on stage
-const gradeOptions = computed(() => {
-  return GRADE_LEVELS.filter(g => g.stage === newGradeStage.value);
+// Flatten all lessons in order
+const allLessons = computed<Lesson[]>(() => {
+  const list: Lesson[] = [];
+  for (const c of CHAPTERS_DATA) {
+    list.push(...c.lessons);
+  }
+  return list;
 });
 
-// Current active textbook
-const currentTextbook = computed(() => {
-  return curriculumStore.activeTextbooks.find(t => t.subjectKey === selectedTbSubjectKey.value);
-});
-
-// =========================================================================
-// 2. Grade Actions
-// =========================================================================
-const openCreateGrade = () => {
-  playButtonSound();
-  newGradeStage.value = 'primary';
-  newGradeName.value = '一年级上册';
-  newGradeRegion.value = 'hengshui';
-  newGradeInitTextbooks.value = true;
-  showCreateGradeModal.value = true;
-};
-
-const handleConfirmCreateGrade = () => {
-  playButtonSound();
-  if (!newGradeName.value.trim()) {
-    showAlert({ title: '请输入年级名称', message: '请选择或输入年级名称', type: 'warning' });
-    return;
-  }
-
-  curriculumStore.createGrade({
-    stage: newGradeStage.value,
-    name: newGradeName.value.trim(),
-    region: newGradeRegion.value,
-    initDefaultTextbooks: newGradeInitTextbooks.value,
-    createFirstDay: true
-  });
-
-  showCreateGradeModal.value = false;
-  confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
-};
-
-const handleDeleteGrade = async (gradeId: string, gradeName: string) => {
-  playButtonSound();
-  const ok = await showConfirm({
-    title: '删除年级确认',
-    message: `确定要删除【${gradeName}】档案吗？该年级下的所有天数、作业与练习记录将一并删除。`,
-    type: 'delete',
-    confirmText: '确定删除',
-    cancelText: '取消'
-  });
-  if (ok) {
-    curriculumStore.deleteGrade(gradeId);
-  }
-};
-
-// =========================================================================
-// 3. Day Actions (在年级下建天)
-// =========================================================================
-const handleQuickCreateToday = () => {
-  if (!curriculumStore.activeGrade) return;
-  playButtonSound();
-  curriculumStore.createDay(curriculumStore.activeGrade.id);
-  confetti({ particleCount: 50, spread: 50, origin: { y: 0.7 } });
-};
-
-
-
-const handleDeleteDay = async (dayId: string, dayTitle: string) => {
-  if (!curriculumStore.activeGrade) return;
-  playButtonSound();
-  const ok = await showConfirm({
-    title: '删除伴学记录',
-    message: `确定删除【${dayTitle}】这天的伴学记录吗？`,
-    type: 'delete',
-    confirmText: '确定删除',
-    cancelText: '取消'
-  });
-  if (ok) {
-    curriculumStore.deleteDay(curriculumStore.activeGrade.id, dayId);
-  }
-};
-
-// =========================================================================
-// 4. Day Subject Task Actions (在当天里选语数外等学科)
-// =========================================================================
-const openAddSubjectToDay = () => {
-  playButtonSound();
-  showAddSubjectToDayModal.value = true;
-};
-
-const handleAddSubjectToCurrentDay = (subOpt: { key: string; name: string; icon: string }) => {
-  if (!curriculumStore.activeGrade || !curriculumStore.activeDay) return;
-  playButtonSound();
-  curriculumStore.addTaskToDay(curriculumStore.activeGrade.id, curriculumStore.activeDay.id, subOpt);
-  showAddSubjectToDayModal.value = false;
-};
-
-const handleRemoveTask = async (taskId: string, subName: string) => {
-  if (!curriculumStore.activeGrade || !curriculumStore.activeDay) return;
-  playButtonSound();
-  const ok = await showConfirm({
-    title: '移除学科作业',
-    message: `确定从今天移除【${subName}】作业吗？`,
-    type: 'delete',
-    confirmText: '确定移除',
-    cancelText: '取消'
-  });
-  if (ok) {
-    curriculumStore.removeTaskFromDay(curriculumStore.activeGrade.id, curriculumStore.activeDay.id, taskId);
-  }
-};
-
-// Textbook options for a specific subject
-const getChaptersForSubject = (subjectKey: string) => {
-  const tb = curriculumStore.activeTextbooks.find(t => t.subjectKey === subjectKey);
-  return tb ? tb.chapters : [];
-};
-
-const handleImageUpload = (task: DaySubjectTask, e: Event) => {
-  const target = e.target as HTMLInputElement;
-  if (target.files && target.files[0]) {
-    const file = target.files[0];
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      task.imageUrl = event.target?.result as string;
-      if (!task.homeworkPrompt) {
-        task.homeworkPrompt = `已拍照上传作业（${file.name}）`;
-      }
-      curriculumStore.saveToStorage();
-    };
-    reader.readAsDataURL(file);
-  }
-};
-
-// =========================================================================
-// 5. Generate AI Smart Quiz & Practice for Task
-// =========================================================================
-const startQuizForTask = (task: DaySubjectTask) => {
-  playButtonSound();
-  practicingTask.value = task;
-  isGeneratingQuiz.value = true;
-  showQuizModal.value = true;
-  quizStep.value = 'practicing';
-
-  setTimeout(() => {
-    const questions = generateHomeworkSmartQuiz(
-      (task.subjectKey as any) || 'math',
-      (curriculumStore.activeGrade?.id as any) || 'g1_t1',
-      task.homeworkPrompt || task.chapterTitle,
-      task.pageRange
-    );
-    task.generatedQuestions = questions;
-    userAnswers.value = {};
-    questionResults.value = {};
-    isGeneratingQuiz.value = false;
-    curriculumStore.saveToStorage();
-  }, 600);
-};
-
-const submitQuiz = () => {
-  if (!practicingTask.value || !curriculumStore.activeGrade || !curriculumStore.activeDay) return;
-  playButtonSound();
-  let correctCount = 0;
-
-  practicingTask.value.generatedQuestions.forEach(q => {
-    const uAns = (userAnswers.value[q.id] || '').trim();
-    const isCorrect = uAns.length > 0 && (
-      uAns.toLowerCase() === q.correctAnswer.toLowerCase() ||
-      q.correctAnswer.includes(uAns) ||
-      uAns.includes(q.correctAnswer.slice(0, 1))
-    );
-    questionResults.value[q.id] = isCorrect;
-    if (isCorrect) {
-      correctCount++;
-    } else {
-      userStore.recordSubjectMistake({
-        subjectId: (practicingTask.value?.subjectKey as any) || 'math',
-        gradeLevel: (curriculumStore.activeGrade?.id as any) || 'g1_t1',
-        topic: practicingTask.value?.chapterTitle || '今日作业针对练习',
-        knowledgePointTitle: q.knowledgePoint,
-        questionPrompt: q.prompt,
-        userAnswer: uAns || '(未作答)',
-        correctAnswer: q.correctAnswer,
-        errorCategory: 'calculation',
-        errorReason: '每日作业变式题错误，重点巩固',
-        stepHints: q.stepGuide || [q.explanation]
-      });
+// Calculate current active / next lesson to continue
+const currentContinueLesson = computed(() => {
+  if (!userStore.hasProfile) return null;
+  for (const les of allLessons.value) {
+    const isCompleted = !!userStore.progress[les.id]?.completed;
+    if (!isCompleted) {
+      return les;
     }
-  });
-
-  const score = Math.round((correctCount / practicingTask.value.generatedQuestions.length) * 100);
-  practicingTask.value.isCompleted = true;
-  practicingTask.value.score = score;
-  curriculumStore.saveToStorage();
-
-  if (correctCount === practicingTask.value.generatedQuestions.length) {
-    playWinSound();
-    confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-    userStore.addCoins(20, '完成作业变式练习(全对)');
-  } else {
-    playErrorSound();
-    userStore.addCoins(5, '完成作业变式练习');
   }
+  return allLessons.value[allLessons.value.length - 1] || null;
+});
 
-  quizStep.value = 'result';
-};
+const totalLessonsCount = computed(() => allLessons.value.length);
+const completedLessonsCount = computed(() => {
+  return allLessons.value.filter((l) => !!userStore.progress[l.id]?.completed).length;
+});
 
-const askAiTutor = (q: ExamQuestion) => {
-  playButtonSound();
-  tutorStore.openTutor('hints', {
-    subjectId: (practicingTask.value?.subjectKey as any) || 'math',
-    lessonTitle: practicingTask.value?.chapterTitle || '每日作业针对练习',
-    knowledgePointTitle: q.knowledgePoint,
-    questionPrompt: q.prompt,
-    correctAnswer: q.correctAnswer,
-    errorReason: '今日作业变式点拨'
-  });
-};
+const isAllCompleted = computed(() => {
+  return completedLessonsCount.value >= totalLessonsCount.value && totalLessonsCount.value > 0;
+});
 
-// =========================================================================
-// 6. Textbook Management Actions
-// =========================================================================
-const openTextbookManager = (subKey: string = 'math') => {
-  playButtonSound();
-  selectedTbSubjectKey.value = subKey;
-  newChapterUnit.value = '';
-  newChapterTitle.value = '';
-  newChapterPages.value = '';
-  showTextbookModal.value = true;
-};
+const overallProgressPercent = computed(() => {
+  if (totalLessonsCount.value === 0) return 0;
+  return Math.min(100, Math.round((completedLessonsCount.value / totalLessonsCount.value) * 100));
+});
 
-const handleAddChapterToTextbook = () => {
-  if (!curriculumStore.activeGrade || !newChapterTitle.value.trim()) {
-    showAlert({ title: '请输入课题名称', message: '如：5以内数的认识与加减法', type: 'warning' });
+const startOrContinueLesson = () => {
+  if (!userStore.hasProfile) {
+    userStore.openProfileModal();
     return;
   }
-  playButtonSound();
-  curriculumStore.addChapterToTextbook(curriculumStore.activeGrade.id, selectedTbSubjectKey.value, {
-    unitName: newChapterUnit.value.trim() || '单元要点',
-    lessonTitle: newChapterTitle.value.trim(),
-    pageRange: newChapterPages.value.trim() || '随堂',
-    coreKnowledge: [newChapterTitle.value.trim()]
-  });
-  newChapterUnit.value = '';
-  newChapterTitle.value = '';
-  newChapterPages.value = '';
-};
-
-const handleDeleteChapter = (chId: string) => {
-  if (!curriculumStore.activeGrade) return;
-  playButtonSound();
-  curriculumStore.deleteChapterFromTextbook(curriculumStore.activeGrade.id, selectedTbSubjectKey.value, chId);
+  sound.playButtonSound();
+  if (currentContinueLesson.value) {
+    router.push('/lesson/' + currentContinueLesson.value.id);
+  } else {
+    router.push('/adventure');
+  }
 };
 
 const navigateTo = (path: string) => {
-  playButtonSound();
+  sound.playButtonSound();
   router.push(path);
 };
+
+const createProfile = () => {
+  userStore.openProfileModal();
+};
+
+// 4 Sleek Exploration Game Tiles
+const quickExplorations = [
+  {
+    title: '六角跳棋',
+    subtitle: '搭桥连跳',
+    icon: '⭐',
+    iconBg: 'bg-amber-100 text-amber-800 border-amber-200',
+    route: '/checkers'
+  },
+  {
+    title: '欢乐五子棋',
+    subtitle: '五子连珠',
+    icon: '⚪',
+    iconBg: 'bg-teal-100 text-teal-800 border-teal-200',
+    route: '/gomoku'
+  },
+  {
+    title: '亲子围棋',
+    subtitle: '同屏对弈',
+    icon: '👥',
+    iconBg: 'bg-blue-100 text-blue-800 border-blue-200',
+    route: '/two-player'
+  },
+  {
+    title: '智能错题本',
+    subtitle: '弱点消灭',
+    icon: '📕',
+    iconBg: 'bg-rose-100 text-rose-800 border-rose-200',
+    route: '/mistakes'
+  }
+];
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#FDFBF7] py-3 sm:py-5 lg:py-6 px-3 sm:px-5 lg:px-8 select-none">
-    <div class="max-w-6xl mx-auto space-y-4 sm:space-y-6">
-      
-      <!-- ================================================================= -->
-      <!-- Case A: Completely Empty Initial State (尚未创建年级) -->
-      <!-- ================================================================= -->
-      <div
-        v-if="!curriculumStore.hasGrades"
-        class="bg-white rounded-3xl p-6 sm:p-12 border-2 border-slate-200 shadow-sm text-center max-w-2xl mx-auto space-y-5 my-8"
-      >
-        <div class="w-20 h-20 rounded-3xl bg-amber-50 border-2 border-amber-200 text-amber-600 flex items-center justify-center text-4xl mx-auto shadow-inner animate-bounce">
-          🎒
+  <div class="min-h-full bg-[#F6F3EB] py-4 md:py-6 lg:py-8 px-4 md:px-6 lg:px-8 select-none relative overflow-hidden">
+    <!-- Atmospheric subtle top glow -->
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[320px] bg-gradient-to-b from-amber-200/25 via-orange-100/20 to-transparent blur-3xl pointer-events-none" />
+
+    <div class="max-w-5xl mx-auto space-y-5 md:space-y-6 lg:space-y-8 relative z-10">
+
+      <!-- 1. Top Greeting -->
+      <div>
+        <div class="flex flex-wrap items-center gap-2 mb-1.5">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-900 border border-amber-300/60 rounded-full text-xs font-bold shadow-2xs">
+            <Calendar class="w-3.5 h-3.5 text-amber-700" />
+            <span>学习第 {{ Math.max(1, userStore.checkInStreak || 1) }} 天</span>
+          </span>
+
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300/60 rounded-full text-xs font-bold shadow-2xs">
+            <span>🌟</span>
+            <span>{{ userStore.currentRank.title }}</span>
+          </span>
         </div>
 
-        <div class="space-y-2">
-          <h1 class="text-xl sm:text-3xl font-cartoon font-bold text-slate-800">
-            开启专属学业伴学中枢
-          </h1>
-          <p class="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-            从当前年级开始（如一年级），每天放学建立当天伴学，按天自由勾选语数外，关联课本、拍照上传作业，AI 实时生成针对练习！
-          </p>
-        </div>
-
-        <div class="pt-2">
-          <button
-            @click="openCreateGrade"
-            class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-rose-500 text-white font-black text-sm sm:text-base shadow-md hover:shadow-lg transition transform active:scale-95 cursor-pointer flex items-center gap-2 mx-auto"
-          >
-            <Plus class="w-5 h-5" />
-            <span>+ 创建一年级伴学档案</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- ================================================================= -->
-      <!-- Case B: Main Living Hub (年级 -> 下面建天 -> 当天选语数外) -->
-      <!-- ================================================================= -->
-      <div v-else class="space-y-4 sm:space-y-6">
-        
-        <!-- 1. Top Grade Tabs & Management Strip -->
-        <div class="bg-white rounded-3xl p-3.5 sm:p-4 border-2 border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          
-          <!-- Left: Grade Pills -->
-          <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-            <span class="text-xs font-black text-slate-400 uppercase tracking-wider shrink-0">年级：</span>
-            <div class="flex items-center gap-1.5 shrink-0">
-              <div
-                v-for="g in curriculumStore.grades"
-                :key="g.id"
-                class="flex items-center gap-1"
-              >
-                <button
-                  @click="curriculumStore.setActiveGrade(g.id)"
-                  :class="[
-                    'px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 border',
-                    curriculumStore.activeGradeId === g.id
-                      ? 'border-orange-500 bg-orange-50 text-orange-950 shadow-xs ring-2 ring-orange-200'
-                      : 'border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-600'
-                  ]"
-                >
-                  <span>{{ g.stage === 'primary' ? '🎒' : g.stage === 'junior' ? '📐' : '🏛️' }}</span>
-                  <span>{{ g.name }}</span>
-                </button>
-                <button
-                  v-if="curriculumStore.grades.length > 1"
-                  @click.stop="handleDeleteGrade(g.id, g.name)"
-                  class="text-slate-300 hover:text-rose-500 p-1 rounded-md"
-                  title="删除该年级档案"
-                >
-                  <Trash2 class="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right: Grade Actions (Add Grade & Textbook Manager) -->
-          <div class="flex items-center gap-2 shrink-0 justify-end">
-            <button
-              @click="openTextbookManager('math')"
-              class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs flex items-center gap-1 cursor-pointer transition"
-            >
-              <BookOpen class="w-3.5 h-3.5 text-orange-500" />
-              <span>本学期课本库 ({{ curriculumStore.activeTextbooks.length }}本)</span>
-            </button>
-            <button
-              @click="openCreateGrade"
-              class="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex items-center gap-1 shadow-2xs cursor-pointer transition active:scale-95"
-            >
-              <Plus class="w-3.5 h-3.5" />
-              <span>创建新年级</span>
-            </button>
-          </div>
-
-        </div>
-
-        <!-- 2. Main Two-Column Structure: Days Timeline (Left) + Day Subjects Workspace (Right) -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
-          
-          <!-- ============================================================= -->
-          <!-- Left Column: Days List (年级下面建的天数列表) -->
-          <!-- ============================================================= -->
-          <div class="lg:col-span-4 bg-white rounded-3xl p-4 sm:p-5 border-2 border-slate-200 shadow-xs space-y-3">
-            
-            <div class="flex items-center justify-between">
-              <h3 class="text-sm sm:text-base font-cartoon font-bold text-slate-800 flex items-center gap-1.5">
-                <Calendar class="w-4 h-4 text-orange-500" />
-                <span>{{ curriculumStore.activeGrade?.name }} · 每日伴学</span>
-              </h3>
-              <span class="text-[11px] font-bold text-slate-400">共 {{ curriculumStore.activeDays.length }} 天</span>
-            </div>
-
-            <!-- Create New Day Button -->
-            <button
-              @click="handleQuickCreateToday"
-              class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer transition transform active:scale-95"
-            >
-              <Plus class="w-4 h-4" />
-              <span>+ 新建今日伴学 (今天)</span>
-            </button>
-
-            <!-- Days Timeline Scroll Area -->
-            <div class="space-y-2 max-h-[520px] overflow-y-auto pr-1">
-              <div
-                v-if="curriculumStore.activeDays.length === 0"
-                class="text-center py-8 text-xs text-slate-400 font-bold"
-              >
-                点击上方按钮，开启第一天的作业与伴学
-              </div>
-
-              <div
-                v-for="(day, idx) in curriculumStore.activeDays"
-                :key="day.id"
-                @click="curriculumStore.setActiveDay(day.id)"
-                :class="[
-                  'p-3 sm:p-3.5 rounded-2xl border-2 cursor-pointer transition flex items-center justify-between group',
-                  curriculumStore.activeDayId === day.id
-                    ? 'border-orange-500 bg-orange-50/70 shadow-xs ring-2 ring-orange-200'
-                    : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
-                ]"
-              >
-                <div class="min-w-0 pr-2 space-y-1">
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-xs font-black text-slate-800 truncate">{{ day.dayTitle }}</span>
-                    <span v-if="idx === 0" class="text-[10px] font-black px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800">
-                      最新
-                    </span>
-                  </div>
-
-                  <!-- Tasks Summary in this day -->
-                  <div class="flex items-center gap-1 text-[11px] text-slate-500 font-bold">
-                    <span v-for="t in day.tasks" :key="t.id" class="inline-flex items-center gap-0.5">
-                      <span>{{ t.subjectIcon }}</span>
-                      <span :class="t.isCompleted ? 'text-emerald-600' : 'text-slate-400'">{{ t.subjectName }}</span>
-                    </span>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-1.5 shrink-0">
-                  <span class="text-[11px] font-black text-orange-600 bg-white px-2 py-0.5 rounded-lg border border-orange-200">
-                    {{ day.tasks.filter(t => t.isCompleted).length }}/{{ day.tasks.length }}
-                  </span>
-                  <button
-                    @click.stop="handleDeleteDay(day.id, day.dayTitle)"
-                    class="text-slate-300 hover:text-rose-500 p-1 opacity-0 group-hover:opacity-100 transition"
-                    title="删除此天"
-                  >
-                    <Trash2 class="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- ============================================================= -->
-          <!-- Right Column: Day Detail & Subjects (当天里选语数外等学科) -->
-          <!-- ============================================================= -->
-          <div class="lg:col-span-8 space-y-4">
-            
-            <div v-if="curriculumStore.activeDay" class="space-y-4">
-              
-              <!-- Day Header Banner -->
-              <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800">
-                      {{ curriculumStore.activeGrade?.name }}
-                    </span>
-                    <span class="text-xs font-bold text-slate-400">{{ curriculumStore.activeDay.dateStr }}</span>
-                  </div>
-                  <h2 class="text-base sm:text-xl font-cartoon font-bold text-slate-900 mt-1">
-                    {{ curriculumStore.activeDay.dayTitle }} · 学科作业清单
-                  </h2>
-                </div>
-
-                <!-- Add Subject to This Day Button -->
-                <div class="flex items-center gap-2">
-                  <button
-                    @click="openAddSubjectToDay"
-                    class="px-3.5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer transition active:scale-95"
-                  >
-                    <Plus class="w-3.5 h-3.5" />
-                    <span>+ 当天添加学科 (语/数/外/物化生)</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Subject Task Cards inside this Day -->
-              <div class="space-y-3.5">
-                <div
-                  v-if="curriculumStore.activeDay.tasks.length === 0"
-                  class="bg-white rounded-3xl p-10 text-center border-2 border-slate-200 text-slate-400 text-xs font-bold"
-                >
-                  当天尚未添加学科，请点击右上角【+ 当天添加学科】
-                </div>
-
-                <div
-                  v-for="task in curriculumStore.activeDay.tasks"
-                  :key="task.id"
-                  class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-slate-200 hover:border-orange-300 shadow-xs transition space-y-3"
-                >
-                  <!-- Subject Task Header -->
-                  <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                    <div class="flex items-center gap-2.5">
-                      <span class="text-2xl">{{ task.subjectIcon }}</span>
-                      <div>
-                        <div class="flex items-center gap-2">
-                          <h4 class="text-base font-cartoon font-bold text-slate-900">{{ task.subjectName }}作业</h4>
-                          <span
-                            :class="[
-                              'text-[10px] font-black px-2 py-0.2 rounded-full',
-                              task.isCompleted ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                            ]"
-                          >
-                            {{ task.isCompleted ? `已完成 (${task.score || 100}分)` : '待练习' }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      @click="handleRemoveTask(task.id, task.subjectName)"
-                      class="text-slate-300 hover:text-rose-500 p-1 transition"
-                      title="移除本科目"
-                    >
-                      <Trash2 class="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <!-- Homework Binding & Form -->
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    
-                    <!-- 1. Chapter Binding -->
-                    <div>
-                      <label class="block text-[11px] font-bold text-slate-500 mb-1">课本章节：</label>
-                      <select
-                        v-model="task.chapterTitle"
-                        @change="curriculumStore.saveToStorage()"
-                        class="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold bg-white focus:border-orange-500 focus:outline-hidden"
-                      >
-                        <option value="随堂知识点">-- 自定义随堂要点 --</option>
-                        <option
-                          v-for="ch in getChaptersForSubject(task.subjectKey)"
-                          :key="ch.id"
-                          :value="ch.unitName + ' - ' + ch.lessonTitle"
-                        >
-                          {{ ch.unitName }} - {{ ch.lessonTitle }} ({{ ch.pageRange }})
-                        </option>
-                      </select>
-                    </div>
-
-                    <!-- 2. Page Range -->
-                    <div>
-                      <label class="block text-[11px] font-bold text-slate-500 mb-1">课本/练习册页码：</label>
-                      <input
-                        v-model="task.pageRange"
-                        @input="curriculumStore.saveToStorage()"
-                        type="text"
-                        placeholder="例如：第 14-16 页"
-                        class="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold focus:border-orange-500 focus:outline-hidden"
-                      />
-                    </div>
-
-                  </div>
-
-                  <!-- Homework Content & Photo -->
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-                    <div class="sm:col-span-2">
-                      <input
-                        v-model="task.homeworkPrompt"
-                        @input="curriculumStore.saveToStorage()"
-                        type="text"
-                        placeholder="老师布置的作业要求（如：口算第15页、生字抄写两遍...）"
-                        class="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-medium focus:border-orange-500 focus:outline-hidden"
-                      />
-                    </div>
-
-                    <div>
-                      <label class="flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl border-2 border-dashed border-orange-300 bg-orange-50/50 text-orange-700 text-xs font-bold cursor-pointer hover:bg-orange-100/50 transition truncate">
-                        <Camera class="w-3.5 h-3.5 shrink-0" />
-                        <span class="truncate">{{ task.imageUrl ? '已上传照片' : '拍照上传作业' }}</span>
-                        <input type="file" accept="image/*" class="hidden" @change="handleImageUpload(task, $event)" />
-                      </label>
-                    </div>
-                  </div>
-
-                  <!-- Actions & Specific Tools -->
-                  <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                    
-                    <!-- Left: Subject Built-in Tools -->
-                    <div class="flex items-center gap-1.5">
-                      <button
-                        v-if="task.subjectKey === 'math'"
-                        @click="navigateTo('/subject/math/drill')"
-                        class="px-2.5 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] flex items-center gap-1 cursor-pointer"
-                      >
-                        <Calculator class="w-3 h-3" />
-                        <span>口算练</span>
-                      </button>
-
-                      <button
-                        v-if="task.subjectKey === 'chinese'"
-                        @click="navigateTo('/subject/chinese/hanzi')"
-                        class="px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[11px] flex items-center gap-1 cursor-pointer"
-                      >
-                        <PenTool class="w-3 h-3" />
-                        <span>生字描红</span>
-                      </button>
-
-                      <button
-                        v-if="task.subjectKey === 'english'"
-                        @click="navigateTo('/subject/english/phonics')"
-                        class="px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-bold text-[11px] flex items-center gap-1 cursor-pointer"
-                      >
-                        <Volume2 class="w-3 h-3" />
-                        <span>自然拼读</span>
-                      </button>
-
-                      <button
-                        @click="navigateTo(`/mistakes?subject=${task.subjectKey}`)"
-                        class="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] flex items-center gap-1 cursor-pointer"
-                      >
-                        <BookMarked class="w-3 h-3" />
-                        <span>错题本</span>
-                      </button>
-                    </div>
-
-                    <!-- Right: Generate Practice Button -->
-                    <button
-                      @click="startQuizForTask(task)"
-                      class="px-4 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer transition transform active:scale-95 ml-auto"
-                    >
-                      <Sparkles class="w-3.5 h-3.5 text-amber-200" />
-                      <span>{{ task.isCompleted ? '重新练习针对题' : '🤖 AI 生成变式针对练 (3题)' }}</span>
-                    </button>
-
-                  </div>
-
-                </div>
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        <!-- Section 3: Brain Strategy & Board Games Pavilion (棋艺馆独立保留) -->
-        <div>
-          <div class="flex items-center justify-between mb-3 px-1">
-            <h3 class="text-base sm:text-xl font-cartoon font-bold text-slate-800 flex items-center gap-2">
-              <span>♟️</span>
-              <span>益智棋艺阁 (独立课余思维乐园)</span>
-            </h3>
-            <span class="text-xs font-bold text-slate-400">
-              劳逸结合 · 启智博弈
-            </span>
-          </div>
-
-          <div
-            @click="navigateTo('/learn')"
-            class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 rounded-3xl p-5 sm:p-6 text-white shadow-md hover:shadow-xl transition-all cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-4 group"
-          >
-            <div class="flex items-center gap-4 text-center sm:text-left">
-              <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform shrink-0">
-                ♟️
-              </div>
-              <div>
-                <div class="flex items-center justify-center sm:justify-start gap-2">
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-white/25">益智博弈</span>
-                  <span class="text-xs text-white/80 font-bold">围棋 / 跳棋 / 五子棋</span>
-                </div>
-                <h4 class="text-lg sm:text-2xl font-cartoon font-bold mt-1 tracking-wide">
-                  棋艺馆 · 智慧对弈天地
-                </h4>
-                <p class="text-xs sm:text-sm text-white/90 font-medium mt-0.5">
-                  围棋28关启蒙闯关、46道死活题库、AI分级对战、六角跳棋与五子棋对决。
-                </p>
-              </div>
-            </div>
-
-            <button class="px-5 py-2.5 rounded-2xl bg-white text-emerald-900 font-black text-xs sm:text-sm shadow-md group-hover:scale-105 transition-transform shrink-0 flex items-center gap-1.5">
-              <span>进入棋艺馆</span>
-              <ArrowRight class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-
-    <!-- ================================================================= -->
-    <!-- Modal 1: Create Grade Modal -->
-    <!-- ================================================================= -->
-    <div
-      v-if="showCreateGradeModal"
-      class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
-    >
-      <div class="bg-white rounded-3xl p-6 max-w-md w-full border-2 border-slate-200 shadow-xl space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-cartoon font-bold text-slate-900 flex items-center gap-2">
-            <span>🎓</span>
-            <span>创建新年级档案</span>
-          </h3>
-          <button @click="showCreateGradeModal = false" class="text-slate-400 hover:text-slate-600">
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-
-        <div class="space-y-3">
-          <!-- Stage -->
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">选择学段：</label>
-            <div class="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                @click="newGradeStage = 'primary'; newGradeName = '一年级上册'"
-                :class="['py-2 rounded-xl text-xs font-bold border transition cursor-pointer', newGradeStage === 'primary' ? 'border-orange-500 bg-orange-50 text-orange-950 font-black' : 'border-slate-200 text-slate-600']"
-              >
-                🎒 小学
-              </button>
-              <button
-                type="button"
-                @click="newGradeStage = 'junior'; newGradeName = '初一上册(七年级)'"
-                :class="['py-2 rounded-xl text-xs font-bold border transition cursor-pointer', newGradeStage === 'junior' ? 'border-blue-500 bg-blue-50 text-blue-950 font-black' : 'border-slate-200 text-slate-600']"
-              >
-                📐 初中
-              </button>
-              <button
-                type="button"
-                @click="newGradeStage = 'senior'; newGradeName = '高一上册(必修一)'"
-                :class="['py-2 rounded-xl text-xs font-bold border transition cursor-pointer', newGradeStage === 'senior' ? 'border-purple-500 bg-purple-50 text-purple-950 font-black' : 'border-slate-200 text-slate-600']"
-              >
-                🏛️ 高中
-              </button>
-            </div>
-          </div>
-
-          <!-- Grade Option -->
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">选择具体年级学期：</label>
-            <div class="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto p-1">
-              <button
-                v-for="g in gradeOptions"
-                :key="g.id"
-                type="button"
-                @click="newGradeName = g.name"
-                :class="['p-2 rounded-xl text-xs text-left border transition cursor-pointer truncate', newGradeName === g.name ? 'border-orange-500 bg-orange-50 text-orange-950 font-black' : 'border-slate-200 text-slate-600']"
-              >
-                {{ g.name }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Region Style -->
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">考查标准风格：</label>
-            <div class="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                @click="newGradeRegion = 'hengshui'"
-                :class="['p-2 rounded-xl text-xs border text-left cursor-pointer transition', newGradeRegion === 'hengshui' ? 'border-rose-500 bg-rose-50 text-rose-950 font-black' : 'border-slate-200 text-slate-600']"
-              >
-                <div class="font-black">🔥 河北衡水标准</div>
-                <div class="text-[10px] text-slate-400 mt-0.5">高密度·重双基·防陷阱</div>
-              </button>
-              <button
-                type="button"
-                @click="newGradeRegion = 'beijing'"
-                :class="['p-2 rounded-xl text-xs border text-left cursor-pointer transition', newGradeRegion === 'beijing' ? 'border-indigo-500 bg-indigo-50 text-indigo-950 font-black' : 'border-slate-200 text-slate-600']"
-              >
-                <div class="font-black">🏛️ 北京素养标准</div>
-                <div class="text-[10px] text-slate-400 mt-0.5">情境探究·重思维逻辑</div>
-              </button>
-            </div>
-          </div>
-
-          <div class="pt-1">
-            <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
-              <input v-model="newGradeInitTextbooks" type="checkbox" class="rounded text-orange-500" />
-              <span>自动初始化语文、数学、英语本学期课本目录</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-end gap-2 pt-2">
-          <button
-            @click="showCreateGradeModal = false"
-            class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 text-xs font-bold"
-          >
-            取消
-          </button>
-          <button
-            @click="handleConfirmCreateGrade"
-            class="px-5 py-2 rounded-xl bg-orange-500 text-white text-xs font-black shadow-sm"
-          >
-            确认创建
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ================================================================= -->
-    <!-- Modal 2: Add Subject to Day Modal (在当天添加学科) -->
-    <!-- ================================================================= -->
-    <div
-      v-if="showAddSubjectToDayModal"
-      class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
-    >
-      <div class="bg-white rounded-3xl p-6 max-w-md w-full border-2 border-slate-200 shadow-xl space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base sm:text-lg font-cartoon font-bold text-slate-900 flex items-center gap-2">
-            <span>➕</span>
-            <span>为今天添加学科作业</span>
-          </h3>
-          <button @click="showAddSubjectToDayModal = false" class="text-slate-400 hover:text-slate-600">
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-
-        <p class="text-xs text-slate-500">
-          选择今天有课后作业或需要练习的学科：
+        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-slate-900 tracking-tight">
+          早上好，{{ userStore.hasProfile ? userStore.nickname : '小棋手' }}！🌱
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-600 mt-1 font-medium">
+          今天也来完成一点点思维成长吧，每下一颗棋子都在变聪明！
         </p>
-
-        <div class="grid grid-cols-2 gap-2">
-          <button
-            v-for="sub in availableSubjectOptions"
-            :key="sub.key"
-            @click="handleAddSubjectToCurrentDay(sub)"
-            class="p-3 rounded-2xl border-2 border-slate-200 hover:border-orange-500 hover:bg-orange-50/50 flex items-center gap-2.5 transition cursor-pointer text-left"
-          >
-            <span class="text-2xl">{{ sub.icon }}</span>
-            <span class="text-xs sm:text-sm font-black text-slate-800">{{ sub.name }}</span>
-          </button>
-        </div>
       </div>
-    </div>
 
-    <!-- ================================================================= -->
-    <!-- Modal 3: Textbook Library & Chapters (学期课本库) -->
-    <!-- ================================================================= -->
-    <div
-      v-if="showTextbookModal"
-      class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
-    >
-      <div class="bg-white rounded-3xl p-6 max-w-2xl w-full border-2 border-slate-200 shadow-xl space-y-4 max-h-[85vh] flex flex-col">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 class="text-base sm:text-lg font-cartoon font-bold text-slate-900 flex items-center gap-2">
-            <BookOpen class="w-5 h-5 text-orange-500" />
-            <span>{{ curriculumStore.activeGrade?.name }} · 本学期课本库</span>
-          </h3>
-          <button @click="showTextbookModal = false" class="text-slate-400 hover:text-slate-600">
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-
-        <!-- Subject Tabs -->
-        <div class="flex gap-2 border-b border-slate-100 pb-2">
-          <button
-            v-for="tb in curriculumStore.activeTextbooks"
-            :key="tb.subjectKey"
-            @click="selectedTbSubjectKey = tb.subjectKey"
-            :class="[
-              'px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5',
-              selectedTbSubjectKey === tb.subjectKey
-                ? 'bg-orange-500 text-white shadow-2xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            ]"
-          >
-            <span>{{ tb.icon }}</span>
-            <span>{{ tb.subjectName }}</span>
-          </button>
-        </div>
-
-        <!-- Current Textbook Details & Add Chapter Form -->
-        <div v-if="currentTextbook" class="space-y-3 flex-1 overflow-y-auto">
-          <div class="text-xs font-bold text-slate-500">
-            当前课本：<span class="text-slate-800 font-black">{{ currentTextbook.textbookName }}</span>
-          </div>
-
-          <!-- Add Chapter Bar -->
-          <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-            <div class="text-xs font-black text-slate-700">+ 录入新章节：</div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <input
-                v-model="newChapterUnit"
-                type="text"
-                placeholder="单元名 (如: 第一单元)"
-                class="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold bg-white"
-              />
-              <input
-                v-model="newChapterTitle"
-                type="text"
-                placeholder="课题 (如: 5以内加减法)"
-                class="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold bg-white"
-              />
-              <input
-                v-model="newChapterPages"
-                type="text"
-                placeholder="页码 (如: 第14-25页)"
-                class="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold bg-white"
-              />
-            </div>
-            <button
-              @click="handleAddChapterToTextbook"
-              class="w-full py-1.5 bg-orange-500 text-white rounded-xl text-xs font-black shadow-2xs hover:bg-orange-600 transition cursor-pointer"
-            >
-              + 确认录入章节
-            </button>
-          </div>
-
-          <!-- Chapter List -->
-          <div class="space-y-1.5">
-            <div v-if="currentTextbook.chapters.length === 0" class="text-center py-6 text-xs text-slate-400 font-bold">
-              暂无章节记录，请在上方录入目录
-            </div>
-            <div
-              v-for="ch in currentTextbook.chapters"
-              :key="ch.id"
-              class="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center justify-between"
-            >
-              <div class="min-w-0 pr-2">
-                <div class="text-xs font-black text-slate-800 truncate">{{ ch.unitName }} - {{ ch.lessonTitle }}</div>
-                <div class="text-[10px] text-slate-400">{{ ch.pageRange }}</div>
-              </div>
-              <button
-                @click="handleDeleteChapter(ch.id)"
-                class="text-slate-300 hover:text-rose-500 p-1"
-                title="删除章节"
-              >
-                <Trash2 class="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="pt-2 border-t border-slate-100 text-right">
-          <button
-            @click="showTextbookModal = false"
-            class="px-5 py-2 rounded-xl bg-slate-900 text-white text-xs font-black cursor-pointer"
-          >
-            完成并关闭
-          </button>
-        </div>
+      <!-- 2. Primary Cockpit Action (Responsive Tablet 2-Col / 3-Col Grid) -->
+      <!-- Case A: No Profile -> First Time State -->
+      <div v-if="!userStore.hasProfile" class="bg-white rounded-3xl p-8 border-2 border-amber-300 shadow-md">
+        <AppEmptyState
+          variant="first-time"
+          title="创建你的专属学员档案"
+          description="小诺准备好陪你一起探索围棋主线故事、益智博弈与思维挑战啦！"
+        >
+          <template #action>
+            <AppButton variant="primary" size="lg" @click="createProfile">
+              <template #icon><AppIcon name="user" /></template>
+              立即创建档案
+            </AppButton>
+          </template>
+        </AppEmptyState>
       </div>
-    </div>
 
-    <!-- ================================================================= -->
-    <!-- Modal 4: AI Smart Quiz & Practice for Task -->
-    <!-- ================================================================= -->
-    <div
-      v-if="showQuizModal && practicingTask"
-      class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in"
-    >
-      <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-2xl w-full border-2 border-slate-200 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 class="text-base sm:text-lg font-cartoon font-bold text-slate-900 flex items-center gap-2">
-            <span>{{ practicingTask.subjectIcon }}</span>
-            <span>{{ practicingTask.subjectName }} · 今日变式练习 (3道题)</span>
-          </h3>
-          <button @click="showQuizModal = false" class="text-slate-400 hover:text-slate-600">
-            <X class="w-5 h-5" />
-          </button>
-        </div>
+      <!-- Case B: Main Learning Cockpit Primary Continue Card -->
+      <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+        <!-- Main Continue Stage (Left 2 cols on tablet & desktop) -->
+        <div
+          class="md:col-span-2 relative overflow-hidden bg-gradient-to-br from-[#FFFDF8] via-[#FFF8EE] to-[#FEEED6] rounded-3xl p-5 sm:p-6 lg:p-7 border-2 border-amber-200/90 shadow-xs flex flex-col justify-between"
+        >
+          <div class="absolute -right-8 -bottom-8 w-48 h-48 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
+          <div class="absolute right-6 top-6 text-5xl opacity-15 pointer-events-none">🧭</div>
 
-        <!-- Practicing Step -->
-        <div v-if="quizStep === 'practicing'" class="space-y-4">
-          <div v-if="isGeneratingQuiz" class="text-center py-10 space-y-2">
-            <Sparkles class="w-8 h-8 text-orange-500 animate-spin mx-auto" />
-            <div class="text-xs sm:text-sm font-black text-slate-700">小诺 AI 正在根据今日课本与作业提炼考点...</div>
-          </div>
-
-          <div v-else class="space-y-3">
-            <div
-              v-for="(q, idx) in practicingTask.generatedQuestions"
-              :key="q.id"
-              class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2"
-            >
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-black text-orange-600">第 {{ idx + 1 }} 题 · 考点: {{ q.knowledgePoint }}</span>
-                <button
-                  @click="askAiTutor(q)"
-                  class="text-[11px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md flex items-center gap-1 cursor-pointer"
-                >
-                  <Bot class="w-3 h-3" />
-                  <span>点拨</span>
-                </button>
+          <div class="space-y-3 relative z-10">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-200/80 text-amber-950 border border-amber-300">
+                  {{ isAllCompleted ? '全部通关' : '主线核心' }}
+                </span>
+                <span class="text-xs text-amber-900 font-bold">
+                  第 {{ completedLessonsCount + 1 }} 关 · 围棋启蒙主线
+                </span>
               </div>
 
-              <p class="text-xs sm:text-sm font-bold text-slate-800">{{ q.prompt }}</p>
+              <span class="text-xs font-bold text-amber-950 bg-white/80 px-2.5 py-0.5 rounded-full border border-amber-200">
+                {{ completedLessonsCount }} / {{ totalLessonsCount }} 关
+              </span>
+            </div>
 
-              <!-- Option Choices -->
-              <div v-if="q.options && q.options.length > 0" class="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  v-for="opt in q.options"
-                  :key="opt"
-                  @click="userAnswers[q.id] = opt"
-                  :class="['p-2 rounded-xl text-left text-xs font-bold border transition cursor-pointer', userAnswers[q.id] === opt ? 'border-orange-500 bg-orange-100 text-orange-950 font-black ring-1 ring-orange-300' : 'border-slate-200 bg-white text-slate-700']"
-                >
-                  {{ opt }}
-                </button>
+            <div>
+              <h2 class="text-xl sm:text-2xl font-display font-bold text-slate-900 tracking-wide">
+                {{ isAllCompleted ? '🎉 恭喜通关全部启蒙篇章！' : currentContinueLesson?.title || '开始第一课' }}
+              </h2>
+              <p class="text-xs sm:text-sm text-slate-700 font-medium mt-1 leading-relaxed line-clamp-2">
+                {{ isAllCompleted ? '你已经掌握了全部基础数气、吃子与死活要领！可以前往对弈场切磋升级！' : currentContinueLesson?.description || '认识棋盘与黑白小精灵' }}
+              </p>
+            </div>
+
+            <!-- Overall Progress Bar with warm gradient -->
+            <div class="space-y-1 pt-1">
+              <div class="flex items-center justify-between text-xs font-bold text-slate-600">
+                <span>主线通关进度</span>
+                <span>{{ overallProgressPercent }}%</span>
               </div>
-
-              <!-- Input for Fill blank -->
-              <div v-else class="pt-1">
-                <input
-                  v-model="userAnswers[q.id]"
-                  type="text"
-                  placeholder="在此输入计算答案..."
-                  class="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold bg-white focus:border-orange-500 focus:outline-hidden"
+              <div class="w-full bg-amber-200/50 h-3 rounded-full overflow-hidden p-0.5 border border-amber-300/60">
+                <div
+                  class="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 h-full rounded-full transition-all duration-300"
+                  :style="{ width: overallProgressPercent + '%' }"
                 />
               </div>
             </div>
           </div>
 
-          <div v-if="!isGeneratingQuiz" class="flex items-center justify-end gap-2 pt-2">
+          <div class="mt-5 pt-3.5 border-t border-amber-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 relative z-10">
+            <div class="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+              <span>⏱️</span>
+              <span>预计 5~8 分钟 · 趣味沉浸互动</span>
+            </div>
+
             <button
-              @click="showQuizModal = false"
-              class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 text-xs font-bold"
+              type="button"
+              class="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs sm:text-sm shadow-xs hover:shadow-md transition transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+              @click="startOrContinueLesson"
             >
-              稍后再练
-            </button>
-            <button
-              @click="submitQuiz"
-              class="px-6 py-2 rounded-xl bg-orange-500 text-white text-xs font-black shadow-sm cursor-pointer hover:bg-orange-600"
-            >
-              提交批改
+              <AppIcon name="play-action" size="sm" />
+              <span>{{ isAllCompleted ? '复习精彩关卡' : '继续今天的一课' }}</span>
+              <span>▶</span>
             </button>
           </div>
         </div>
 
-        <!-- Result Step -->
-        <div v-else-if="quizStep === 'result'" class="space-y-4 text-center">
-          <div class="text-3xl">🎉</div>
-          <h4 class="text-base sm:text-lg font-cartoon font-bold text-slate-800">
-            {{ practicingTask.subjectName }}变式练习已完成！
-          </h4>
-          <p class="text-xs text-slate-500">
-            本次得分：<span class="font-black text-orange-600 text-sm">{{ practicingTask.score }} 分</span>。错题已自动入库全科错题本。
-          </p>
+        <!-- Right 1 col: Today Growth Summary -->
+        <div class="bg-white rounded-3xl p-5 sm:p-6 border-2 border-slate-200/90 shadow-xs flex flex-col justify-between">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 class="text-base font-bold text-slate-900 flex items-center gap-1.5">
+                <span>✨</span>
+                <span>成长概览</span>
+              </h3>
+              <button
+                type="button"
+                class="text-xs font-bold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
+                @click="navigateTo('/profile')"
+              >
+                查看档案 →
+              </button>
+            </div>
 
-          <div class="space-y-2 text-left pt-2">
-            <div
-              v-for="(q, idx) in practicingTask.generatedQuestions"
-              :key="q.id"
-              :class="['p-3 rounded-xl border text-xs space-y-1', questionResults[q.id] ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200']"
-            >
-              <div class="flex items-center justify-between">
-                <span class="font-black">{{ idx + 1 }}. {{ q.prompt }}</span>
-                <span :class="questionResults[q.id] ? 'text-emerald-700 font-bold' : 'text-rose-600 font-bold'">
-                  {{ questionResults[q.id] ? '正确' : '错误' }}
+            <div class="space-y-2">
+              <button
+                type="button"
+                class="w-full flex items-center justify-between p-2.5 rounded-xl bg-blue-50/70 border border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition cursor-pointer"
+                @click="navigateTo('/tsumego')"
+              >
+                <span class="text-xs font-bold text-slate-600">累计攻克死活</span>
+                <span class="text-xs sm:text-sm font-bold text-blue-900">{{ userStore.solvedPuzzles?.length || 0 }} 题</span>
+              </button>
+              <button
+                type="button"
+                class="w-full flex items-center justify-between p-2.5 rounded-xl bg-rose-50/70 border border-rose-100 hover:border-rose-300 hover:bg-rose-50 transition cursor-pointer"
+                @click="navigateTo('/mistakes')"
+              >
+                <span class="text-xs font-bold text-slate-600">待消灭错题</span>
+                <span class="text-xs sm:text-sm font-bold" :class="(userStore.mistakes?.length || 0) > 0 ? 'text-rose-600' : 'text-emerald-700'">
+                  {{ (userStore.mistakes?.length || 0) > 0 ? (userStore.mistakes?.length + ' 处') : '0 (无弱点 ✓)' }}
                 </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Smart Companion Recommendation -->
+      <div v-if="userStore.hasProfile" class="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-3xl p-5 sm:p-6 border-2 border-blue-200/80 shadow-2xs">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-white text-2xl flex items-center justify-center shadow-xs shrink-0 border border-blue-200">
+              🐼
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-base sm:text-lg font-bold text-slate-900">小诺助教的今日点播</h3>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-200 text-blue-900">智能推荐</span>
               </div>
-              <div class="text-slate-600"><span class="font-bold">标准正解：</span>{{ q.correctAnswer }}</div>
-              <div class="text-slate-500 text-[11px]"><span class="font-bold">名师解析：</span>{{ q.explanation }}</div>
+              <p class="text-xs sm:text-sm text-slate-700 mt-1 leading-relaxed">
+                小诺发现多做死活手筋能迅速提升大局观！今天我们来挑战一道“做眼与破眼”必修题吧！
+              </p>
             </div>
           </div>
 
-          <div class="pt-3">
-            <button
-              @click="showQuizModal = false"
-              class="w-full py-2.5 bg-orange-500 text-white rounded-xl text-xs font-black shadow-sm cursor-pointer hover:bg-orange-600"
-            >
-              完成并关闭
-            </button>
-          </div>
+          <button
+            type="button"
+            class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-xs transition active:scale-95 shrink-0 w-full sm:w-auto cursor-pointer"
+            @click="navigateTo('/tsumego')"
+          >
+            开始死活挑战 →
+          </button>
+        </div>
+      </div>
+
+      <!-- 5. Quick Arenas (2x2 on Mobile, 4-col on Tablet/Desktop) -->
+      <div v-if="userStore.hasProfile" class="space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <h2 class="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
+            <span>🎲</span>
+            <span>棋艺与益智探索</span>
+          </h2>
+          <span class="text-xs font-bold text-slate-400">
+            跳棋 · 五子棋 · AI对弈 · 错题本
+          </span>
         </div>
 
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div
+            v-for="item in quickExplorations"
+            :key="item.title"
+            class="bg-white rounded-2xl p-3.5 border-2 border-slate-200/90 hover:border-amber-300 hover:shadow-md transition cursor-pointer flex items-center gap-3 transform hover:-translate-y-0.5 active:scale-95"
+            @click="navigateTo(item.route)"
+          >
+            <div
+              class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-xl shrink-0 border"
+              :class="item.iconBg"
+            >
+              {{ item.icon }}
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs sm:text-sm font-bold text-slate-900 truncate">{{ item.title }}</div>
+              <div class="text-[11px] text-slate-400 font-semibold truncate">{{ item.subtitle }}</div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
 
+    </div>
   </div>
 </template>
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useUserStore } from '../stores/useUserStore';
 import { AiTutorService, type AiTutorStepHint, type AiVariationQuiz } from '../services/aiTutorService';
 import type { MistakeRecord, SubjectId, DailyLearningReport } from '../types/curriculum';
@@ -18,7 +18,6 @@ import {
   CheckCircle2,
   RotateCcw,
   Sparkles,
-  ArrowLeft,
   Bot,
   Volume2,
   X,
@@ -31,7 +30,6 @@ import {
   Search,
 } from 'lucide-vue-next';
 
-const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
 
@@ -48,7 +46,7 @@ const searchQuery = ref('');
 onMounted(() => {
   userStore.purgeDemoMistakes();
   const qSub = route.query.subject as SubjectId | undefined;
-  if (qSub && ['math', 'chinese', 'english', 'go'].includes(qSub)) {
+  if (qSub && ['go', 'checkers', 'gomoku'].includes(qSub)) {
     activeSubjectTab.value = qSub;
   }
   if (route.query.quiz === 'true') {
@@ -473,10 +471,6 @@ const openDailyParentReport = () => {
   showParentReportModal.value = true;
 };
 
-const goBack = () => {
-  playButtonSound();
-  router.push('/');
-};
 </script>
 
 <template>
@@ -485,13 +479,6 @@ const goBack = () => {
 
       <!-- Breadcrumb & Top Bar -->
       <div class="flex items-center justify-between flex-wrap gap-2">
-        <button
-          @click="goBack"
-          class="inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 bg-amber-100/80 hover:bg-amber-200 text-amber-900 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black transition-all active:scale-95 border border-amber-300 shadow-2xs cursor-pointer shrink-0"
-        >
-          <ArrowLeft class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          <span>返回大厅</span>
-        </button>
 
         <div class="flex items-center gap-1.5 sm:gap-2">
           <button
@@ -601,11 +588,10 @@ const goBack = () => {
           <div class="flex items-center gap-2 overflow-x-auto no-scrollbar w-full sm:w-auto">
             <button
               v-for="sub in [
-                { id: 'all', name: '📚 全部语数外', count: getPendingCountBySubject('all') },
-                { id: 'math', name: '🔢 数学数理', count: getPendingCountBySubject('math') },
-                { id: 'chinese', name: '🏮 国学语文', count: getPendingCountBySubject('chinese') },
-                { id: 'english', name: '🔤 趣味英语', count: getPendingCountBySubject('english') },
-                { id: 'go', name: '♟️ 围棋死活', count: getPendingCountBySubject('go') }
+                { id: 'all', name: '📚 全部记录', count: getPendingCountBySubject('all') },
+                { id: 'go', name: '♟️ 围棋死活', count: getPendingCountBySubject('go') },
+                { id: 'checkers', name: '⭐ 六角跳棋', count: getPendingCountBySubject('checkers') },
+                { id: 'gomoku', name: '⚪ 欢乐五子棋', count: getPendingCountBySubject('gomoku') }
               ]"
               :key="sub.id"
               @click="activeSubjectTab = sub.id as any"
@@ -723,13 +709,12 @@ const goBack = () => {
                 <span
                   class="text-[10px] font-black px-2 py-0.5 rounded-full"
                   :class="
-                    item.subjectId === 'math' ? 'bg-blue-100 text-blue-800' :
-                    item.subjectId === 'chinese' ? 'bg-amber-100 text-amber-800' :
-                    item.subjectId === 'english' ? 'bg-purple-100 text-purple-800' :
+                    item.subjectId === 'checkers' ? 'bg-amber-100 text-amber-800' :
+                    item.subjectId === 'gomoku' ? 'bg-teal-100 text-teal-800' :
                     'bg-emerald-100 text-emerald-800'
                   "
                 >
-                  {{ item.subjectId === 'math' ? '🔢 数学' : item.subjectId === 'chinese' ? '🏮 语文' : item.subjectId === 'english' ? '🔤 英语' : '♟️ 围棋' }}
+                  {{ item.subjectId === 'checkers' ? '⭐ 跳棋' : item.subjectId === 'gomoku' ? '⚪ 五子棋' : '♟️ 围棋' }}
                 </span>
                 <span class="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
                   {{ item.knowledgePointTitle }}
@@ -1270,5 +1255,13 @@ const goBack = () => {
 
   </div>
 </template>
+
+
+
+
+
+
+
+
 
 

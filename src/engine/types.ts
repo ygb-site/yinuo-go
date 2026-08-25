@@ -26,8 +26,17 @@ export type BoardCell = StoneColor | null;
 
 /**
  * 棋盘标准尺寸定义
+ * 5 路仅用于主线/死活等教学棋盘，亲子对局不开放。
  */
 export type BoardSize = 5 | 7 | 9 | 13 | 19 | number;
+
+/** 亲子对局可选路数 */
+export const GO_MATCH_BOARD_SIZES = [7, 9, 13, 19] as const;
+export type GoMatchBoardSize = (typeof GO_MATCH_BOARD_SIZES)[number];
+
+export function isGoMatchBoardSize(size: number): size is GoMatchBoardSize {
+  return (GO_MATCH_BOARD_SIZES as readonly number[]).includes(size);
+}
 
 /**
  * 棋子连通块与气数结构 (Stone Group & Liberties)
@@ -99,8 +108,6 @@ export interface AtariAlert {
   group: StoneGroup;
   escapePoints: Point[];
 }
-
-export type ThemeType = 'wood' | 'candy' | 'neon' | 'jade' | 'galaxy' | 'forest' | 'gold';
 
 export interface AIMoveHint {
   point: Point;

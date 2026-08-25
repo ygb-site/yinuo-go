@@ -56,7 +56,7 @@ export async function signUpWithEmail(email: string, password: string): Promise<
         email: data.user.email,
         is_admin: false,
         profiles_data: [],
-        settings_data: { theme: 'wood', soundEnabled: true, volume: 0.8 },
+        settings_data: { soundEnabled: true, volume: 0.8 },
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' });
     }

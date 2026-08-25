@@ -1,21 +1,20 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import type { Point, StoneColor, ThemeType, BoardSize, StoneGroup } from '../../engine/types';
+import type { Point, StoneColor, BoardSize, StoneGroup } from '../../engine/types';
 import { GoGame } from '../../engine/GoGame';
 import { useUserStore } from '../../stores/useUserStore';
 import { playStoneSound, playCaptureSound, playErrorSound, playButtonSound } from '../../lib/audio';
 
 const props = withDefaults(
   defineProps<{
-    game: GoGame;
+    game?: GoGame;
+    board?: GoGame;
     readonly?: boolean;
     showLiberties?: boolean;
-    showBreathingTubes?: boolean;
     boardSize?: BoardSize;
     showCoordinates?: boolean;
     showAtari?: boolean;
     showTerritory?: boolean;
-    theme?: ThemeType;
     highlightPoints?: Point[];
     lastMove?: Point | null;
     sizePx?: number;
@@ -26,11 +25,9 @@ const props = withDefaults(
   {
     readonly: false,
     showLiberties: true,
-    showBreathingTubes: true,
     showCoordinates: true,
     showAtari: true,
     showTerritory: false,
-    theme: 'wood',
     highlightPoints: () => [],
     lastMove: null,
     sizePx: 520,
@@ -55,6 +52,8 @@ const selectedStonePoint = ref<Point | null>(null);
 const pendingConfirmPoint = ref<Point | null>(null);
 const isShaking = ref(false);
 
+const activeGame = computed(() => props.game || props.board || new GoGame(props.boardSize || 9));
+
 const isTouchConfirmActive = computed(() => {
   return props.confirmTouch ?? userStore.touchConfirmEnabled;
 });
@@ -70,11 +69,11 @@ const renderedStones = computed(() => {
   void props.game?.history?.length;
   const s = size.value;
   const list: { r: number; c: number; color: StoneColor }[] = [];
-  if (!props.game) return list;
+  if (!activeGame.value) return list;
 
   for (let r = 0; r < s; r++) {
     for (let c = 0; c < s; c++) {
-      const cell = props.game.getCell(r, c);
+      const cell = activeGame.value.getCell(r, c);
       if (cell !== null) {
         list.push({ r, c, color: cell });
       }
@@ -85,7 +84,7 @@ const renderedStones = computed(() => {
 
 // Watch for any external game mutations, moves, passes, resets
 watch(
-  () => [props.game, props.game?.version, props.lastMove, props.game?.history?.length, props.editMode],
+  () => [activeGame.value, props.game?.version, props.lastMove, props.game?.history?.length, props.editMode],
   () => {
     boardVersion.value++;
   },
@@ -138,10 +137,10 @@ const columnLetters = computed(() => {
 // Calculate liberties for all groups
 const libertiesMap = computed(() => {
   const map = new Map<string, number>();
-  if (!props.showLiberties || !props.game) return map;
+  if (!props.showLiberties || !activeGame.value) return map;
   void boardVersion.value;
   void props.game?.version;
-  const groups = props.game.getAllGroups();
+  const groups = activeGame.value.getAllGroups();
   for (const g of groups) {
     for (const st of g.stones) {
       map.set(st.r + ',' + st.c, g.libertyCount);
@@ -153,10 +152,10 @@ const libertiesMap = computed(() => {
 // Atari alert stones
 const atariAlertPoints = computed<Set<string>>(() => {
   const set = new Set<string>();
-  if (!props.showAtari || !props.game) return set;
+  if (!props.showAtari || !activeGame.value) return set;
   void boardVersion.value;
   void props.game?.version;
-  const ataris = props.game.checkAtari();
+  const ataris = activeGame.value.checkAtari();
   for (const at of ataris) {
     for (const st of at.group.stones) {
       set.add(st.r + ',' + st.c);
@@ -165,67 +164,18 @@ const atariAlertPoints = computed<Set<string>>(() => {
   return set;
 });
 
-// Calculate Tangible Breathing Tubes (具象化呼吸管道)
-interface BreathingTube {
-  id: string;
-  from: Point;
-  to: Point;
-  isAtari: boolean;
-  color: StoneColor;
-}
-
-const breathingTubes = computed<BreathingTube[]>(() => {
-  if (!props.showBreathingTubes || !props.game) return [];
-  void boardVersion.value;
-  void props.game?.version;
-
-  const s = size.value;
-  if (s > 11) return []; // Omit on larger boards to keep clear
-
-  const tubes: BreathingTube[] = [];
-  const visited = new Set<string>();
-  const groups = props.game.getAllGroups();
-
-  for (const g of groups) {
-    const isAtari = g.libertyCount === 1;
-    for (const st of g.stones) {
-      const deltas = [{ r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 }];
-      for (const d of deltas) {
-        const nr = st.r + d.r;
-        const nc = st.c + d.c;
-        if (nr >= 0 && nr < s && nc >= 0 && nc < s) {
-          if (props.game.getCell(nr, nc) === null) {
-            const key = st.r + ',' + st.c + '->' + nr + ',' + nc;
-            if (!visited.has(key)) {
-              visited.add(key);
-              tubes.push({
-                id: key,
-                from: { r: st.r, c: st.c },
-                to: { r: nr, c: nc },
-                isAtari,
-                color: g.color
-              });
-            }
-          }
-        }
-      }
-    }
-  }
-  return tubes;
-});
-
 // Active selected stone liberties highlight
 const activeSelectedLiberties = computed<Point[]>(() => {
-  if (!selectedStonePoint.value || !props.game) return [];
+  if (!selectedStonePoint.value || !activeGame.value) return [];
   void boardVersion.value;
-  return props.game.getLibertiesOf(selectedStonePoint.value.r, selectedStonePoint.value.c);
+  return activeGame.value.getLibertiesOf(selectedStonePoint.value.r, selectedStonePoint.value.c);
 });
 
 // Territory evaluation map
 const territoryMap = computed(() => {
-  if (!props.showTerritory || !props.game) return null;
+  if (!props.showTerritory || !activeGame.value) return null;
   void boardVersion.value;
-  return props.game.calculateScore().territoryMap;
+  return activeGame.value.calculateScore().territoryMap;
 });
 
 // Trigger error vibration animation
@@ -266,14 +216,14 @@ const handleCellClick = (r: number, c: number) => {
     return;
   }
 
-  if (props.readonly || !props.game) return;
+  if (props.readonly || !activeGame.value) return;
 
   // Handle Edit Mode (placing Black, White, or Erasing directly)
   if (props.editMode) {
     if (props.editMode === 'empty') {
-      props.game.setCell(r, c, null);
+      activeGame.value.setCell(r, c, null);
     } else {
-      props.game.setCell(r, c, props.editMode);
+      activeGame.value.setCell(r, c, props.editMode);
     }
     boardVersion.value++;
     playStoneSound();
@@ -282,7 +232,7 @@ const handleCellClick = (r: number, c: number) => {
     return;
   }
 
-  const existingStone = props.game.getCell(r, c);
+  const existingStone = activeGame.value.getCell(r, c);
 
   // If clicking on an existing stone, toggle selection to show its liberties
   if (existingStone !== null) {
@@ -292,7 +242,7 @@ const handleCellClick = (r: number, c: number) => {
       emit('selectStone', null, null);
     } else {
       selectedStonePoint.value = { r, c };
-      const group = props.game.getGroup(r, c);
+      const group = activeGame.value.getGroup(r, c);
       emit('selectStone', { r, c }, group);
     }
     return;
@@ -313,7 +263,7 @@ const executeMove = (r: number, c: number) => {
   // Handle Manual Mode (parent view controls move logic)
   if (props.manualMove) {
     emit('play', { r, c });
-    emit('move', { r, c }, props.game.turn);
+    emit('move', { r, c }, activeGame.value.turn);
     boardVersion.value++;
     return;
   }
@@ -321,8 +271,8 @@ const executeMove = (r: number, c: number) => {
   // Clear selected stone upon placing a new move
   selectedStonePoint.value = null;
 
-  const turnColor = props.game.turn;
-  const check = props.game.isLegalMove(r, c, turnColor);
+  const turnColor = activeGame.value.turn;
+  const check = activeGame.value.isLegalMove(r, c, turnColor);
 
   if (!check.legal) {
     triggerShake();
@@ -331,7 +281,7 @@ const executeMove = (r: number, c: number) => {
   }
 
   // Play move on GoGame state machine
-  const res = props.game.playMove(r, c, turnColor);
+  const res = activeGame.value.playMove(r, c, turnColor);
   if (res.success) {
     boardVersion.value++;
     playStoneSound();
@@ -354,66 +304,9 @@ const handleCellLeave = () => {
   hoverPoint.value = null;
 };
 
-// Theme styles
-const themeContainerClass = computed(() => {
-  switch (props.theme) {
-    case 'candy':
-      return 'bg-[#FFF0F5] border-[#F472B6] shadow-[0_15px_30px_-5px_rgba(244,114,182,0.3)]';
-    case 'neon':
-      return 'bg-[#0B1120] border-[#38BDF8] shadow-[0_15px_30px_-5px_rgba(56,189,248,0.35)]';
-    case 'jade':
-      return 'bg-[#ECFDF5] border-[#10B981] shadow-[0_15px_30px_-5px_rgba(16,185,129,0.3)]';
-    case 'galaxy':
-      return 'bg-[#180C2E] border-[#A855F7] shadow-[0_15px_30px_-5px_rgba(168,85,247,0.35)]';
-    case 'forest':
-      return 'bg-[#F0FDF4] border-[#22C55E] shadow-[0_15px_30px_-5px_rgba(34,197,94,0.3)]';
-    case 'gold':
-      return 'bg-[#FFFBEB] border-[#F59E0B] shadow-[0_15px_30px_-5px_rgba(245,158,11,0.35)]';
-    case 'wood':
-    default:
-      return 'wood-pattern border-[#B47B36] shadow-[0_20px_35px_-10px_rgba(99,59,13,0.35)]';
-  }
-});
-
-const gridLineColor = computed(() => {
-  switch (props.theme) {
-    case 'candy':
-      return '#F472B6';
-    case 'neon':
-      return '#38BDF8';
-    case 'jade':
-      return '#059669';
-    case 'galaxy':
-      return '#C084FC';
-    case 'forest':
-      return '#15803D';
-    case 'gold':
-      return '#B45309';
-    case 'wood':
-    default:
-      return '#6B3E11';
-  }
-});
-
-const coordSvgColor = computed(() => {
-  switch (props.theme) {
-    case 'candy':
-      return '#DB2777';
-    case 'neon':
-      return '#38BDF8';
-    case 'jade':
-      return '#047857';
-    case 'galaxy':
-      return '#C084FC';
-    case 'forest':
-      return '#166534';
-    case 'gold':
-      return '#92400E';
-    case 'wood':
-    default:
-      return '#78350F';
-  }
-});
+const BOARD_CONTAINER_CLASS = 'wood-pattern border-[#B47B36] shadow-[0_20px_35px_-10px_rgba(99,59,13,0.35)]';
+const GRID_LINE_COLOR = '#6B3E11';
+const COORD_SVG_COLOR = '#78350F';
 
 const coordFontSize = computed(() => {
   const s = size.value;
@@ -427,7 +320,7 @@ const coordFontSize = computed(() => {
 <template>
   <div
     class="relative rounded-3xl p-2 sm:p-4 border-4 sm:border-[6px] transition-all select-none mx-auto max-w-full cursor-pointer aspect-square flex items-center justify-center overflow-hidden"
-    :class="[themeContainerClass, { 'animate-shake': isShaking }]"
+    :class="[BOARD_CONTAINER_CLASS, { 'animate-shake': isShaking }]"
     :style="{ width: 'min(100%, ' + sizePx + 'px)' }"
     @click.capture="handleBoardContainerClick"
   >
@@ -467,7 +360,7 @@ const coordFontSize = computed(() => {
         </defs>
 
         <!-- Coordinate Labels: Top & Bottom Letters (A, B, C...) - 绝对对齐纵线 -->
-        <g v-if="showCoordinates" :fill="coordSvgColor" :font-size="coordFontSize" font-weight="900" font-family="'Quicksand', 'Fredoka', sans-serif" text-anchor="middle" opacity="0.85" pointer-events="none">
+        <g v-if="showCoordinates" :fill="COORD_SVG_COLOR" :font-size="coordFontSize" font-weight="900" font-family="'Quicksand', 'Fredoka', sans-serif" text-anchor="middle" opacity="0.85" pointer-events="none">
           <!-- Top Letters -->
           <text
             v-for="(letter, cIdx) in columnLetters"
@@ -490,7 +383,7 @@ const coordFontSize = computed(() => {
         </g>
 
         <!-- Coordinate Labels: Left & Right Numbers (5, 4, 3, 2, 1) - 绝对对齐横线 -->
-        <g v-if="showCoordinates" :fill="coordSvgColor" :font-size="coordFontSize" font-weight="900" font-family="'Quicksand', 'Fredoka', sans-serif" text-anchor="middle" opacity="0.85" pointer-events="none">
+        <g v-if="showCoordinates" :fill="COORD_SVG_COLOR" :font-size="coordFontSize" font-weight="900" font-family="'Quicksand', 'Fredoka', sans-serif" text-anchor="middle" opacity="0.85" pointer-events="none">
           <!-- Left Numbers -->
           <text
             v-for="rIdx in size"
@@ -513,7 +406,7 @@ const coordFontSize = computed(() => {
         </g>
 
         <!-- Board Grid Lines -->
-        <g :stroke="gridLineColor" stroke-width="2.5" stroke-linecap="round">
+        <g :stroke="GRID_LINE_COLOR" stroke-width="2.5" stroke-linecap="round">
           <!-- Horizontal Lines -->
           <line
             v-for="r in size"
@@ -535,7 +428,7 @@ const coordFontSize = computed(() => {
         </g>
 
         <!-- Star Points (Hoshi) -->
-        <g :fill="gridLineColor">
+        <g :fill="GRID_LINE_COLOR">
           <circle
             v-for="sp in starPoints"
             :key="'star-' + sp.r + '-' + sp.c"
@@ -543,47 +436,6 @@ const coordFontSize = computed(() => {
             :cy="sp.r * 100 + 50"
             :r="size >= 13 ? 7.5 : 6.5"
           />
-        </g>
-
-        <!-- Tangible Breathing Oxygen Tubes Layer (具象化呼吸管道) -->
-        <g v-if="showBreathingTubes && breathingTubes.length > 0" pointer-events="none">
-          <template v-for="tube in breathingTubes" :key="'tube-' + tube.id">
-            <!-- Outer Glow Beam -->
-            <line
-              :x1="tube.from.c * 100 + 50"
-              :y1="tube.from.r * 100 + 50"
-              :x2="tube.to.c * 100 + 50"
-              :y2="tube.to.r * 100 + 50"
-              :stroke="tube.isAtari ? '#EF4444' : '#10B981'"
-              :stroke-width="tube.isAtari ? 7 : 4.5"
-              stroke-linecap="round"
-              :opacity="tube.isAtari ? 0.9 : 0.65"
-              :class="tube.isAtari ? 'animate-pulse-fast' : ''"
-            />
-            <!-- Inner Core Dotted Stream Line -->
-            <line
-              :x1="tube.from.c * 100 + 50"
-              :y1="tube.from.r * 100 + 50"
-              :x2="tube.to.c * 100 + 50"
-              :y2="tube.to.r * 100 + 50"
-              :stroke="tube.isAtari ? '#FCA5A5' : '#D1FAE5'"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-dasharray="4,4"
-              opacity="0.9"
-            />
-            <!-- Terminal Oxygen Node Indicator -->
-            <circle
-              :cx="tube.to.c * 100 + 50"
-              :cy="tube.to.r * 100 + 50"
-              :r="tube.isAtari ? 11 : 7.5"
-              :fill="tube.isAtari ? '#EF4444' : '#10B981'"
-              :stroke="tube.isAtari ? '#FFFFFF' : '#ECFDF5'"
-              :stroke-width="tube.isAtari ? 2.5 : 1.5"
-              :opacity="tube.isAtari ? 0.95 : 0.75"
-              :class="tube.isAtari ? 'animate-pulse-fast' : ''"
-            />
-          </template>
         </g>
 
         <!-- Territory Shading Overlay -->
@@ -847,6 +699,19 @@ const coordFontSize = computed(() => {
   animation: pingOnce 0.6s ease-out forwards;
 }
 
+.wood-pattern {
+  background-color: #e6a863;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(120, 53, 15, 0.07) 0px,
+      rgba(120, 53, 15, 0.07) 1px,
+      transparent 1px,
+      transparent 22px
+    ),
+    linear-gradient(180deg, #f0c27a 0%, #d4923f 55%, #c07a2e 100%);
+}
+
 .animate-pulse-fast {
   animation: pulseFast 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
@@ -856,4 +721,5 @@ const coordFontSize = computed(() => {
   50% { opacity: 0.4; }
 }
 </style>
+
 

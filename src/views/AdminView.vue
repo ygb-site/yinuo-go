@@ -15,7 +15,7 @@ import { showAlert, showConfirm } from '../utils/alert';
 import { CHAPTERS_DATA } from '../data/chapters';
 import { TSUMEGO_PUZZLES } from '../data/tsumegoLibrary';
 import { BADGES_DATA } from '../data/achievementsData';
-import { SHOP_THEMES } from '../data/shopData';
+import { SHOP_AVATARS } from '../data/shopData';
 import {
   ShieldAlert,
   Users,
@@ -673,9 +673,9 @@ const formatTime = (iso?: string) => {
           </div>
 
           <div class="bg-indigo-50/70 p-3 sm:p-4 rounded-2xl border border-indigo-200 space-y-0.5">
-            <div class="text-xs font-black text-indigo-900">棋盘装扮皮肤</div>
-            <div class="text-xl sm:text-2xl font-black text-indigo-600">{{ SHOP_THEMES.length }} 款</div>
-            <div class="text-[10px] text-gray-500 font-bold">原木、星空、翡翠、糖果等</div>
+            <div class="text-xs font-black text-indigo-900">萌宠头像装扮</div>
+            <div class="text-xl sm:text-2xl font-black text-indigo-600">{{ SHOP_AVATARS.length }} 款</div>
+            <div class="text-[10px] text-gray-500 font-bold">金币兑换可爱头像</div>
           </div>
         </div>
       </div>

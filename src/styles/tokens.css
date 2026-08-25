@@ -1,0 +1,231 @@
+/* =========================================================================
+ * 03 · Design Tokens - 一诺未来学堂视觉设计令牌
+ * ========================================================================= */
+
+:root {
+  /* 1. 基础色板 (Color Palette) - 温暖质感米白纸感底色与纯白卡片分层 */
+  --color-background: #F6F3EB;
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #FFFFFF;
+  --color-surface-sunken: #EFEAE0;
+
+  /* 品牌色 - 活力暖橙与温暖金棕 */
+  --color-brand: #E0722C;
+  --color-brand-strong: #C45818;
+  --color-brand-soft: #FDEEDC;
+
+  /* 文本色 - 深暖灰 Slate 与次级说明文本 */
+  --color-text: #1E242B;
+  --color-text-secondary: #586370;
+  --color-text-muted: #8E9BAA;
+  --color-text-on-brand: #FFFFFF;
+
+  /* 边框色 - 柔和暖色细描边 */
+  --color-border: #E5DDD0;
+  --color-border-strong: #D1C5B2;
+
+  /* 语义状态色 (主色 + Soft 底) */
+  --color-success: #22995D;
+  --color-success-soft: #E3F6EC;
+  --color-warning: #B37305;
+  --color-warning-soft: #FEF3D8;
+  --color-danger: #D13838;
+  --color-danger-soft: #FDEDED;
+  --color-info: #2B6BC7;
+  --color-info-soft: #E8F1FC;
+
+  /* 领域色 (Domain Colors) */
+  --color-learning: #2B6BC7;
+  --color-growth: #22995D;
+  --color-challenge: #704FD0;
+
+  /* 2. 字体族 (Typography) */
+  --font-sans: 'ZCOOL KuaiLe', 'Fredoka', 'Quicksand', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-display: 'ZCOOL KuaiLe', 'Fredoka', 'Quicksand', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Monaco, Consolas, monospace;
+
+  /* 3. 间距标尺 (Spacing Scale - 4px Grid) */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* 4. 圆角标尺 (Radius Scale) */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  /* 5. 阴影与标高 (Elevation / Shadow) */
+  --elevation-0: none;
+  --elevation-1: 0 2px 6px -1px rgba(30, 36, 43, 0.05), 0 1px 3px -1px rgba(30, 36, 43, 0.03);
+  --elevation-2: 0 6px 16px -2px rgba(30, 36, 43, 0.07), 0 2px 6px -1px rgba(30, 36, 43, 0.04);
+  --elevation-3: 0 12px 32px -4px rgba(30, 36, 43, 0.10), 0 4px 12px -2px rgba(30, 36, 43, 0.05);
+  --elevation-4: 0 20px 48px -6px rgba(30, 36, 43, 0.14);
+
+  /* 6. 动效时间与缓动 (Motion Tokens) */
+  --duration-instant: 0ms;
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 320ms;
+  --duration-emphasis: 480ms;
+
+  --ease-standard: cubic-bezier(0.2, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-emphasis: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* 7. Z-Index 层级标尺 */
+  --z-base: 0;
+  --z-sticky: 100;
+  --z-nav: 200;
+  --z-float: 300;
+  --z-popover: 400;
+  --z-modal: 1000;
+  --z-toast: 1100;
+  --z-loading: 1200;
+}
+
+/* 8. 排版语义类 (Typography Utility Classes) */
+.text-display {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+@media (min-width: 768px) {
+  .text-display {
+    font-size: 32px;
+    line-height: 42px;
+  }
+}
+
+.text-heading {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 30px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+@media (min-width: 768px) {
+  .text-heading {
+    font-size: 24px;
+    line-height: 34px;
+  }
+}
+
+.text-title {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.text-body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.text-body-strong {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.text-label {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.text-caption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* 9. 骨架屏微亮扫过动效 (Skeleton Shimmer) */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-sunken) 25%,
+    var(--color-border) 37%,
+    var(--color-surface-sunken) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+/* 10. 减弱动效响应 (Prefers-reduced-motion) */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0ms;
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
+    --duration-emphasis: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 11. 年龄自适应主题变量覆写 (Age-adaptive Overrides) */
+[data-age-stage="early-childhood"] {
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+}
+
+[data-age-stage="middle-school"] {
+  --font-display: var(--font-sans);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+[data-age-stage="teen"] {
+  --font-display: var(--font-sans);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
+

@@ -284,18 +284,18 @@ export const CHAPTERS_DATA: Chapter[] =
               "r": 1,
               "c": 2
             },
-            "comment": "太棒啦！黑子四周的4条呼吸管道清晰可见！",
+            "comment": "太棒啦！黑子四周上下左右一共有 4 口气！",
             "isCorrect": true
           }
         ],
         "subPuzzles": [
           {
             "stepIndex": 1,
-            "title": "第 1 题：中央棋子的4条气管",
+            "title": "第 1 题：中央棋子的 4 口气",
             "subtitle": "中腹单子拥有4口气",
             "goalText": "在黑子上方（C2）落子！",
             "storyDialogues": [
-              "中腹单子四周有上下左右4条绿色呼吸管！点击上方 C2 落子！"
+              "中腹单子四周上下左右一共有 4 口气！点击上方 C2 落子！"
             ],
             "boardSize": 5,
             "initialStones": [
@@ -1016,7 +1016,7 @@ export const CHAPTERS_DATA: Chapter[] =
         "subtitle": "拔掉最后一口气，把被吃的白子抓出棋盘",
         "description": "白棋已经只剩最后1口气啦！把这最后一口气堵死，就能把白子提离棋盘，收入俘虏盒！",
         "storyDialogues": [
-          "快看！白棋只剩最后一条红色的危险呼吸管！",
+          "快看！白棋只剩最后 1 口气啦！",
           "只要黑棋落在最后这个十字路口，白棋立刻0气窒息！",
           "啪！清脆提子！把白子抓走移出棋盘！快来试一试！"
         ],

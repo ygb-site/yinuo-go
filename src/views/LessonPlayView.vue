@@ -558,7 +558,6 @@ const handleBackToMap = () => {
               :readonly="isLessonComplete || isBotThinking || isCurrentStepCompleted"
               :showLiberties="showLiberties"
               :showAtari="showAtari"
-              :theme="userStore.theme"
               :manualMove="true"
               :highlightPoints="currentStepState.highlightPoints"
               :lastMove="currentStepState.lastMove"

@@ -13,7 +13,6 @@ export interface ExportedArchiveData {
     totalStars: number;
     badges: string[];
     solvedPuzzles: string[];
-    unlockedThemes?: string[];
     unlockedAvatars?: string[];
     mistakes?: string[];
     solvedMistakes?: string[];
@@ -78,7 +77,6 @@ export function createSafeProfileArchive(profile: ChildProfile): ExportedArchive
       totalStars: Math.max(0, Number(profile.totalStars) || 0),
       badges: Array.isArray(profile.badges) ? profile.badges.map(b => sanitizeText(b, 50)).filter(Boolean) : [],
       solvedPuzzles: Array.isArray(profile.solvedPuzzles) ? profile.solvedPuzzles.map(p => sanitizeText(p, 50)).filter(Boolean) : [],
-      unlockedThemes: Array.isArray(profile.unlockedThemes) ? profile.unlockedThemes.map(t => sanitizeText(t, 20)).filter(Boolean) : ['wood'],
       unlockedAvatars: Array.isArray(profile.unlockedAvatars) ? profile.unlockedAvatars.map(a => sanitizeText(a, 10)).filter(Boolean) : ['🦁', '👶', '🐱', '🐼'],
       mistakes: Array.isArray(profile.mistakes) ? profile.mistakes.map(m => sanitizeText(m, 50)).filter(Boolean) : [],
       solvedMistakes: Array.isArray(profile.solvedMistakes) ? profile.solvedMistakes.map(m => sanitizeText(m, 50)).filter(Boolean) : [],
@@ -222,7 +220,6 @@ export function validateAndSanitizeArchive(rawJson: string, maxSizeBytes = 2 * 1
     totalStars: Math.max(0, Number(source.totalStars) || 0),
     badges: Array.isArray(source.badges) ? source.badges.map((b: any) => sanitizeText(b, 50)).filter(Boolean) : [],
     solvedPuzzles: Array.isArray(source.solvedPuzzles) ? source.solvedPuzzles.map((p: any) => sanitizeText(p, 50)).filter(Boolean) : [],
-    unlockedThemes: Array.isArray(source.unlockedThemes) ? source.unlockedThemes.map((t: any) => sanitizeText(t, 20)).filter(Boolean) : ['wood'],
     unlockedAvatars: Array.isArray(source.unlockedAvatars) ? source.unlockedAvatars.map((a: any) => sanitizeText(a, 10)).filter(Boolean) : ['🦁', '👶', '🐱', '🐼'],
     mistakes: Array.isArray(source.mistakes) ? source.mistakes.map((m: any) => sanitizeText(m, 50)).filter(Boolean) : [],
     solvedMistakes: Array.isArray(source.solvedMistakes) ? source.solvedMistakes.map((m: any) => sanitizeText(m, 50)).filter(Boolean) : [],

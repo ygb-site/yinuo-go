@@ -1,40 +1,67 @@
+@import './styles/tokens.css';
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&family=Quicksand:wght@500;600;700;800&family=ZCOOL+KuaiLe&family=ZCOOL+QingKe+HuangYou&family=Ma+Shan+Zheng&family=Liu+Jian+Mao+Cao&family=Long+Cang&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@500;700;900&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css');
+@import url('https://cdn.jsdelivr.net/npm/smiley-sans@1.1.1/smiley-sans.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --font-global: "Nunito", "Quicksand", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "YouYuan", sans-serif;
+  --font-base-size: 16px;
+  --font-global-spacing: 0.02em;
+}
+
 @layer base {
+  html {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    font-size: var(--font-base-size);
+    font-family: var(--font-global);
+    letter-spacing: var(--font-global-spacing);
+  }
+  body, button, input, select, textarea, h1, h2, h3, h4, h5, h6, p, span, div, a {
+    font-family: var(--font-global);
+    letter-spacing: var(--font-global-spacing);
+    -webkit-font-smoothing: antialiased;
+  }
   body {
-    @apply bg-[#FDFBF7] text-[#2D3748] font-sans antialiased select-none;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    background-color: var(--color-background);
+    color: var(--color-text);
     touch-action: manipulation;
-    overscroll-behavior-y: contain;
-    overflow-x: hidden;
+  }
+  #app {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    font-family: var(--font-global);
   }
 }
 
-/* Custom minimal scrollbar for non-modal desktop content */
+/* Minimal scrollbar */
 @media (min-width: 768px) {
-  body:not(.modal-open)::-webkit-scrollbar {
+  body::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-  body:not(.modal-open)::-webkit-scrollbar-track {
+  body::-webkit-scrollbar-track {
     background: transparent;
   }
-  body:not(.modal-open)::-webkit-scrollbar-thumb {
-    background: #E2D9C8;
+  body::-webkit-scrollbar-thumb {
+    background: var(--color-border);
     border-radius: 9999px;
-  }
-  body:not(.modal-open)::-webkit-scrollbar-thumb:hover {
-    background: #C8BAA3;
   }
 }
 
-/* Hide scrollbars completely on mobile */
+/* Hide scrollbars on mobile */
 @media (max-width: 767px) {
   ::-webkit-scrollbar {
     display: none !important;
-    width: 0 !important;
-    height: 0 !important;
   }
   * {
     scrollbar-width: none !important;
@@ -42,55 +69,16 @@
   }
 }
 
-/* Universal Modal & Dialog Scrollbar Complete Suppression */
-.modal-overlay,
-.modal-overlay *,
-.modal-card,
-.modal-card *,
-.no-scrollbar,
-.no-scrollbar * {
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.no-scrollbar {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
 
-.modal-overlay::-webkit-scrollbar,
-.modal-overlay *::-webkit-scrollbar,
-.modal-card::-webkit-scrollbar,
-.modal-card *::-webkit-scrollbar,
-.no-scrollbar::-webkit-scrollbar,
-.no-scrollbar *::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+/* Utility font overrides */
+.font-sans, .font-display, .font-cartoon, .font-comic {
+  font-family: var(--font-global) !important;
 }
 
-/* Wood board texture effect */
-.wood-pattern {
-  background-color: #E6B870;
-  background-image: 
-    radial-gradient(ellipse at 50% 50%, rgba(255, 230, 180, 0.4) 0%, rgba(180, 120, 50, 0.25) 100%),
-    repeating-linear-gradient(45deg, transparent, transparent 15px, rgba(160, 100, 40, 0.05) 15px, rgba(160, 100, 40, 0.05) 30px);
-}
-
-.candy-pattern {
-  background-color: #FCE7F3;
-  background-image: radial-gradient(#F472B6 0.75px, transparent 0.75px), radial-gradient(#60A5FA 0.75px, #FCE7F3 0.75px);
-  background-size: 30px 30px;
-  background-position: 0 0, 15px 15px;
-}
-
-.neon-pattern {
-  background-color: #0F172A;
-  background-image: linear-gradient(to right, #1E293B 1px, transparent 1px), linear-gradient(to bottom, #1E293B 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-/* Cartoon 3D button utility */
-.btn-cartoon {
-  @apply transition-all duration-150 active:translate-y-1 active:shadow-none font-bold rounded-2xl cursor-pointer;
-}
-
-.font-cartoon {
-  font-family: 'ZCOOL KuaiLe', 'Fredoka', 'Chalkboard SE', 'Comic Sans MS', 'PingFang SC', sans-serif;
-  letter-spacing: 0.03em;
-}

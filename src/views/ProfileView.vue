@@ -8,7 +8,6 @@ import { TSUMEGO_PUZZLES } from '../data/tsumegoLibrary';
 import { BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
 import CertificateModal from '../components/common/CertificateModal.vue';
 import { showAlert, showConfirm } from '../utils/alert';
-import { SHOP_THEMES } from '../data/shopData';
 import { playButtonSound, playWinSound, playErrorSound, triggerConfetti } from '../lib/audio';
 import { sound } from '../utils/sound';
 import { createSafeProfileArchive } from '../services/dataArchiveService';
@@ -186,33 +185,6 @@ const goToTsumego = (puzzleId?: string) => {
   }
 };
 
-const goToRankExam = () => {
-  const isUnlocked = unlockStore.isFeatureUnlocked('rank-exam');
-  if (!isUnlocked) {
-    sound.playErrorSound();
-    const feat = unlockStore.getFeature('rank-exam');
-    showConfirm({
-      title: '暂未解锁定段考',
-      message: `小棋手别着急！【定段升级考】需要${feat?.unlockTip || '完成全部启蒙闯关'}才能开启哦！快去继续主线闯关吧！`,
-      type: 'warning',
-      confirmText: '前往闯关',
-      cancelText: '知道了'
-    }).then(confirmed => {
-      if (confirmed) {
-        router.push('/learn');
-      }
-    });
-    return;
-  }
-  playButtonSound();
-  router.push('/rank-exam');
-};
-
-const goToShop = () => {
-  playButtonSound();
-  router.push('/shop');
-};
-
 const avatarList = ['🦁', '👶', '🐱', '🐼', '🐯', '🐰', '🦊', '🦄', '🐲', '🚀'];
 
 const saveNickname = () => {
@@ -298,11 +270,10 @@ const mistakeMasteryPercent = computed(() => {
 });
 
 const mistakesBySubject = computed(() => {
-  const math = pendingMistakes.value.filter(m => m.subjectId === 'math').length;
-  const chinese = pendingMistakes.value.filter(m => m.subjectId === 'chinese').length;
-  const english = pendingMistakes.value.filter(m => m.subjectId === 'english').length;
   const go = pendingMistakes.value.filter(m => m.subjectId === 'go').length;
-  return { math, chinese, english, go };
+  const checkers = pendingMistakes.value.filter(m => m.subjectId === 'checkers').length;
+  const gomoku = pendingMistakes.value.filter(m => m.subjectId === 'gomoku').length;
+  return { go, checkers, gomoku };
 });
 
 const goToMistakes = (subject?: string, autoQuiz = false) => {
@@ -329,10 +300,11 @@ const confirmReset = async () => {
     showAlert({ message: '已成功重置当前宝贝的数据。', type: 'info' });
   }
 };
+
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-5rem)] bg-[#FDFBF7] py-3 sm:py-10 px-2.5 sm:px-6 lg:px-8 select-none">
+  <div class="min-h-[calc(100vh-5rem)] bg-[#FAF8F5] py-3 sm:py-6 lg:py-8 px-4 sm:px-6 lg:px-8 select-none">
     <div class="max-w-6xl mx-auto space-y-4 sm:space-y-8">
 
       <!-- Case A: Logged In & Has Child Profile -->
@@ -447,18 +419,6 @@ const confirmReset = async () => {
               </div>
               <div class="flex items-center gap-1.5 pt-1">
                 <button
-                  @click="goToRankExam"
-                  class="flex-1 py-1.5 px-2 rounded-xl text-[11px] font-black shadow-xs flex items-center justify-center gap-1 cursor-pointer transition active:scale-95"
-                  :class="
-                    unlockStore.isFeatureUnlocked('rank-exam')
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white'
-                      : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200'
-                  "
-                >
-                  <Trophy class="w-3.5 h-3.5" />
-                  <span>{{ unlockStore.isFeatureUnlocked('rank-exam') ? '考级挑战' : '考级 (未解锁)' }}</span>
-                </button>
-                <button
                   @click="showCertModal = true"
                   class="flex-1 py-1.5 px-2 bg-white hover:bg-orange-50 text-orange-700 border border-orange-200 rounded-xl text-[11px] font-black shadow-xs flex items-center justify-center gap-1 cursor-pointer"
                 >
@@ -568,44 +528,34 @@ const confirmReset = async () => {
             </div>
 
             <!-- Subject Progress Bars -->
-            <div class="grid grid-cols-2 gap-2 text-xs font-bold">
-              <div class="bg-blue-50/60 rounded-xl p-2.5 border border-blue-200">
-                <div class="flex justify-between text-[11px] text-blue-900 font-black mb-1">
-                  <span>📐 数学掌握度</span>
-                  <span>{{ studentProfile.subjectMastery.math }}%</span>
+            <div class="grid grid-cols-3 gap-2 text-xs font-bold">
+              <div class="bg-emerald-50/60 rounded-xl p-2.5 border border-emerald-200">
+                <div class="flex justify-between text-[11px] text-emerald-900 font-black mb-1">
+                  <span>♟️ 围棋死活度</span>
+                  <span>{{ studentProfile.subjectMastery.go }}%</span>
                 </div>
-                <div class="w-full bg-blue-200 h-1.5 rounded-full overflow-hidden">
-                  <div class="bg-blue-500 h-full rounded-full" :style="{ width: studentProfile.subjectMastery.math + '%' }"></div>
+                <div class="w-full bg-emerald-200 h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-emerald-500 h-full rounded-full" :style="{ width: studentProfile.subjectMastery.go + '%' }"></div>
                 </div>
               </div>
 
               <div class="bg-amber-50/60 rounded-xl p-2.5 border border-amber-200">
                 <div class="flex justify-between text-[11px] text-amber-900 font-black mb-1">
-                  <span>🏮 语文掌握度</span>
-                  <span>{{ studentProfile.subjectMastery.chinese }}%</span>
+                  <span>⭐ 六角跳棋度</span>
+                  <span>{{ studentProfile.subjectMastery.checkers }}%</span>
                 </div>
                 <div class="w-full bg-amber-200 h-1.5 rounded-full overflow-hidden">
-                  <div class="bg-amber-500 h-full rounded-full" :style="{ width: studentProfile.subjectMastery.chinese + '%' }"></div>
+                  <div class="bg-amber-500 h-full rounded-full" :style="{ width: studentProfile.subjectMastery.checkers + '%' }"></div>
                 </div>
               </div>
 
-              <div class="bg-purple-50/60 rounded-xl p-2.5 border border-purple-200">
-                <div class="flex justify-between text-[11px] text-purple-900 font-black mb-1">
-                  <span>🔤 英语掌握度</span>
-                  <span>{{ studentProfile.subjectMastery.english }}%</span>
+              <div class="bg-teal-50/60 rounded-xl p-2.5 border border-teal-200">
+                <div class="flex justify-between text-[11px] text-teal-900 font-black mb-1">
+                  <span>⚪ 五子连珠度</span>
+                  <span>{{ studentProfile.subjectMastery.gomoku }}%</span>
                 </div>
-                <div class="w-full bg-purple-200 h-1.5 rounded-full overflow-hidden">
-                  <div class="bg-purple-500 h-full rounded-full" :style="{ width: studentProfile.subjectMastery.english + '%' }"></div>
-                </div>
-              </div>
-
-              <div class="bg-emerald-50/60 rounded-xl p-2.5 border border-emerald-200">
-                <div class="flex justify-between text-[11px] text-emerald-900 font-black mb-1">
-                  <span>♟️ 围棋视野度</span>
-                  <span>{{ studentProfile.subjectMastery.go }}%</span>
-                </div>
-                <div class="w-full bg-emerald-200 h-1.5 rounded-full overflow-hidden">
-                  <div class="bg-emerald-500 h-full rounded-full" :style="{ width: studentProfile.subjectMastery.go + '%' }"></div>
+                <div class="w-full bg-teal-200 h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-teal-500 h-full rounded-full" :style="{ width: studentProfile.subjectMastery.gomoku + '%' }"></div>
                 </div>
               </div>
             </div>
@@ -654,50 +604,8 @@ const confirmReset = async () => {
           </div>
         </div>
 
-        <!-- 4 Subjects Quick Filter Badges & Summary -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div
-            @click="goToMistakes('math')"
-            class="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition cursor-pointer flex items-center justify-between group"
-          >
-            <div class="flex items-center gap-2">
-              <span class="text-xl group-hover:scale-110 transition-transform">🔢</span>
-              <div>
-                <div class="text-xs font-black text-blue-900">数学错题</div>
-                <div class="text-[10px] text-blue-600 font-bold">进退位与口算</div>
-              </div>
-            </div>
-            <span class="text-base font-black text-blue-700">{{ mistakesBySubject.math }} 道</span>
-          </div>
-
-          <div
-            @click="goToMistakes('chinese')"
-            class="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-100 hover:border-amber-300 hover:bg-amber-50 transition cursor-pointer flex items-center justify-between group"
-          >
-            <div class="flex items-center gap-2">
-              <span class="text-xl group-hover:scale-110 transition-transform">🏮</span>
-              <div>
-                <div class="text-xs font-black text-amber-900">语文错题</div>
-                <div class="text-[10px] text-amber-600 font-bold">生字、拼音与成语</div>
-              </div>
-            </div>
-            <span class="text-base font-black text-amber-700">{{ mistakesBySubject.chinese }} 道</span>
-          </div>
-
-          <div
-            @click="goToMistakes('english')"
-            class="p-3.5 rounded-2xl bg-purple-50/70 border border-purple-100 hover:border-purple-300 hover:bg-purple-50 transition cursor-pointer flex items-center justify-between group"
-          >
-            <div class="flex items-center gap-2">
-              <span class="text-xl group-hover:scale-110 transition-transform">🔤</span>
-              <div>
-                <div class="text-xs font-black text-purple-900">英语错题</div>
-                <div class="text-[10px] text-purple-600 font-bold">词汇拼写与口语</div>
-              </div>
-            </div>
-            <span class="text-base font-black text-purple-700">{{ mistakesBySubject.english }} 道</span>
-          </div>
-
+        <!-- 3 Games Quick Filter Badges & Summary -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div
             @click="goToMistakes('go')"
             class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-100 hover:border-emerald-300 hover:bg-emerald-50 transition cursor-pointer flex items-center justify-between group"
@@ -705,11 +613,39 @@ const confirmReset = async () => {
             <div class="flex items-center gap-2">
               <span class="text-xl group-hover:scale-110 transition-transform">♟️</span>
               <div>
-                <div class="text-xs font-black text-emerald-900">围棋错题</div>
-                <div class="text-[10px] text-emerald-600 font-bold">死活与手筋弱点</div>
+                <div class="text-xs font-black text-emerald-900">围棋死活</div>
+                <div class="text-[10px] text-emerald-600 font-bold">做活与手筋弱点</div>
               </div>
             </div>
             <span class="text-base font-black text-emerald-700">{{ mistakesBySubject.go }} 道</span>
+          </div>
+
+          <div
+            @click="goToMistakes('checkers')"
+            class="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-100 hover:border-amber-300 hover:bg-amber-50 transition cursor-pointer flex items-center justify-between group"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-xl group-hover:scale-110 transition-transform">⭐</span>
+              <div>
+                <div class="text-xs font-black text-amber-900">跳棋对决</div>
+                <div class="text-[10px] text-amber-600 font-bold">连环跳步法</div>
+              </div>
+            </div>
+            <span class="text-base font-black text-amber-700">{{ mistakesBySubject.checkers }} 道</span>
+          </div>
+
+          <div
+            @click="goToMistakes('gomoku')"
+            class="p-3.5 rounded-2xl bg-teal-50/70 border border-teal-100 hover:border-teal-300 hover:bg-teal-50 transition cursor-pointer flex items-center justify-between group"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-xl group-hover:scale-110 transition-transform">⚪</span>
+              <div>
+                <div class="text-xs font-black text-teal-900">五子连珠</div>
+                <div class="text-[10px] text-teal-600 font-bold">攻防关键点</div>
+              </div>
+            </div>
+            <span class="text-base font-black text-teal-700">{{ mistakesBySubject.gomoku }} 道</span>
           </div>
         </div>
 
@@ -1116,65 +1052,8 @@ const confirmReset = async () => {
       <div v-if="userStore.hasProfile" class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-orange-100 shadow-sm space-y-6">
         <h2 class="text-xl font-cartoon font-bold text-gray-900 tracking-wide">个性化设置与多档案管理</h2>
 
-        <!-- Theme Selection -->
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="text-xs font-black text-gray-500 uppercase tracking-wide">
-              已解锁的棋盘皮肤
-            </div>
-            <button
-              @click="goToShop"
-              class="text-xs font-black flex items-center gap-1 cursor-pointer"
-              :class="unlockStore.isFeatureUnlocked('shop') ? 'text-orange-600 hover:text-orange-700' : 'text-gray-400 hover:text-orange-600'"
-            >
-              <span>前往商城解锁更多皮肤</span>
-              <ArrowRight class="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div
-              v-for="t in SHOP_THEMES"
-              :key="t.id"
-              @click="userStore.unlockedThemes.includes(t.id) || t.id === 'wood' ? userStore.setTheme(t.id) : goToShop()"
-              class="p-3.5 rounded-2xl border-2 text-center transition cursor-pointer relative flex flex-col justify-between"
-              :class="
-                userStore.theme === t.id
-                  ? 'border-orange-500 ring-2 ring-orange-300 shadow-sm bg-orange-50/40 font-black'
-                  : (userStore.unlockedThemes.includes(t.id) || t.id === 'wood')
-                  ? 'border-emerald-200 hover:border-emerald-400 bg-white'
-                  : 'border-gray-100 bg-gray-50/80 opacity-70 hover:opacity-100'
-              "
-            >
-              <div class="text-3xl mb-1">{{ t.icon }}</div>
-              <div class="text-xs font-bold text-gray-900 truncate">{{ t.name }}</div>
-
-              <div class="mt-2 pt-1 border-t border-gray-100">
-                <span
-                  v-if="userStore.theme === t.id"
-                  class="text-[10px] text-orange-600 font-black"
-                >
-                  ✓ 使用中
-                </span>
-                <span
-                  v-else-if="userStore.unlockedThemes.includes(t.id) || t.id === 'wood'"
-                  class="text-[10px] text-emerald-700 font-bold"
-                >
-                  点击换上
-                </span>
-                <span
-                  v-else
-                  class="text-[10px] text-amber-700 font-bold flex items-center justify-center gap-0.5"
-                >
-                  <Lock class="w-3 h-3" /> {{ t.price }}币
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Data Export & Reset -->
-        <div class="pt-4 border-t border-gray-100 flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-3">
           <button
             @click="exportData"
             class="px-4 py-2.5 rounded-2xl border text-xs font-black flex items-center gap-2 transition active:scale-95 cursor-pointer bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900"
@@ -1204,6 +1083,12 @@ const confirmReset = async () => {
     />
   </div>
 </template>
+
+
+
+
+
+
 
 
 

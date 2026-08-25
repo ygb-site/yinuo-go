@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# 环境变量：即使当前只放公开的 anon key，也必须隔离，避免日后写入真实密钥时被自动提交
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

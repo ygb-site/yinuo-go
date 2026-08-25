@@ -3,7 +3,6 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { GO_RHYMES_DATA, type GoRhymeCard } from '../data/rhymesData';
 import { GoGame } from '../engine/GoGame';
-import { useUserStore } from '../stores/useUserStore';
 import { playButtonSound } from '../lib/audio';
 import GoBoard from '../components/board/GoBoard.vue';
 import SpeechBubble from '../components/common/SpeechBubble.vue';
@@ -15,7 +14,6 @@ import {
 } from 'lucide-vue-next';
 
 const router = useRouter();
-const userStore = useUserStore();
 
 const goBack = () => {
   playButtonSound();
@@ -145,7 +143,6 @@ const selectCard = (card: GoRhymeCard) => {
               :readonly="true"
               :showLiberties="true"
               :showAtari="true"
-              :theme="userStore.theme"
               :highlightPoints="currentCard.highlight"
               :sizePx="460"
             />
