@@ -59,14 +59,14 @@ const isTouchConfirmActive = computed(() => {
 });
 
 const boardVersion = ref(0);
-const size = computed(() => props.game?.size || 9);
+const size = computed(() => activeGame.value.size || 9);
 
 // 100% Guaranteed Reactive Stone List calculation
 const renderedStones = computed(() => {
   void boardVersion.value;
   void props.lastMove;
-  void props.game?.version;
-  void props.game?.history?.length;
+  void activeGame.value.version;
+  void activeGame.value.history?.length;
   const s = size.value;
   const list: { r: number; c: number; color: StoneColor }[] = [];
   if (!activeGame.value) return list;
@@ -84,7 +84,7 @@ const renderedStones = computed(() => {
 
 // Watch for any external game mutations, moves, passes, resets
 watch(
-  () => [activeGame.value, props.game?.version, props.lastMove, props.game?.history?.length, props.editMode],
+  () => [activeGame.value, activeGame.value.version, props.lastMove, activeGame.value.history?.length, props.editMode],
   () => {
     boardVersion.value++;
   },
@@ -139,7 +139,7 @@ const libertiesMap = computed(() => {
   const map = new Map<string, number>();
   if (!props.showLiberties || !activeGame.value) return map;
   void boardVersion.value;
-  void props.game?.version;
+  void activeGame.value.version;
   const groups = activeGame.value.getAllGroups();
   for (const g of groups) {
     for (const st of g.stones) {
@@ -154,7 +154,7 @@ const atariAlertPoints = computed<Set<string>>(() => {
   const set = new Set<string>();
   if (!props.showAtari || !activeGame.value) return set;
   void boardVersion.value;
-  void props.game?.version;
+  void activeGame.value.version;
   const ataris = activeGame.value.checkAtari();
   for (const at of ataris) {
     for (const st of at.group.stones) {
@@ -192,7 +192,7 @@ const isLastMovePoint = (r: number, c: number) => {
   if (props.lastMove) {
     return props.lastMove.r === r && props.lastMove.c === c;
   }
-  const hist = props.game?.history;
+  const hist = activeGame.value.history;
   if (hist && hist.length > 0) {
     const last = hist[hist.length - 1];
     return last.point !== null && last.point.r === r && last.point.c === c;
@@ -635,8 +635,8 @@ const coordFontSize = computed(() => {
           v-if="
             !readonly &&
             hoverPoint &&
-            game?.getCell(hoverPoint.r, hoverPoint.c) === null &&
-            game?.isLegalMove(hoverPoint.r, hoverPoint.c, game.turn).legal
+            activeGame?.getCell(hoverPoint.r, hoverPoint.c) === null &&
+            activeGame?.isLegalMove(hoverPoint.r, hoverPoint.c, activeGame.turn).legal
           "
           :transform="'translate(' + (hoverPoint.c * 100 + 50) + ', ' + (hoverPoint.r * 100 + 50) + ')'"
           opacity="0.6"
@@ -646,7 +646,7 @@ const coordFontSize = computed(() => {
             cx="0"
             cy="0"
             r="43"
-            :fill="game.turn === 'B' ? '#1E293B' : '#FFFFFF'"
+            :fill="activeGame.turn === 'B' ? '#1E293B' : '#FFFFFF'"
             stroke="#F59E0B"
             stroke-width="3"
             stroke-dasharray="6,4"

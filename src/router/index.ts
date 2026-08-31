@@ -9,6 +9,7 @@ import { sound } from '../utils/sound';
 import { showAlert } from '../utils/alert';
 
 const HomeView = () => import('../views/HomeView.vue');
+const ScheduleView = () => import('../views/ScheduleView.vue');
 const GoHubView = () => import('../views/GoHubView.vue');
 const MatchCreateView = () => import('../views/MatchCreateView.vue');
 const ProfileView = () => import('../views/ProfileView.vue');
@@ -34,6 +35,12 @@ const routes: RouteRecordRaw[] = [
     name: 'home',
     component: HomeView,
     meta: { mode: 'child', section: 'today', title: '今天', label: '一诺未来学堂' }
+  },
+  {
+    path: '/schedule',
+    name: 'schedule',
+    component: ScheduleView,
+    meta: { mode: 'child', section: 'schedule', title: '课程表', label: '一年级课程表' }
   },
   {
     path: '/learn',

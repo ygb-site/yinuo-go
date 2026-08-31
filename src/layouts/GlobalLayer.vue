@@ -8,7 +8,6 @@ import ProfileSwitcherModal from '../components/common/ProfileSwitcherModal.vue'
 import UnlockCelebrationModal from '../components/common/UnlockCelebrationModal.vue';
 import AiTutorFloatModal from '../components/common/AiTutorFloatModal.vue';
 import { useUserStore } from '../stores/useUserStore';
-import FontStudioModal from '../components/common/FontStudioModal.vue';
 
 const route = useRoute();
 const userStore = useUserStore();
@@ -43,9 +42,6 @@ const showAiTutor = computed(() => {
 
     <!-- Global Cartoon Alert / Confirm Modal -->
     <CartoonAlertModal />
-
-    <!-- Global Font Studio & Layout Center Modal -->
-    <FontStudioModal />
   </div>
 </template>
 

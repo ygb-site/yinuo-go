@@ -105,6 +105,14 @@ export interface ChildProfile {
   rewardLedger?: Record<string, number>;
   /** 每日封顶计数：`<capId>:<yyyy-mm-dd>` -> 当日已发放次数 */
   rewardDailyCounters?: Record<string, number>;
+  /** 一年级课程表（随档案上云，多端一致） */
+  schedule?: {
+    grid: Record<string, string>;
+    schoolName: string;
+    className: string;
+    studentName?: string;
+    version?: string;
+  };
   stats: {
     gamesPlayed: number;
     gamesWon: number;
@@ -727,6 +735,7 @@ export const useUserStore = defineStore('userStore', {
         starLog: [],
         rewardLedger: {},
         rewardDailyCounters: {},
+        schedule: undefined,
         stats: {
           gamesPlayed: 0,
           gamesWon: 0,

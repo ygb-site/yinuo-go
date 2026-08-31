@@ -3,7 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { TSUMEGO_PUZZLES, type TsumegoPuzzle } from '../data/tsumegoLibrary';
 import { GoBoard } from '../engine/GoBoard';
-import type { Point } from '../engine/types';
+import type { Point, StoneColor } from '../engine/types';
 import { useTsumegoStore } from '../stores/tsumegoStore';
 import { useUserStore } from '../stores/useUserStore';
 import { sound } from '../utils/sound';
@@ -135,6 +135,19 @@ const nextPuzzle = () => {
   }
 };
 
+const isSamePoint = (a: Point, b: Point) => a.r === b.r && a.c === b.c;
+
+const playVerifiedMove = (r: number, c: number, color: StoneColor) => {
+  const moveRes = board.value.playMove(r, c, color);
+  if (!moveRes.success) {
+    return moveRes;
+  }
+  sound.playStoneSound();
+  if (moveRes.capturedStones.length > 0) sound.playCaptureSound();
+  lastMove.value = { r, c };
+  return moveRes;
+};
+
 const handlePlay = (point: Point) => {
   if (!userStore.hasProfile) {
     userStore.openProfileModal();
@@ -146,68 +159,81 @@ const handlePlay = (point: Point) => {
   const p = currentPuzzle.value;
   const { r, c } = point;
 
-  // Check branch response if applicable (Step 2)
   if (waitingForNextStep.value && p.botBranchMoves) {
-    if (point.r === p.botBranchMoves.nextValidMove.r && point.c === p.botBranchMoves.nextValidMove.c) {
-      const moveRes = board.value.playMove(r, c, p.playerColor);
-      sound.playStoneSound();
-      if (moveRes.capturedStones.length > 0) sound.playCaptureSound();
-      lastMove.value = point;
-      triggerPuzzleSolve(p.botBranchMoves.winComment);
-      return;
-    } else {
+    if (!isSamePoint(point, p.botBranchMoves.nextValidMove)) {
       sound.playErrorSound();
       mascotMood.value = 'comforting';
-      mascotMessage.value = '差一点点，注意白棋的反扑方向！';
+      mascotMessage.value = '差一点点，点回刚才那个诱饵点，把白棋一口气提掉！';
       return;
     }
+
+    const recapRes = playVerifiedMove(r, c, p.playerColor);
+    if (!recapRes.success) {
+      sound.playErrorSound();
+      mascotMood.value = 'comforting';
+      mascotMessage.value = recapRes.errorReason || '这步按规则落不下去，再看一看气。';
+      return;
+    }
+    highlightPoints.value = [];
+    triggerPuzzleSolve(p.botBranchMoves.winComment);
+    return;
   }
 
-  // First move check
-  const isCorrect = p.correctMoves.some(cm => cm.r === r && cm.c === c);
-
-  if (isCorrect) {
-    const moveRes = board.value.playMove(r, c, p.playerColor);
-    sound.playStoneSound();
-    if (moveRes.capturedStones.length > 0) sound.playCaptureSound();
-    lastMove.value = point;
-    highlightPoints.value = [];
-
-    // Bot response branch?
-    if (p.botBranchMoves) {
-      isBotThinking.value = true;
-      mascotMood.value = 'thinking';
-      mascotMessage.value = '白棋正在思考如何反扑...';
-
-      setTimeout(() => {
-        if (p.botBranchMoves) {
-          board.value.playMove(
-            p.botBranchMoves.botMove.r,
-            p.botBranchMoves.botMove.c,
-            board.value.getOpponentColor(p.playerColor)
-          );
-          sound.playStoneSound();
-          lastMove.value = p.botBranchMoves.botMove;
-          mascotMood.value = 'excited';
-          mascotMessage.value = p.botBranchMoves.botComment;
-          waitingForNextStep.value = true;
-        }
-        isBotThinking.value = false;
-      }, 500);
-      return;
-    }
-
-    triggerPuzzleSolve();
-  } else {
+  const isCorrect = p.correctMoves.some(cm => isSamePoint(cm, point));
+  if (!isCorrect) {
     sound.playErrorSound();
     userStore.recordMistake(p.id);
     mascotMood.value = 'comforting';
     mascotMessage.value = `这步棋没有击中要害哦！提示：${p.hint}`;
+    return;
   }
+
+  const moveRes = playVerifiedMove(r, c, p.playerColor);
+  if (!moveRes.success) {
+    sound.playErrorSound();
+    mascotMood.value = 'comforting';
+    mascotMessage.value = moveRes.errorReason || '这步按规则落不下去，换个交叉点试试。';
+    return;
+  }
+  highlightPoints.value = [];
+
+  if (!p.botBranchMoves) {
+    triggerPuzzleSolve();
+    return;
+  }
+
+  isBotThinking.value = true;
+  mascotMood.value = 'thinking';
+  mascotMessage.value = '白棋正在思考如何应对...';
+
+  setTimeout(() => {
+    const branch = p.botBranchMoves;
+    if (!branch) {
+      isBotThinking.value = false;
+      triggerPuzzleSolve();
+      return;
+    }
+
+    const botColor = board.value.getOpponentColor(p.playerColor);
+    const botRes = playVerifiedMove(branch.botMove.r, branch.botMove.c, botColor);
+    isBotThinking.value = false;
+
+    if (!botRes.success) {
+      triggerPuzzleSolve(branch.winComment);
+      return;
+    }
+
+    mascotMood.value = 'excited';
+    mascotMessage.value = branch.botComment;
+    highlightPoints.value = [branch.nextValidMove];
+    waitingForNextStep.value = true;
+  }, 500);
 };
 
 const triggerPuzzleSolve = (customWinMsg?: string) => {
   isSolved.value = true;
+  waitingForNextStep.value = false;
+  highlightPoints.value = [];
   mascotMood.value = 'cheering';
   mascotMessage.value = customWinMsg || '🎉 恭喜！完美解答这道死活题！点击下方名师解析查看精要！';
   tsumegoStore.solvePuzzle(currentPuzzle.value.id);
@@ -223,6 +249,12 @@ const handleHint = () => {
   sound.playHintSound();
   sound.fireMiniSparkles();
   mascotMood.value = 'excited';
+  const branch = currentPuzzle.value.botBranchMoves;
+  if (waitingForNextStep.value && branch) {
+    mascotMessage.value = '白棋已经提走诱饵，现在点回闪烁的交叉点反提！';
+    highlightPoints.value = [branch.nextValidMove];
+    return;
+  }
   mascotMessage.value = `【小诺提示】${currentPuzzle.value.hint}`;
   highlightPoints.value = [...currentPuzzle.value.correctMoves];
 };
@@ -508,15 +540,14 @@ const toggleFavorite = () => {
 
             <!-- GoBoard -->
             <GoBoardComponent
-              :board="board"
-              :playerColor="currentPuzzle.playerColor"
+              :game="board"
               :lastMove="lastMove"
               :highlightPoints="highlightPoints"
               :showLiberties="userStore.showLibertiesOverlay"
               :showAtari="userStore.showAtariAlerts"
               :manualMove="true"
               :sizePx="440"
-              :disabled="isSolved || isBotThinking"
+              :readonly="isSolved || isBotThinking"
               @play="handlePlay"
             />
 

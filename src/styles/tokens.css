@@ -39,9 +39,9 @@
   --color-growth: #22995D;
   --color-challenge: #704FD0;
 
-  /* 2. 字体族 (Typography) */
-  --font-sans: 'ZCOOL KuaiLe', 'Fredoka', 'Quicksand', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
-  --font-display: 'ZCOOL KuaiLe', 'Fredoka', 'Quicksand', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  /* 2. 字体族 (Typography) — 全站固定思源典雅宋体 */
+  --font-sans: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif;
+  --font-display: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Monaco, Consolas, monospace;
 
   /* 3. 间距标尺 (Spacing Scale - 4px Grid) */

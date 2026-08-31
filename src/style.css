@@ -1,16 +1,17 @@
 @import './styles/tokens.css';
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&family=Quicksand:wght@500;600;700;800&family=ZCOOL+KuaiLe&family=ZCOOL+QingKe+HuangYou&family=Ma+Shan+Zheng&family=Liu+Jian+Mao+Cao&family=Long+Cang&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@500;700;900&display=swap');
-@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css');
-@import url('https://cdn.jsdelivr.net/npm/smiley-sans@1.1.1/smiley-sans.css');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&family=Quicksand:wght@500;600;700;800&family=Noto+Serif+SC:wght@400;500;700;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* 全站固定：思源典雅宋体 + 标准字号 + 开阔透气字距 */
 :root {
-  --font-global: "Nunito", "Quicksand", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "YouYuan", sans-serif;
+  --font-global: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
+  --font-display: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
+  --font-sans: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
   --font-base-size: 16px;
-  --font-global-spacing: 0.02em;
+  --font-global-spacing: 0.025em;
 }
 
 @layer base {

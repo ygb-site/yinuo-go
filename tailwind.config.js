@@ -113,10 +113,10 @@ export default {
         loading: 'var(--z-loading)',
       },
       fontFamily: {
-        sans: ['"ZCOOL KuaiLe"', '"Fredoka"', '"Quicksand"', '"PingFang SC"', '"Hiragino Sans GB"', '"Microsoft YaHei"', 'system-ui', 'sans-serif'],
-        display: ['"ZCOOL KuaiLe"', '"Fredoka"', '"Quicksand"', '"PingFang SC"', '"Hiragino Sans GB"', '"Microsoft YaHei"', 'sans-serif'],
-        cartoon: ['"ZCOOL KuaiLe"', '"Fredoka"', '"Quicksand"', '"PingFang SC"', '"Hiragino Sans GB"', '"Microsoft YaHei"', 'sans-serif'],
-        comic: ['"ZCOOL KuaiLe"', '"Fredoka"', '"Quicksand"', '"Comic Sans MS"', '"PingFang SC"', 'sans-serif'],
+        sans: ['"Noto Serif SC"', '"Source Han Serif SC"', '"Songti SC"', '"SimSun"', 'serif'],
+        display: ['"Noto Serif SC"', '"Source Han Serif SC"', '"Songti SC"', '"SimSun"', 'serif'],
+        cartoon: ['"Noto Serif SC"', '"Source Han Serif SC"', '"Songti SC"', '"SimSun"', 'serif'],
+        comic: ['"Noto Serif SC"', '"Source Han Serif SC"', '"Songti SC"', '"SimSun"', 'serif'],
         mono: ['ui-monospace', '"SF Mono"', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
       animation: {

@@ -26,6 +26,17 @@ export const MODULE_INVENTORY: ModuleInventoryItem[] = [
     suggestDelete: false
   },
   {
+    id: 'schedule',
+    name: '课程表',
+    kind: 'page',
+    path: '/schedule',
+    file: 'src/views/ScheduleView.vue',
+    reachable: true,
+    entries: ['桌面侧栏', '手机/平板底栏'],
+    note: '一年级课表：点格子自选科目，本地保存。',
+    suggestDelete: false
+  },
+  {
     id: 'learn',
     name: '少儿围棋',
     kind: 'page',
@@ -199,16 +210,6 @@ export const MODULE_INVENTORY: ModuleInventoryItem[] = [
     reachable: true,
     entries: ['成长档案（仅管理员账号）'],
     note: '需登录且 isAdmin。',
-    suggestDelete: false
-  },
-  {
-    id: 'font-studio',
-    name: '字体中心',
-    kind: 'overlay',
-    file: 'src/components/common/FontStudioModal.vue',
-    reachable: true,
-    entries: ['顶栏「字体」', '桌面侧栏底部'],
-    note: '弹层，不是独立路由。',
     suggestDelete: false
   },
   {

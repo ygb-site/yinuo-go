@@ -2,22 +2,22 @@
 import { computed, nextTick, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '../stores/useUserStore';
-import { useFontStore } from '../stores/useFontStore';
+import { useScheduleStore } from '../stores/useScheduleStore';
 import {
   AppIcon,
   type IconName
 } from '../design-system';
 import Footer from '../components/Footer.vue';
 import UserMenuDropdown from '../components/common/UserMenuDropdown.vue';
-import { ShieldCheck, Type } from 'lucide-vue-next';
+import { ShieldCheck } from 'lucide-vue-next';
 
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
-const fontStore = useFontStore();
+const scheduleStore = useScheduleStore();
 
 interface NavTab {
-  id: 'today' | 'learn' | 'play' | 'me' | 'lab';
+  id: 'today' | 'schedule' | 'learn' | 'play' | 'me' | 'lab';
   label: string;
   shortLabel: string;
   path: string;
@@ -28,6 +28,7 @@ interface NavTab {
 
 const navTabs: NavTab[] = [
   { id: 'today', label: '今天', shortLabel: '今天', path: '/', icon: 'compass' },
+  { id: 'schedule', label: '课程表', shortLabel: '课表', path: '/schedule', icon: 'calendar', badge: '一年级' },
   { id: 'learn', label: '少儿围棋', shortLabel: '围棋', path: '/learn', icon: 'book', badge: '核心' },
   { id: 'play', label: '创建对局', shortLabel: '对局', path: '/match', icon: 'gamepad', badge: '热门' },
   { id: 'me', label: '成长档案', shortLabel: '我的', path: '/profile', icon: 'growth' },
@@ -43,6 +44,7 @@ const currentSection = computed(() => {
   }
   const path = route.path;
   if (path === '/') return 'today';
+  if (path.startsWith('/schedule')) return 'schedule';
   if (path.startsWith('/learn') || path.startsWith('/adventure') || path.startsWith('/lesson')) return 'learn';
   if (path.startsWith('/match') || path.startsWith('/puzzle') || path.startsWith('/checkers') || path.startsWith('/gomoku') || path.startsWith('/two-player')) return 'play';
   if (path.startsWith('/profile') || path.startsWith('/shop') || path.startsWith('/mistakes')) return 'me';
@@ -51,11 +53,12 @@ const currentSection = computed(() => {
 });
 
 const isTopLevelTab = computed(() => {
-  return ['/', '/learn', '/match', '/puzzle', '/profile', '/modules'].includes(route.path);
+  return ['/', '/schedule', '/learn', '/match', '/puzzle', '/profile', '/modules'].includes(route.path);
 });
 
 const pageTitle = computed(() => {
   if (route.path === '/') return '学堂大厅';
+  if (route.path.startsWith('/schedule')) return `${scheduleStore.displayStudentName}的课程表`;
   if (route.path.startsWith('/learn')) return '少儿围棋天地';
   if (route.path.startsWith('/match') || route.path.startsWith('/puzzle')) return '创建对局中心';
   if (route.path.startsWith('/profile')) return '成长中心';
@@ -79,10 +82,6 @@ const handleBack = () => {
 
 const goToParentDashboard = () => {
   router.push('/parent-dashboard');
-};
-
-const openFontStudio = () => {
-  fontStore.openModal();
 };
 
 const mainScrollRef = ref<HTMLElement | null>(null);
@@ -144,23 +143,8 @@ watch(
           </nav>
         </div>
 
-        <!-- Bottom Sidebar: Font Center & Parent Gate -->
+        <!-- Bottom Sidebar: 家长入口 -->
         <div class="pt-4 border-t border-slate-100 space-y-2.5">
-          <!-- Font Studio Trigger -->
-          <button
-            type="button"
-            class="w-full flex items-center justify-between px-3 lg:px-3.5 py-2.5 rounded-2xl text-xs font-bold text-amber-900 bg-amber-50/80 hover:bg-amber-100 border border-amber-200 hover:border-amber-300 transition-all cursor-pointer shadow-2xs"
-            @click="openFontStudio"
-            title="选择页面字体与大小排版"
-          >
-            <div class="flex items-center gap-2">
-              <Type class="w-4 h-4 text-amber-600 shrink-0" />
-              <span>字体中心 (换字体)</span>
-            </div>
-            <span class="text-amber-500 text-[10px] bg-white px-1.5 py-0.5 rounded-md border border-amber-200 font-bold">Aa</span>
-          </button>
-
-          <!-- Parent Gate -->
           <button
             type="button"
             class="w-full flex items-center justify-between px-3 lg:px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-700 bg-slate-50 hover:bg-amber-50 hover:text-amber-900 border border-slate-200/80 hover:border-amber-300 transition-all cursor-pointer shadow-2xs"
@@ -199,19 +183,8 @@ watch(
             </h1>
           </div>
 
-          <!-- Right: Font Studio, Coins, Stars, Profile Avatar -->
+          <!-- Right: Coins, Stars, Profile Avatar -->
           <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-            <!-- Quick Font Switcher Button -->
-            <button
-              type="button"
-              class="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-amber-100/70 hover:bg-amber-200 text-amber-900 border border-amber-300/80 rounded-full text-xs font-bold shadow-2xs transition active:scale-95 cursor-pointer"
-              @click="openFontStudio"
-              title="切换字体与字号"
-            >
-              <Type class="w-3.5 h-3.5 text-amber-700 shrink-0" />
-              <span>字体</span>
-            </button>
-
             <!-- Coins Pill -->
             <div class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200/90 rounded-full text-xs font-black text-amber-900 shadow-2xs">
               <span>🪙</span>
