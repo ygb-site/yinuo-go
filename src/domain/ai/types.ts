@@ -45,6 +45,11 @@ export interface GuardContext {
 
 export type SpeakableText = string & { readonly __speakable: unique symbol };
 
+export interface DualAudienceOutput {
+  child: string;
+  parent: string;
+}
+
 export interface TutorContext {
   domain: { id: DomainId; name: string };
   currentNode?: { id: LearningNodeId; title: string; kind: LearningNodeKind };

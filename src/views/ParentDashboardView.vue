@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore, type ChildProfile } from '../stores/useUserStore';
 import { sound } from '../utils/sound';
@@ -31,6 +31,10 @@ import {
 import { buildAbilityProfile } from '../domain/ability/abilityEngine';
 import type { AbilityEvent, AbilityDimensionId } from '../domain/ability/types';
 import ParentGateScreen from '../components/parent/ParentGateScreen.vue';
+import SchoolHomeworkComposer from '../components/parent/SchoolHomeworkComposer.vue';
+import SchoolDualTrackPanel from '../components/parent/SchoolDualTrackPanel.vue';
+import SchoolSleepSettings from '../components/parent/SchoolSleepSettings.vue';
+import { useSchoolStore } from '../stores/useSchoolStore';
 import {
   Clock,
   Download,
@@ -40,6 +44,18 @@ import {
 
 const router = useRouter();
 const userStore = useUserStore();
+const schoolStore = useSchoolStore();
+
+onMounted(() => {
+  schoolStore.hydrateFromProfile();
+});
+
+watch(
+  () => userStore.currentProfileId,
+  () => {
+    schoolStore.hydrateFromProfile();
+  }
+);
 
 // Current student profile
 const profile = computed<ChildProfile>(() => userStore.currentProfile);
@@ -322,6 +338,10 @@ const handleImportArchive = (e: Event) => {
           </div>
         </AppCard>
       </AppSection>
+
+      <SchoolSleepSettings />
+      <SchoolHomeworkComposer />
+      <SchoolDualTrackPanel />
 
       <!-- Section 1: Weekly Story & Growth Highlights (结论先行) -->
       <AppSection title="本周学情结论与陪伴建议" icon="book-open" tone="learning">

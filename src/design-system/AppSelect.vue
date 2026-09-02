@@ -33,6 +33,8 @@ const isOpen = ref(false);
 const rootRef = ref<HTMLElement | null>(null);
 const listRef = ref<HTMLElement | null>(null);
 const highlightedIndex = ref(0);
+/** Teleport 到 body 后用 fixed 定位，避免被 AppCard / 滚动容器裁切 */
+const menuStyle = ref<Record<string, string>>({});
 
 const selectedOption = computed(() => {
   return props.options.find((opt) => opt.value === props.modelValue) || props.options[0];
@@ -67,6 +69,31 @@ const close = () => {
   isOpen.value = false;
 };
 
+const updateMenuPosition = () => {
+  const trigger = rootRef.value;
+  if (!trigger) return;
+
+  const rect = trigger.getBoundingClientRect();
+  const gap = 6;
+  const maxPanel = 256;
+  const spaceBelow = window.innerHeight - rect.bottom - gap - 8;
+  const spaceAbove = rect.top - gap - 8;
+  const openUp = spaceBelow < 160 && spaceAbove > spaceBelow;
+  const available = Math.max(120, openUp ? spaceAbove : spaceBelow);
+  const maxHeight = Math.min(maxPanel, available);
+
+  menuStyle.value = {
+    position: 'fixed',
+    left: `${Math.max(8, rect.left)}px`,
+    width: `${Math.max(120, rect.width)}px`,
+    maxHeight: `${maxHeight}px`,
+    zIndex: '500',
+    ...(openUp
+      ? { bottom: `${window.innerHeight - rect.top + gap}px`, top: 'auto' }
+      : { top: `${rect.bottom + gap}px`, bottom: 'auto' })
+  };
+};
+
 const toggle = () => {
   if (props.disabled) return;
   isOpen.value = !isOpen.value;
@@ -95,10 +122,15 @@ const moveHighlight = (delta: number) => {
 };
 
 const onDocPointerDown = (event: PointerEvent) => {
-  if (!rootRef.value) return;
-  if (!rootRef.value.contains(event.target as Node)) {
-    close();
-  }
+  const target = event.target as Node;
+  if (rootRef.value?.contains(target)) return;
+  if (listRef.value?.contains(target)) return;
+  close();
+};
+
+const onViewportChange = () => {
+  if (!isOpen.value) return;
+  updateMenuPosition();
 };
 
 const onTriggerKeydown = (event: KeyboardEvent) => {
@@ -144,17 +176,23 @@ const onTriggerKeydown = (event: KeyboardEvent) => {
 watch(isOpen, async (open) => {
   if (!open) return;
   syncHighlight();
+  updateMenuPosition();
   await nextTick();
+  updateMenuPosition();
   const el = listRef.value?.querySelector(`[data-select-idx="${highlightedIndex.value}"]`) as HTMLElement | null;
   el?.scrollIntoView({ block: 'nearest' });
 });
 
 onMounted(() => {
   document.addEventListener('pointerdown', onDocPointerDown);
+  window.addEventListener('resize', onViewportChange);
+  window.addEventListener('scroll', onViewportChange, true);
 });
 
 onUnmounted(() => {
   document.removeEventListener('pointerdown', onDocPointerDown);
+  window.removeEventListener('resize', onViewportChange);
+  window.removeEventListener('scroll', onViewportChange, true);
 });
 </script>
 
@@ -194,37 +232,40 @@ onUnmounted(() => {
       />
     </button>
 
-    <ul
-      v-if="isOpen"
-      ref="listRef"
-      role="listbox"
-      class="absolute left-0 right-0 top-[calc(100%+6px)] z-10 max-h-64 overflow-y-auto rounded-2xl border-2 border-slate-200 bg-white p-1.5 shadow-e3"
-      :aria-labelledby="id"
-    >
-      <li
-        v-for="(opt, index) in options"
-        :key="String(opt.value)"
-        role="option"
-        :data-select-idx="index"
-        :aria-selected="opt.value === modelValue"
-        class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-bold cursor-pointer transition-colors"
-        :class="
-          opt.value === modelValue
-            ? 'bg-amber-50 text-amber-950'
-            : highlightedIndex === index
-              ? 'bg-slate-100 text-slate-900'
-              : 'text-slate-700 hover:bg-slate-50'
-        "
-        @pointerdown.prevent="selectOption(opt)"
-        @mouseenter="highlightedIndex = index"
+    <Teleport to="body">
+      <ul
+        v-if="isOpen"
+        ref="listRef"
+        role="listbox"
+        class="overflow-y-auto overscroll-contain rounded-2xl border-2 border-slate-200 bg-white p-1.5 shadow-e3"
+        :style="menuStyle"
+        :aria-labelledby="id"
       >
-        <span v-if="opt.icon" class="text-lg leading-none shrink-0" aria-hidden="true">{{ opt.icon }}</span>
-        <span class="truncate flex-1">{{ opt.label }}</span>
-        <Check
-          v-if="opt.value === modelValue"
-          class="w-4 h-4 text-amber-600 shrink-0"
-        />
-      </li>
-    </ul>
+        <li
+          v-for="(opt, index) in options"
+          :key="String(opt.value)"
+          role="option"
+          :data-select-idx="index"
+          :aria-selected="opt.value === modelValue"
+          class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-bold cursor-pointer transition-colors"
+          :class="
+            opt.value === modelValue
+              ? 'bg-amber-50 text-amber-950'
+              : highlightedIndex === index
+                ? 'bg-slate-100 text-slate-900'
+                : 'text-slate-700 hover:bg-slate-50'
+          "
+          @pointerdown.prevent="selectOption(opt)"
+          @mouseenter="highlightedIndex = index"
+        >
+          <span v-if="opt.icon" class="text-lg leading-none shrink-0" aria-hidden="true">{{ opt.icon }}</span>
+          <span class="truncate flex-1">{{ opt.label }}</span>
+          <Check
+            v-if="opt.value === modelValue"
+            class="w-4 h-4 text-amber-600 shrink-0"
+          />
+        </li>
+      </ul>
+    </Teleport>
   </div>
 </template>

@@ -16,6 +16,7 @@ import {
   type TrackRole
 } from '../domain/growth/tracks';
 import { resolveDayPlan, type DayPlanState } from '../domain/today/dayPlan';
+import { resolveSchoolLayer, type SchoolLayerState } from '../domain/school';
 import { defineStore } from 'pinia';
 import { USER_RANKS, type UserRank, BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
 import { KNOWLEDGE_POINTS_REPOSITORY } from '../data/knowledgePointsData';
@@ -98,6 +99,8 @@ export interface ChildProfile {
   togetherWeek?: TogetherWeekState;
   /** 儿童「今天」页当日勾选进度 */
   dayPlan?: DayPlanState;
+  /** 学校层：统编教材进度、校内作业、就寝时间。与城市轴 schoolTrack 字段分开 */
+  schoolLayer?: SchoolLayerState;
   progress: Record<string, { completed: boolean; stars: number; highscore?: number; completedAt?: string }>;
   totalStars: number;
   badges: string[];
@@ -163,6 +166,7 @@ const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
   trackRole: 'current',
   togetherWeek: undefined,
   dayPlan: undefined,
+  schoolLayer: undefined,
   progress: {},
   totalStars: 0,
   badges: [],
@@ -216,6 +220,29 @@ function applyGrowthDefaults(profile: ChildProfile): ChildProfile {
   const plan = resolveDayPlan(profile.dayPlan);
   if (!profile.dayPlan || profile.dayPlan.date !== plan.date) {
     profile.dayPlan = plan;
+  }
+
+  if (!profile.schoolLayer) {
+    profile.schoolLayer = resolveSchoolLayer(
+      null,
+      tracks.schoolTrack,
+      tracks.hometownTrack,
+      profile.gradeLevel
+    );
+  } else {
+    if (profile.schoolLayer.schoolTrack.city !== tracks.schoolTrack) {
+      profile.schoolLayer.schoolTrack.city = tracks.schoolTrack;
+    }
+    if (profile.schoolLayer.hometownTrack.city !== tracks.hometownTrack) {
+      profile.schoolLayer.hometownTrack.city = tracks.hometownTrack;
+    }
+    const grade = profile.gradeLevel || 'g1_t1';
+    if (profile.schoolLayer.schoolTrack.gradeLevel !== grade) {
+      profile.schoolLayer.schoolTrack.gradeLevel = grade;
+    }
+    if (profile.schoolLayer.hometownTrack.gradeLevel !== grade) {
+      profile.schoolLayer.hometownTrack.gradeLevel = grade;
+    }
   }
 
   return profile;
@@ -803,6 +830,12 @@ export const useUserStore = defineStore('userStore', {
         trackRole: resolvedTracks.trackRole,
         togetherWeek: resolveTogetherWeek(null),
         dayPlan: resolveDayPlan(null),
+        schoolLayer: resolveSchoolLayer(
+          null,
+          resolvedTracks.schoolTrack,
+          resolvedTracks.hometownTrack,
+          resolveGradeLevel(gradeLevel)
+        ),
         progress: {},
         totalStars: 0,
         badges: [],

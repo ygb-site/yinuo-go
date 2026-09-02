@@ -10,6 +10,7 @@ import {
   type TrackRole
 } from '../domain/growth/tracks';
 import { resolveDayPlan, type DayPlanState } from '../domain/today/dayPlan';
+import { resolveSchoolLayer, type SchoolLayerState } from '../domain/school';
 
 export interface ExportedArchiveData {
   schemaVersion: '1.0';
@@ -25,6 +26,7 @@ export interface ExportedArchiveData {
     trackRole?: TrackRole;
     togetherWeek?: TogetherWeekState;
     dayPlan?: DayPlanState;
+    schoolLayer?: SchoolLayerState;
     progress: Record<string, { completed: boolean; stars: number; highscore?: number; completedAt?: string }>;
     totalStars: number;
     badges: string[];
@@ -96,6 +98,12 @@ export function createSafeProfileArchive(profile: ChildProfile): ExportedArchive
       trackRole: tracks.trackRole,
       togetherWeek: resolveTogetherWeek(profile.togetherWeek),
       dayPlan: resolveDayPlan(profile.dayPlan),
+      schoolLayer: resolveSchoolLayer(
+        profile.schoolLayer,
+        tracks.schoolTrack,
+        tracks.hometownTrack,
+        profile.gradeLevel
+      ),
       progress: JSON.parse(JSON.stringify(profile.progress || {})),
       totalStars: Math.max(0, Number(profile.totalStars) || 0),
       badges: Array.isArray(profile.badges) ? profile.badges.map(b => sanitizeText(b, 50)).filter(Boolean) : [],
@@ -244,6 +252,12 @@ export function validateAndSanitizeArchive(rawJson: string, maxSizeBytes = 2 * 1
     trackRole: tracks.trackRole,
     togetherWeek: resolveTogetherWeek(source.togetherWeek),
     dayPlan: resolveDayPlan(source.dayPlan),
+    schoolLayer: resolveSchoolLayer(
+      source.schoolLayer,
+      tracks.schoolTrack,
+      tracks.hometownTrack,
+      gradeLevel
+    ),
     progress,
     totalStars: Math.max(0, Number(source.totalStars) || 0),
     badges: Array.isArray(source.badges) ? source.badges.map((b: any) => sanitizeText(b, 50)).filter(Boolean) : [],

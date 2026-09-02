@@ -21,8 +21,12 @@ const pageTitle = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-[#F8F9FC] text-slate-800 font-sans antialiased select-none">
-    <header class="sticky top-0 z-sticky bg-white/95 backdrop-blur-md border-b border-slate-200 h-16 px-4 md:px-8 flex items-center justify-between gap-4 shrink-0">
+  <!--
+    App.vue 根节点是 h-screen + overflow-hidden（给儿童壳内部滚动用）。
+    家长壳必须自带可滚主区，否则内容超出视口后整页无法滚动。
+  -->
+  <div class="h-screen overflow-hidden flex flex-col bg-[#F8F9FC] text-slate-800 font-sans antialiased select-none">
+    <header class="z-sticky bg-white/95 backdrop-blur-md border-b border-slate-200 h-16 px-4 md:px-8 flex items-center justify-between gap-4 shrink-0">
       <div class="flex items-center gap-4 min-w-0">
         <AppButton
           variant="secondary"
@@ -61,7 +65,7 @@ const pageTitle = computed(() => {
       </div>
     </header>
 
-    <nav class="sm:hidden bg-white border-b border-slate-200 px-4 py-2 flex gap-2" aria-label="家长空间">
+    <nav class="sm:hidden bg-white border-b border-slate-200 px-4 py-2 flex gap-2 shrink-0" aria-label="家长空间">
       <router-link
         v-for="item in parentNav"
         :key="item.path"
@@ -73,8 +77,10 @@ const pageTitle = computed(() => {
       </router-link>
     </nav>
 
-    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-8">
-      <slot />
+    <main class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+      <div class="max-w-6xl w-full mx-auto p-4 md:p-8 pb-16">
+        <slot />
+      </div>
     </main>
   </div>
 </template>
