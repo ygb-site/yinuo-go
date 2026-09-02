@@ -17,6 +17,7 @@ import {
   resolveHomeworkRecord,
   resolveSchoolLayer,
   type DailyHomeworkItem,
+  type DailyStudyTask,
   type DualTrackViewModel,
   type SchoolLayerState,
   type TextbookSubjectId
@@ -31,6 +32,24 @@ function cloneLayer(layer: SchoolLayerState): SchoolLayerState {
   return resolveSchoolLayer(JSON.parse(JSON.stringify(layer)) as SchoolLayerState);
 }
 
+/** 从 state 纯函数派生任务，避免 getter 里 this 互相引用被 vue-tsc -b 推错类型 */
+function buildTasksFromLayer(layer: SchoolLayerState): DailyStudyTask[] {
+  const userStore = useUserStore();
+  const tracks = resolveGrowthTracks(userStore.currentProfile);
+  const date = localDateKey();
+  const homeworkItems = resolveHomeworkRecord(layer.homeworkByDate[date], date).items;
+  const doneIds = layer.taskDoneByDate[date] || [];
+  const raw = buildSchoolTasks({
+    date,
+    homeworkItems,
+    schoolTrack: layer.schoolTrack,
+    doneIds,
+    tracks,
+    gradeLevel: userStore.currentProfile.gradeLevel
+  });
+  return applySleepShrink(raw, computeSleepBudget(layer.bedtimeMinutes));
+}
+
 export const useSchoolStore = defineStore('school', {
   state: () => ({
     layer: resolveSchoolLayer() as SchoolLayerState,
@@ -40,43 +59,44 @@ export const useSchoolStore = defineStore('school', {
     todayKey(): string {
       return localDateKey();
     },
-    todayHomework(): DailyHomeworkItem[] {
-      return resolveHomeworkRecord(this.layer.homeworkByDate[this.todayKey], this.todayKey).items;
+    todayHomework(state): DailyHomeworkItem[] {
+      const date = localDateKey();
+      return resolveHomeworkRecord(state.layer.homeworkByDate[date], date).items;
     },
-    todayDoneIds(): string[] {
-      return this.layer.taskDoneByDate[this.todayKey] || [];
+    todayDoneIds(state): string[] {
+      return state.layer.taskDoneByDate[localDateKey()] || [];
     },
-    dualTrack(): DualTrackViewModel {
+    dualTrack(state): DualTrackViewModel {
       const userStore = useUserStore();
       const tracks = resolveGrowthTracks(userStore.currentProfile);
       return buildDualTrackView(
-        this.layer.schoolTrack,
-        this.layer.hometownTrack,
+        state.layer.schoolTrack,
+        state.layer.hometownTrack,
         tracks,
         userStore.currentProfile.gradeLevel
       );
     },
-    generatedTasks() {
+    generatedTasks(state): DailyStudyTask[] {
+      return buildTasksFromLayer(state.layer);
+    },
+    childTasks(state): DailyStudyTask[] {
+      return childVisibleTasks(buildTasksFromLayer(state.layer));
+    },
+    primaryTask(state): DailyStudyTask | null {
+      return primaryChildTask(buildTasksFromLayer(state.layer));
+    },
+    hasStarted(state): boolean {
       const userStore = useUserStore();
       const tracks = resolveGrowthTracks(userStore.currentProfile);
-      const raw = buildSchoolTasks({
-        date: this.todayKey,
-        homeworkItems: this.todayHomework,
-        schoolTrack: this.layer.schoolTrack,
-        doneIds: this.todayDoneIds,
+      const view = buildDualTrackView(
+        state.layer.schoolTrack,
+        state.layer.hometownTrack,
         tracks,
-        gradeLevel: userStore.currentProfile.gradeLevel
-      });
-      return applySleepShrink(raw, computeSleepBudget(this.layer.bedtimeMinutes));
-    },
-    childTasks() {
-      return childVisibleTasks(this.generatedTasks);
-    },
-    primaryTask() {
-      return primaryChildTask(this.generatedTasks);
-    },
-    hasStarted(): boolean {
-      return this.dualTrack.schoolStarted || this.todayHomework.length > 0;
+        userStore.currentProfile.gradeLevel
+      );
+      const date = localDateKey();
+      const homeworkCount = resolveHomeworkRecord(state.layer.homeworkByDate[date], date).items.length;
+      return view.schoolStarted || homeworkCount > 0;
     },
     emptyLabel(): '尚未开始' {
       return notStartedLabel();
@@ -123,7 +143,7 @@ export const useSchoolStore = defineStore('school', {
       estimatedMinutes?: number;
     }) {
       if (!isTextbookSubjectId(input.subjectId)) return;
-      const date = this.todayKey;
+      const date = localDateKey();
       const current = resolveHomeworkRecord(this.layer.homeworkByDate[date], date);
       const item: DailyHomeworkItem = {
         id: newHomeworkId(),
@@ -145,7 +165,7 @@ export const useSchoolStore = defineStore('school', {
     },
 
     removeHomework(itemId: string) {
-      const date = this.todayKey;
+      const date = localDateKey();
       const current = resolveHomeworkRecord(this.layer.homeworkByDate[date], date);
       this.layer.homeworkByDate = {
         ...this.layer.homeworkByDate,
@@ -183,20 +203,37 @@ export const useSchoolStore = defineStore('school', {
     markLessonComplete(role: 'school' | 'hometown', lessonId: string) {
       if (!lessonId) return;
       const now = Date.now();
-      const track = role === 'school' ? this.layer.schoolTrack : this.layer.hometownTrack;
+      if (role === 'school') {
+        const track = this.layer.schoolTrack;
+        if (track.completedLessonIds.includes(lessonId)) return;
+        this.layer.schoolTrack = {
+          role: 'school',
+          city: track.city,
+          editionId: track.editionId,
+          gradeLevel: track.gradeLevel,
+          completedLessonIds: [...track.completedLessonIds, lessonId],
+          activeChapterId: track.activeChapterId,
+          updatedAt: now
+        };
+        this.persistToProfile();
+        return;
+      }
+      const track = this.layer.hometownTrack;
       if (track.completedLessonIds.includes(lessonId)) return;
-      const next = {
-        ...track,
+      this.layer.hometownTrack = {
+        role: 'hometown',
+        city: track.city,
+        editionId: track.editionId,
+        gradeLevel: track.gradeLevel,
         completedLessonIds: [...track.completedLessonIds, lessonId],
+        activeChapterId: track.activeChapterId,
         updatedAt: now
       };
-      if (role === 'school') this.layer.schoolTrack = next;
-      else this.layer.hometownTrack = next;
       this.persistToProfile();
     },
 
     toggleTaskDone(taskId: string) {
-      const date = this.todayKey;
+      const date = localDateKey();
       const current = [...(this.layer.taskDoneByDate[date] || [])];
       const idx = current.indexOf(taskId);
       if (idx >= 0) current.splice(idx, 1);

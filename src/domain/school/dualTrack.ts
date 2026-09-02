@@ -24,10 +24,8 @@ export function shouldShowParentSupplement(tracks: GrowthTrackFields, gradeLevel
   return hometownShadowIsTight(tracks, gradeLevel);
 }
 
-export function collectDualTrackDiffs(
-  school: SchoolTrackState,
-  hometown: HometownTrackState
-): DualTrackDiffItem[] {
+export function collectDualTrackDiffs(school: SchoolTrackState): DualTrackDiffItem[] {
+  // 一年级两地同用统编目录；差异写在课时元数据上
   const lessons = listLessonsForGrade(school.gradeLevel);
   const diffs: DualTrackDiffItem[] = [];
   for (const lesson of lessons) {
@@ -77,7 +75,7 @@ export function buildDualTrackView(
   tracks: GrowthTrackFields,
   gradeLevel?: GradeLevel
 ): DualTrackViewModel {
-  const diffs = collectDualTrackDiffs(school, hometown);
+  const diffs = collectDualTrackDiffs(school);
   const gradeOneRecordOnly = gradeYear(gradeLevel) <= 1;
   const supplementEnabled = shouldShowParentSupplement(tracks, gradeLevel) && !gradeOneRecordOnly;
   return {
