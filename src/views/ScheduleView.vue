@@ -4,6 +4,7 @@ import { domToPng } from 'modern-screenshot';
 import { Cloud, Download, LoaderCircle, MoreHorizontal } from 'lucide-vue-next';
 import { AppModal } from '../design-system';
 import { useUserStore } from '../stores/useUserStore';
+import { gradeYearLabel } from '../types/curriculum';
 import {
   useScheduleStore,
   WEEKDAYS,
@@ -30,9 +31,11 @@ const previewDataUrl = ref('');
 /** 导出用离屏画布：页头 + 完整一周表 */
 const exportSheetRef = ref<HTMLElement | null>(null);
 
+const gradeLabel = computed(() => gradeYearLabel(userStore.currentProfile.gradeLevel));
+
 const exportFileName = computed(() => {
   const safeName = (scheduleStore.displayStudentName || '课程表').replace(/[\\/:*?"<>|]/g, '');
-  return `${safeName}-一年级课程表.png`;
+  return `${safeName}-${gradeLabel.value}课程表.png`;
 });
 
 const selectableSubjects = computed(() => [
@@ -148,7 +151,7 @@ watch(
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0 space-y-1.5">
             <p class="text-[11px] font-semibold text-slate-400 tracking-wide">
-              京西校区 26-27 学年 · 一年级
+              京西校区 26-27 学年 · {{ gradeLabel }}
             </p>
             <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               {{ scheduleStore.displayStudentName }}的课程表
@@ -394,7 +397,7 @@ watch(
       >
         <div class="mb-6 pb-5 border-b border-slate-200">
           <p class="text-xs font-semibold text-slate-400 tracking-wide mb-2">
-            京西校区 26-27 学年 · 一年级
+            京西校区 26-27 学年 · {{ gradeLabel }}
           </p>
           <h1 class="text-3xl font-black tracking-tight mb-2">
             {{ scheduleStore.displayStudentName }}的课程表

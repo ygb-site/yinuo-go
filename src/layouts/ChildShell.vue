@@ -10,6 +10,7 @@ import {
 import Footer from '../components/Footer.vue';
 import UserMenuDropdown from '../components/common/UserMenuDropdown.vue';
 import { ShieldCheck } from 'lucide-vue-next';
+import { gradeYearLabel } from '../types/curriculum';
 
 const route = useRoute();
 const router = useRouter();
@@ -26,17 +27,19 @@ interface NavTab {
   desktopOnly?: boolean;
 }
 
-const navTabs: NavTab[] = [
+const scheduleGradeBadge = computed(() => gradeYearLabel(userStore.currentProfile.gradeLevel));
+
+const navTabs = computed<NavTab[]>(() => [
   { id: 'today', label: '今天', shortLabel: '今天', path: '/', icon: 'compass' },
-  { id: 'schedule', label: '课程表', shortLabel: '课表', path: '/schedule', icon: 'calendar', badge: '一年级' },
+  { id: 'schedule', label: '课程表', shortLabel: '课表', path: '/schedule', icon: 'calendar', badge: scheduleGradeBadge.value },
   { id: 'learn', label: '少儿围棋', shortLabel: '围棋', path: '/learn', icon: 'book', badge: '核心' },
   { id: 'play', label: '创建对局', shortLabel: '对局', path: '/match', icon: 'gamepad', badge: '热门' },
   { id: 'me', label: '成长档案', shortLabel: '我的', path: '/profile', icon: 'growth' },
   { id: 'lab', label: '模块清单', shortLabel: '模块', path: '/modules', icon: 'clipboard-list', badge: '整理', desktopOnly: true }
-];
+]);
 
-const desktopNavTabs = computed(() => navTabs);
-const mobileNavTabs = computed(() => navTabs.filter((tab) => !tab.desktopOnly));
+const desktopNavTabs = computed(() => navTabs.value);
+const mobileNavTabs = computed(() => navTabs.value.filter((tab) => !tab.desktopOnly));
 
 const currentSection = computed(() => {
   if (route.meta.section) {
@@ -57,7 +60,7 @@ const isTopLevelTab = computed(() => {
 });
 
 const pageTitle = computed(() => {
-  if (route.path === '/') return '学堂大厅';
+  if (route.path === '/') return '今天';
   if (route.path.startsWith('/schedule')) return `${scheduleStore.displayStudentName}的课程表`;
   if (route.path.startsWith('/learn')) return '少儿围棋天地';
   if (route.path.startsWith('/match') || route.path.startsWith('/puzzle')) return '创建对局中心';
@@ -67,12 +70,19 @@ const pageTitle = computed(() => {
 });
 
 const navigateTo = (path: string) => {
+  // 未登录只许停在今天首页；点其它 Tab / 入口一律弹登录
+  if (path !== '/' && !userStore.requireLogin()) return;
   if (route.path !== path) {
     router.push(path);
   }
 };
 
 const handleBack = () => {
+  if (!userStore.isLoggedIn) {
+    userStore.openAuthModal();
+    if (route.path !== '/') router.push('/');
+    return;
+  }
   if (window.history.length > 1) {
     router.back();
   } else {
@@ -81,6 +91,7 @@ const handleBack = () => {
 };
 
 const goToParentDashboard = () => {
+  if (!userStore.requireLogin()) return;
   router.push('/parent-dashboard');
 };
 

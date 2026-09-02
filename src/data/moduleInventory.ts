@@ -22,7 +22,7 @@ export const MODULE_INVENTORY: ModuleInventoryItem[] = [
     file: 'src/views/HomeView.vue',
     reachable: true,
     entries: ['桌面侧栏', '手机/平板底栏'],
-    note: '学堂大厅：打卡、继续学、快捷入口。',
+    note: '日课驾驶舱：按时段显示课表/带物、午休轻练、作业与明日准备、衡水影子一题。',
     suggestDelete: false
   },
   {
@@ -33,7 +33,7 @@ export const MODULE_INVENTORY: ModuleInventoryItem[] = [
     file: 'src/views/ScheduleView.vue',
     reachable: true,
     entries: ['桌面侧栏', '手机/平板底栏'],
-    note: '一年级课表：点格子自选科目，本地保存。',
+    note: '课表：点格子自选科目，本地保存。标题跟档案年级走。',
     suggestDelete: false
   },
   {
@@ -198,7 +198,7 @@ export const MODULE_INVENTORY: ModuleInventoryItem[] = [
     file: 'src/views/ParentDashboardView.vue',
     reachable: true,
     entries: ['桌面侧栏底部', '成长档案横幅'],
-    note: '家长看板。',
+    note: '家长看板：亲子一起做、年级双轨、学情摘要。',
     suggestDelete: false
   },
   {
@@ -209,7 +209,7 @@ export const MODULE_INVENTORY: ModuleInventoryItem[] = [
     file: 'src/views/AdminView.vue',
     reachable: true,
     entries: ['成长档案（仅管理员账号）'],
-    note: '需登录且 isAdmin。',
+    note: '需登录且 isAdmin。查看家庭数据，不发放新账号。',
     suggestDelete: false
   },
   {

@@ -9,15 +9,13 @@ import { showAlert } from '../../utils/alert';
 import {
   User,
   UserCheck,
-  BookMarked,
   BarChart3,
   ShoppingBag,
   ShieldAlert,
   LogOut,
   LogIn,
   UserPlus,
-  ChevronDown,
-  ShieldCheck
+  ChevronDown
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -50,6 +48,7 @@ const onDocPointerDown = (event: PointerEvent) => {
 const goTo = (path: string) => {
   close();
   playButtonSound();
+  if (path !== '/' && !userStore.requireLogin()) return;
   if (route.path !== path) {
     router.push(path);
   }
@@ -61,8 +60,7 @@ const openProfiles = () => {
   userStore.openProfileModal();
 };
 
-const openAccountCenter = () => {
-  close();
+const openLogin = () => {
   playButtonSound();
   userStore.openAuthModal();
 };
@@ -104,7 +102,7 @@ onUnmounted(() => {
     v-if="!userStore.isLoggedIn"
     type="button"
     class="flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 text-white border border-amber-300 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl cursor-pointer shadow-sm transition transform active:scale-95 text-[11px] sm:text-xs font-black whitespace-nowrap"
-    @click="openAccountCenter"
+    @click="openLogin"
   >
     <LogIn class="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
     <span>登录</span>
@@ -167,16 +165,6 @@ onUnmounted(() => {
         >
           <User class="w-4 h-4 text-orange-500 shrink-0" />
           <span>切换宝贝档案</span>
-        </button>
-
-        <button
-          type="button"
-          role="menuitem"
-          class="w-full px-3 py-2 rounded-xl text-left hover:bg-orange-50 text-slate-700 flex items-center gap-2 transition-colors cursor-pointer text-xs font-bold"
-          @click="openAccountCenter"
-        >
-          <ShieldCheck class="w-4 h-4 text-orange-600 shrink-0" />
-          <span>家长账号中心</span>
         </button>
 
         <button

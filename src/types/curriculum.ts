@@ -24,8 +24,36 @@ export const GRADE_LEVELS: GradeMeta[] = [
   { id: 'g2_t1', name: '二年级上册', shortName: '二上', subtitle: '手筋战术', badge: '思维拔高' },
   { id: 'g2_t2', name: '二年级下册', shortName: '二下', subtitle: '对弈实战', badge: '对战提高' },
   { id: 'g3_t1', name: '三年级上册', shortName: '三上', subtitle: '大局观探索', badge: '布局拓展' },
-  { id: 'g3_t2', name: '三年级下册', shortName: '三下', subtitle: '段位冲刺', badge: '冲段大师' }
+  { id: 'g3_t2', name: '三年级下册', shortName: '三下', subtitle: '段位冲刺', badge: '冲段大师' },
+  { id: 'g4_t1', name: '四年级上册', shortName: '四上', subtitle: '衡水对齐准备', badge: '过渡' },
+  { id: 'g4_t2', name: '四年级下册', shortName: '四下', subtitle: '节奏与熟练', badge: '巩固' },
+  { id: 'g5_t1', name: '五年级上册', shortName: '五上', subtitle: '系统推进', badge: '进阶' },
+  { id: 'g5_t2', name: '五年级下册', shortName: '五下', subtitle: '稳定输出', badge: '进阶' },
+  { id: 'g6_t1', name: '六年级上册', shortName: '六上', subtitle: '小学收束', badge: '收官' },
+  { id: 'g6_t2', name: '六年级下册', shortName: '六下', subtitle: '衔接中学', badge: '收官' }
 ];
+
+export const GRADE_LEVEL_IDS: GradeLevel[] = GRADE_LEVELS.map((item) => item.id);
+
+const GRADE_YEAR_LABEL: Record<string, string> = {
+  g1: '一年级',
+  g2: '二年级',
+  g3: '三年级',
+  g4: '四年级',
+  g5: '五年级',
+  g6: '六年级'
+};
+
+/** 从 g1_t1 这类学段 id 取出「一年级」这种给课表/导航用的年级名 */
+export function gradeYearLabel(gradeLevel?: GradeLevel | string): string {
+  if (!gradeLevel) return '一年级';
+  const yearKey = String(gradeLevel).slice(0, 2).toLowerCase();
+  return GRADE_YEAR_LABEL[yearKey] || '一年级';
+}
+
+export function isGradeLevel(value: unknown): value is GradeLevel {
+  return typeof value === 'string' && GRADE_LEVEL_IDS.includes(value as GradeLevel);
+}
 
 export interface SubjectMeta {
   id: SubjectId;

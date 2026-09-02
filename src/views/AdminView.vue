@@ -337,7 +337,7 @@ const formatTime = (iso?: string) => {
             全站用户与教学数据中心
           </h1>
           <p class="text-xs text-gray-500 font-medium">
-            一键调控宝贝关卡进度、解锁全套玩法、实时查看全站学情与发放金币星星。
+            家庭私有学堂：只用当前这一家账号。公开注册已关闭。
           </p>
         </div>
 
@@ -360,7 +360,7 @@ const formatTime = (iso?: string) => {
           <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-sm">
             <Users class="w-4 h-4" />
           </div>
-          <div class="text-[10px] sm:text-[11px] font-bold text-gray-400">注册家长数</div>
+          <div class="text-[10px] sm:text-[11px] font-bold text-gray-400">家庭账号数</div>
           <div class="text-xl sm:text-2xl font-black text-indigo-900 font-mono">{{ stats.totalParents }}</div>
         </div>
 

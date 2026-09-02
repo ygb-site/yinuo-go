@@ -40,7 +40,7 @@ const routes: RouteRecordRaw[] = [
     path: '/schedule',
     name: 'schedule',
     component: ScheduleView,
-    meta: { mode: 'child', section: 'schedule', title: '课程表', label: '一年级课程表' }
+    meta: { mode: 'child', section: 'schedule', title: '课程表', label: '课程表' }
   },
   {
     path: '/learn',
@@ -150,6 +150,10 @@ const routes: RouteRecordRaw[] = [
     redirect: '/parent-dashboard'
   },
   {
+    path: '/parent/companion',
+    redirect: '/parent-dashboard'
+  },
+  {
     path: '/admin',
     name: 'admin',
     component: AdminView,
@@ -168,15 +172,23 @@ const router = createRouter({
   }
 });
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   stopSpeech();
   try {
     const loadingStore = useLoadingStore();
     loadingStore.startLoading('小诺正在加载精彩页面...');
   } catch {}
 
+  const userStore = useUserStore();
+  await userStore.ensureAuthReady();
+
+  const isPublicHome = to.path === '/' || to.name === 'home';
+  if (!userStore.isLoggedIn && !isPublicHome) {
+    userStore.openAuthModal();
+    return '/';
+  }
+
   if (to.path === '/admin') {
-    const userStore = useUserStore();
     if (!userStore.isLoggedIn || !userStore.isAdmin) {
       sound.playErrorSound();
       showAlert({

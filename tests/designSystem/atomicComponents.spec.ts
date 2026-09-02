@@ -80,6 +80,7 @@ describe('Design System: Atomic Components & Tokens', () => {
     it('derives correct age stages across K12 grade levels', () => {
       expect(deriveAgeStage('g1_t1')).toBe('primary');
       expect(deriveAgeStage('g3_t2')).toBe('primary');
+      expect(deriveAgeStage('g6_t1')).toBe('primary');
       expect(deriveAgeStage('junior')).toBe('middle-school');
       expect(deriveAgeStage('g8')).toBe('middle-school');
       expect(deriveAgeStage('senior')).toBe('teen');

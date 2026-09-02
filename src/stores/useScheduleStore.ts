@@ -288,12 +288,30 @@ export const useScheduleStore = defineStore('schedule', {
       };
     },
     todayCourses(): { period: SchedulePeriod; subject: ScheduleSubject }[] {
-      const today = getTodayWeekdayId();
-      if (!today) return [];
-      return SCHEDULE_PERIODS.map((period) => ({
-        period,
-        subject: getSubjectById(this.grid[cellKey(today, period.id)] || 'empty')
-      })).filter((row) => row.subject.id !== 'empty');
+      return this.coursesForWeekday(getTodayWeekdayId());
+    },
+    /** 下一个有课的工作日课程（周五晚看周一） */
+    nextSchoolDayCourses(): { weekdayId: WeekdayId; weekdayName: string; courses: { period: SchedulePeriod; subject: ScheduleSubject }[] } | null {
+      const todayJs = new Date().getDay();
+      for (let offset = 1; offset <= 7; offset += 1) {
+        const jsDay = (todayJs + offset) % 7;
+        if (jsDay === 0 || jsDay === 6) continue;
+        const weekdayId = jsDay as WeekdayId;
+        const courses = this.coursesForWeekday(weekdayId);
+        if (courses.length === 0) continue;
+        const weekdayName = WEEKDAYS.find((d) => d.id === weekdayId)?.name || '明天';
+        return { weekdayId, weekdayName, courses };
+      }
+      return null;
+    },
+    coursesForWeekday() {
+      return (weekday: WeekdayId | null): { period: SchedulePeriod; subject: ScheduleSubject }[] => {
+        if (!weekday) return [];
+        return SCHEDULE_PERIODS.map((period) => ({
+          period,
+          subject: getSubjectById(this.grid[cellKey(weekday, period.id)] || 'empty')
+        })).filter((row) => row.subject.id !== 'empty');
+      };
     },
     filledCellCount(): number {
       return countFilledCells(this.grid);

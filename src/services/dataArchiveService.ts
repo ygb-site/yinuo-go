@@ -1,5 +1,15 @@
 import type { ChildProfile } from '../stores/useUserStore';
 import type { MistakeRecord, KnowledgeMasteryRecord, GradeLevel } from '../types/curriculum';
+import { isGradeLevel } from '../types/curriculum';
+import {
+  resolveGrowthTracks,
+  resolveTogetherWeek,
+  type EducationTrackId,
+  type ReturnWindowId,
+  type TogetherWeekState,
+  type TrackRole
+} from '../domain/growth/tracks';
+import { resolveDayPlan, type DayPlanState } from '../domain/today/dayPlan';
 
 export interface ExportedArchiveData {
   schemaVersion: '1.0';
@@ -9,6 +19,12 @@ export interface ExportedArchiveData {
     nickname: string;
     avatar: string;
     gradeLevel?: GradeLevel;
+    schoolTrack?: EducationTrackId;
+    hometownTrack?: EducationTrackId;
+    returnWindow?: ReturnWindowId;
+    trackRole?: TrackRole;
+    togetherWeek?: TogetherWeekState;
+    dayPlan?: DayPlanState;
     progress: Record<string, { completed: boolean; stars: number; highscore?: number; completedAt?: string }>;
     totalStars: number;
     badges: string[];
@@ -65,6 +81,7 @@ export function sanitizeText(input: unknown, maxLen = 100): string {
  * 安全导出儿童档案：彻底剥离家长 UID、邮箱、Auth Token、管理员标识等敏感账户信息
  */
 export function createSafeProfileArchive(profile: ChildProfile): ExportedArchiveData {
+  const tracks = resolveGrowthTracks(profile);
   return {
     schemaVersion: '1.0',
     app: 'yinuo-go',
@@ -73,6 +90,12 @@ export function createSafeProfileArchive(profile: ChildProfile): ExportedArchive
       nickname: sanitizeText(profile.nickname || '宝贝', 20),
       avatar: sanitizeText(profile.avatar || '🦁', 10),
       gradeLevel: profile.gradeLevel || 'g1_t1',
+      schoolTrack: tracks.schoolTrack,
+      hometownTrack: tracks.hometownTrack,
+      returnWindow: tracks.returnWindow,
+      trackRole: tracks.trackRole,
+      togetherWeek: resolveTogetherWeek(profile.togetherWeek),
+      dayPlan: resolveDayPlan(profile.dayPlan),
       progress: JSON.parse(JSON.stringify(profile.progress || {})),
       totalStars: Math.max(0, Number(profile.totalStars) || 0),
       badges: Array.isArray(profile.badges) ? profile.badges.map(b => sanitizeText(b, 50)).filter(Boolean) : [],
@@ -142,9 +165,8 @@ export function validateAndSanitizeArchive(rawJson: string, maxSizeBytes = 2 * 1
 
   const nickname = sanitizeText(source.nickname || '导入宝贝', 20);
   const avatar = sanitizeText(source.avatar || '🦁', 10);
-  const gradeLevel: GradeLevel = ['g1_t1', 'g1_t2', 'g2_t1', 'g2_t2', 'g3_t1', 'g3_t2'].includes(source.gradeLevel)
-    ? source.gradeLevel
-    : 'g1_t1';
+  const gradeLevel: GradeLevel = isGradeLevel(source.gradeLevel) ? source.gradeLevel : 'g1_t1';
+  const tracks = resolveGrowthTracks(source);
 
   // 校验 progress
   const progress: Record<string, { completed: boolean; stars: number; highscore?: number; completedAt?: string }> = {};
@@ -216,6 +238,12 @@ export function validateAndSanitizeArchive(rawJson: string, maxSizeBytes = 2 * 1
     avatar,
     createdAt: typeof source.createdAt === 'number' ? source.createdAt : Date.now(),
     gradeLevel,
+    schoolTrack: tracks.schoolTrack,
+    hometownTrack: tracks.hometownTrack,
+    returnWindow: tracks.returnWindow,
+    trackRole: tracks.trackRole,
+    togetherWeek: resolveTogetherWeek(source.togetherWeek),
+    dayPlan: resolveDayPlan(source.dayPlan),
     progress,
     totalStars: Math.max(0, Number(source.totalStars) || 0),
     badges: Array.isArray(source.badges) ? source.badges.map((b: any) => sanitizeText(b, 50)).filter(Boolean) : [],

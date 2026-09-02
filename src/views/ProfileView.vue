@@ -11,6 +11,7 @@ import { showAlert, showConfirm } from '../utils/alert';
 import { playButtonSound, playWinSound, playErrorSound, triggerConfetti } from '../lib/audio';
 import { sound } from '../utils/sound';
 import { createSafeProfileArchive } from '../services/dataArchiveService';
+import { signOutCloud } from '../services/cloudSyncService';
 import {
   Trophy,
   Star,
@@ -133,6 +134,20 @@ const radarPolygonPoints = computed(() => {
 const favoritePuzzlesList = computed(() => {
   return TSUMEGO_PUZZLES.filter(p => tsumegoStore.isFavorite(p.id));
 });
+
+const handleLogout = async () => {
+  playButtonSound();
+  await signOutCloud();
+  userStore.clearCloudUser();
+  showAlert({
+    title: '已退出登录',
+    message: '账号已安全退出，随时可再次登录继续学棋！',
+    type: 'info'
+  });
+  if (router.currentRoute.value.path !== '/') {
+    router.push('/');
+  }
+};
 
 const handleManualSync = async () => {
   if (!userStore.isLoggedIn) {
@@ -796,7 +811,7 @@ const confirmReset = async () => {
           class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-sm shadow-md transition active:scale-95 inline-flex items-center gap-2 cursor-pointer"
         >
           <LogIn class="w-4 h-4" />
-          <span>立即登录 / 注册账号 🚀</span>
+          <span>立即登录 🚀</span>
         </button>
         <button
           v-else
@@ -853,11 +868,12 @@ const confirmReset = async () => {
             </button>
 
             <button
-              @click="userStore.openAuthModal()"
+              type="button"
               class="hidden sm:flex py-1.5 px-2.5 bg-gray-50 hover:bg-rose-50 text-gray-600 hover:text-rose-600 border border-gray-200 rounded-xl text-xs font-bold transition active:scale-95 items-center gap-1 cursor-pointer"
+              @click="handleLogout"
             >
               <LogOut class="w-3.5 h-3.5" />
-              <span>切换 / 退出</span>
+              <span>退出登录</span>
             </button>
           </div>
         </div>
@@ -881,11 +897,12 @@ const confirmReset = async () => {
           </button>
 
           <button
-            @click="userStore.openAuthModal()"
+            type="button"
             class="sm:hidden py-2 px-3 bg-gray-50 hover:bg-rose-50 text-gray-600 hover:text-rose-600 border border-gray-200 rounded-2xl text-xs font-bold transition active:scale-95 flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
+            @click="handleLogout"
           >
             <LogOut class="w-3.5 h-3.5" />
-            <span>切换账号 / 退出登录</span>
+            <span>退出登录</span>
           </button>
         </div>
 

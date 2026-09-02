@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore, type ChildProfile } from '../stores/useUserStore';
 import { sound } from '../utils/sound';
@@ -12,12 +12,26 @@ import {
   AppProgress,
   AppAvatar,
   AppSection,
-  AppEmptyState
+  AppEmptyState,
+  AppSelect
 } from '../design-system';
+import { GRADE_LEVELS, gradeYearLabel, type GradeLevel } from '../types/curriculum';
+import {
+  EDUCATION_TRACK_OPTIONS,
+  RETURN_WINDOW_OPTIONS,
+  TRACK_ROLE_OPTIONS,
+  TOGETHER_ITEMS,
+  hometownShadowIsTight,
+  resolveGrowthTracks,
+  type EducationTrackId,
+  type ReturnWindowId,
+  type TogetherItemId,
+  type TrackRole
+} from '../domain/growth/tracks';
 import { buildAbilityProfile } from '../domain/ability/abilityEngine';
 import type { AbilityEvent, AbilityDimensionId } from '../domain/ability/types';
+import ParentGateScreen from '../components/parent/ParentGateScreen.vue';
 import {
-  ShieldCheck,
   Clock,
   Download,
   Upload,
@@ -26,36 +40,6 @@ import {
 
 const router = useRouter();
 const userStore = useUserStore();
-
-// 1. Parental Gate
-const isUnlocked = ref(false);
-const gateNum1 = ref(7);
-const gateNum2 = ref(8);
-const gateAnswer = ref('');
-const gateError = ref(false);
-
-function generateGateQuestion() {
-  gateNum1.value = Math.floor(Math.random() * 6) + 4;
-  gateNum2.value = Math.floor(Math.random() * 6) + 4;
-  gateAnswer.value = '';
-  gateError.value = false;
-}
-
-function verifyParentGate() {
-  const correct = gateNum1.value * gateNum2.value;
-  if (parseInt(gateAnswer.value, 10) === correct) {
-    isUnlocked.value = true;
-    sound.playStarSound();
-  } else {
-    gateError.value = true;
-    sound.playErrorSound();
-    generateGateQuestion();
-  }
-}
-
-onMounted(() => {
-  generateGateQuestion();
-});
 
 // Current student profile
 const profile = computed<ChildProfile>(() => userStore.currentProfile);
@@ -152,6 +136,45 @@ const weeklyStory = computed(() => {
   ];
 });
 
+const growthTracks = computed(() => resolveGrowthTracks(profile.value));
+const togetherDone = computed(() => profile.value.togetherWeek?.done || {
+  go: false,
+  read: false,
+  outdoor: false,
+  chore: false
+});
+const togetherDoneCount = computed(() => Object.values(togetherDone.value).filter(Boolean).length);
+const shadowTight = computed(() => hometownShadowIsTight(growthTracks.value, profile.value.gradeLevel));
+const gradeOptions = GRADE_LEVELS.map((item) => ({ value: item.id, label: item.name }));
+const schoolTrackOptions = EDUCATION_TRACK_OPTIONS.map((item) => ({ value: item.id, label: item.label }));
+const hometownTrackOptions = EDUCATION_TRACK_OPTIONS.map((item) => ({ value: item.id, label: `${item.label}（老家）` }));
+const returnWindowOptions = RETURN_WINDOW_OPTIONS.map((item) => ({ value: item.id, label: item.label }));
+const trackRoleOptions = TRACK_ROLE_OPTIONS.map((item) => ({ value: item.id, label: item.label }));
+
+const onToggleTogether = (id: TogetherItemId) => {
+  userStore.toggleTogetherItem(id);
+};
+
+const onGradeChange = (value: string) => {
+  userStore.updateGrowthTracks({ gradeLevel: value as GradeLevel });
+};
+
+const onSchoolTrackChange = (value: string) => {
+  userStore.updateGrowthTracks({ schoolTrack: value as EducationTrackId });
+};
+
+const onHometownTrackChange = (value: string) => {
+  userStore.updateGrowthTracks({ hometownTrack: value as EducationTrackId });
+};
+
+const onReturnWindowChange = (value: string) => {
+  userStore.updateGrowthTracks({ returnWindow: value as ReturnWindowId });
+};
+
+const onTrackRoleChange = (value: string) => {
+  userStore.updateGrowthTracks({ trackRole: value as TrackRole });
+};
+
 // Archive Export / Import
 const exportArchive = () => {
   sound.playButtonSound();
@@ -205,47 +228,8 @@ const handleImportArchive = (e: Event) => {
 
 <template>
   <div class="space-y-6 md:space-y-8 select-none">
-    <!-- 🔒 1. Parental Gate Screen -->
-    <div
-      v-if="!isUnlocked"
-      class="max-w-md mx-auto my-12 bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-5"
-    >
-      <div class="w-14 h-14 mx-auto rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-        <ShieldCheck class="w-8 h-8" />
-      </div>
-
-      <div class="space-y-1">
-        <h2 class="text-xl font-bold text-slate-900">家长验证安全锁</h2>
-        <p class="text-sm text-slate-500">
-          为了保护孩子的自主学习环境，进入学情空间请先回答下面的数学题：
-        </p>
-      </div>
-
-      <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-2xl font-bold text-slate-800">
-        {{ gateNum1 }} × {{ gateNum2 }} = ?
-      </div>
-
-      <div class="space-y-3">
-        <input
-          v-model="gateAnswer"
-          type="number"
-          placeholder="请输入计算结果"
-          class="w-full h-11 text-center text-lg font-bold border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
-          @keyup.enter="verifyParentGate"
-        />
-
-        <div v-if="gateError" class="text-xs text-rose-500 font-bold">
-          计算答案有误，请重新计算新的题目哦！
-        </div>
-
-        <AppButton variant="primary" size="lg" block @click="verifyParentGate">
-          验证并进入家长空间
-        </AppButton>
-      </div>
-    </div>
-
-    <!-- 📊 2. Parent Learning Dashboard (Unlocked) -->
-    <div v-else class="space-y-8">
+    <ParentGateScreen>
+    <div class="space-y-8">
       <!-- Top Title & Child Info -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div class="flex items-center gap-3">
@@ -256,7 +240,7 @@ const handleImportArchive = (e: Event) => {
               <AppBadge variant="brand" size="sm">少儿学员</AppBadge>
             </div>
             <p class="text-xs text-slate-500 mt-0.5">
-              档案创建于 {{ new Date(profile.createdAt || Date.now()).toLocaleDateString() }} · 围棋启蒙主线阶段
+              {{ gradeYearLabel(profile.gradeLevel) }} · 学校轴 {{ growthTracks.schoolTrack === 'beijing' ? '北京' : '衡水' }} · 老家 {{ growthTracks.hometownTrack === 'beijing' ? '北京' : '衡水' }}
             </p>
           </div>
         </div>
@@ -277,6 +261,67 @@ const handleImportArchive = (e: Event) => {
           </label>
         </div>
       </div>
+
+      <AppSection title="本周一起做的一件事" icon="sparkles" tone="growth">
+        <AppCard variant="outlined" padding="lg" class="bg-white space-y-3">
+          <p class="text-sm text-slate-600">
+            关系在前，分数在后。完成不算能力分，也不进儿童首页。本周已记下 {{ togetherDoneCount }}/4 件。
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              v-for="item in TOGETHER_ITEMS"
+              :key="item.id"
+              type="button"
+              class="text-left rounded-xl border px-3 py-3 transition"
+              :class="togetherDone[item.id] ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300'"
+              @click="onToggleTogether(item.id)"
+            >
+              <div class="text-sm font-bold text-slate-900">{{ togetherDone[item.id] ? '已一起做过' : '还未做' }} · {{ item.title }}</div>
+              <p class="text-xs text-slate-500 mt-1">{{ item.detail }}</p>
+              <AppButton
+                v-if="item.route"
+                variant="brandSoft"
+                size="sm"
+                class="mt-2"
+                @click.stop="router.push(item.route)"
+              >
+                去对弈
+              </AppButton>
+            </button>
+          </div>
+        </AppCard>
+      </AppSection>
+
+      <AppSection title="年级与双轨（只给家长看）" icon="settings" tone="learning">
+        <AppCard variant="outlined" padding="lg" class="bg-white space-y-4">
+          <p class="text-sm text-slate-600">
+            一年级起儿童「今天」里就有一道衡水影子轻练（口算/识字量级），不是预习包，也不堆第二套作业。
+            北京课表仍是学校主轴；{{ shadowTight ? '当前已进入收紧窗口，家长端可以开始看同龄熟练度对照。' : '收紧窗口前家长端先盯习惯：独立写完、口算不拖、字写完能认。' }}
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="space-y-1 text-xs font-bold text-slate-600">
+              年级
+              <AppSelect :model-value="profile.gradeLevel || 'g1_t1'" :options="gradeOptions" size="sm" aria-label="年级" @update:model-value="onGradeChange" />
+            </label>
+            <label class="space-y-1 text-xs font-bold text-slate-600">
+              是否已回老家上学
+              <AppSelect :model-value="growthTracks.trackRole" :options="trackRoleOptions" size="sm" aria-label="在读位置" @update:model-value="onTrackRoleChange" />
+            </label>
+            <label class="space-y-1 text-xs font-bold text-slate-600">
+              当前学校轴
+              <AppSelect :model-value="growthTracks.schoolTrack" :options="schoolTrackOptions" size="sm" aria-label="当前学校轴" @update:model-value="onSchoolTrackChange" />
+            </label>
+            <label class="space-y-1 text-xs font-bold text-slate-600">
+              老家对齐轴
+              <AppSelect :model-value="growthTracks.hometownTrack" :options="hometownTrackOptions" size="sm" aria-label="老家对齐轴" @update:model-value="onHometownTrackChange" />
+            </label>
+            <label class="space-y-1 text-xs font-bold text-slate-600 sm:col-span-2">
+              预计回老家窗口
+              <AppSelect :model-value="growthTracks.returnWindow" :options="returnWindowOptions" size="sm" aria-label="回老家窗口" @update:model-value="onReturnWindowChange" />
+            </label>
+          </div>
+        </AppCard>
+      </AppSection>
 
       <!-- Section 1: Weekly Story & Growth Highlights (结论先行) -->
       <AppSection title="本周学情结论与陪伴建议" icon="book-open" tone="learning">
@@ -434,6 +479,7 @@ const handleImportArchive = (e: Event) => {
         </div>
       </AppSection>
     </div>
+    </ParentGateScreen>
   </div>
 </template>
 

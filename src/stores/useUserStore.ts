@@ -5,6 +5,17 @@ import type {
   StudentLearningProfile,
   GradeLevel
 } from '../types/curriculum';
+import {
+  resolveGrowthTracks,
+  resolveTogetherWeek,
+  resolveGradeLevel,
+  type EducationTrackId,
+  type ReturnWindowId,
+  type TogetherItemId,
+  type TogetherWeekState,
+  type TrackRole
+} from '../domain/growth/tracks';
+import { resolveDayPlan, type DayPlanState } from '../domain/today/dayPlan';
 import { defineStore } from 'pinia';
 import { USER_RANKS, type UserRank, BADGES_DATA, type AchievementBadge } from '../data/achievementsData';
 import { KNOWLEDGE_POINTS_REPOSITORY } from '../data/knowledgePointsData';
@@ -75,6 +86,18 @@ export interface ChildProfile {
   avatar: string;
   createdAt: number;
   gradeLevel?: GradeLevel;
+  /** 当前在读城市轨道，默认北京 */
+  schoolTrack?: EducationTrackId;
+  /** 老家对齐轨道，默认衡水 */
+  hometownTrack?: EducationTrackId;
+  /** 预计回老家的年级窗口，默认四到六年级 */
+  returnWindow?: ReturnWindowId;
+  /** current=仍跟当前学校；hometown=已切到老家学校 */
+  trackRole?: TrackRole;
+  /** 本周亲子一起做，不算能力分 */
+  togetherWeek?: TogetherWeekState;
+  /** 儿童「今天」页当日勾选进度 */
+  dayPlan?: DayPlanState;
   progress: Record<string, { completed: boolean; stars: number; highscore?: number; completedAt?: string }>;
   totalStars: number;
   badges: string[];
@@ -105,7 +128,7 @@ export interface ChildProfile {
   rewardLedger?: Record<string, number>;
   /** 每日封顶计数：`<capId>:<yyyy-mm-dd>` -> 当日已发放次数 */
   rewardDailyCounters?: Record<string, number>;
-  /** 一年级课程表（随档案上云，多端一致） */
+  /** 当前年级课表（随档案上云，多端一致） */
   schedule?: {
     grid: Record<string, string>;
     schoolName: string;
@@ -134,6 +157,12 @@ const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
   avatar: '👶',
   createdAt: 0,
   gradeLevel: 'g1_t1',
+  schoolTrack: 'beijing',
+  hometownTrack: 'hengshui',
+  returnWindow: 'g4_g6',
+  trackRole: 'current',
+  togetherWeek: undefined,
+  dayPlan: undefined,
   progress: {},
   totalStars: 0,
   badges: [],
@@ -170,12 +199,39 @@ const EMPTY_PLACEHOLDER_PROFILE: ChildProfile = {
 /** 云端设置里允许恢复的 AI 配置字段白名单：apiKey 等密钥字段永远不在其中 */
 const CLOUD_AI_CONFIG_ALLOWED_KEYS = ['mode', 'endpoint', 'model', 'autoSpeech'] as const;
 
+function applyGrowthDefaults(profile: ChildProfile): ChildProfile {
+  const tracks = resolveGrowthTracks(profile);
+  profile.gradeLevel = resolveGradeLevel(profile.gradeLevel);
+  profile.schoolTrack = tracks.schoolTrack;
+  profile.hometownTrack = tracks.hometownTrack;
+  profile.returnWindow = tracks.returnWindow;
+  profile.trackRole = tracks.trackRole;
+
+  // getter 里也会走到这里：只在缺字段或跨周/跨日时写回，避免每次新建对象触发递归更新
+  const together = resolveTogetherWeek(profile.togetherWeek);
+  if (!profile.togetherWeek || profile.togetherWeek.weekKey !== together.weekKey) {
+    profile.togetherWeek = together;
+  }
+
+  const plan = resolveDayPlan(profile.dayPlan);
+  if (!profile.dayPlan || profile.dayPlan.date !== plan.date) {
+    profile.dayPlan = plan;
+  }
+
+  return profile;
+}
+
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
+/** 会话初始化单飞：路由守卫和 App 启动共用，避免重复绑定 onAuthStateChange */
+let authInitPromise: Promise<void> | null = null;
+let cloudSessionListenerBound = false;
 
 export const useUserStore = defineStore('userStore', {
   state: () => ({
     // 🔐 纯云端登录与权限状态 (Cloud Auth & Role State)
     isLoggedIn: false as boolean,
+    /** 是否已完成一次会话探测；未完成前不要按「未登录」拦路由 */
+    authReady: false as boolean,
     currentUserEmail: null as string | null,
     currentUserId: null as string | null,
     isAdmin: false as boolean,
@@ -244,6 +300,7 @@ export const useUserStore = defineStore('userStore', {
       if (found.mistakeRecords.length > 0 && found.mistakeRecords.some(m => String(m.id || '').startsWith('sample_'))) {
         found.mistakeRecords = found.mistakeRecords.filter(m => !String(m.id || '').startsWith('sample_'));
       }
+      applyGrowthDefaults(found);
       if (!found.knowledgeMastery) found.knowledgeMastery = {};
       if (!found.arcadeHighScores) {
         found.arcadeHighScores = { speedCapture: 0, countLiberties: 0, connectCut: 0 };
@@ -530,14 +587,18 @@ export const useUserStore = defineStore('userStore', {
       this.showAuthModal = false;
     },
 
+    /** 只要登录。未登录就弹登录框，用于侧栏/路由拦截。 */
+    requireLogin(): boolean {
+      if (this.isLoggedIn) return true;
+      this.openAuthModal();
+      return false;
+    },
+
     /**
-     * 统一鉴权拦截器 (Auth Guard Helper)
+     * 统一鉴权拦截器：登录 + 已有宝贝档案
      */
     requireAuth(): boolean {
-      if (!this.isLoggedIn) {
-        this.openAuthModal();
-        return false;
-      }
+      if (!this.requireLogin()) return false;
       if (this.profiles.length === 0) {
         this.isProfileModalOpen = true;
         return false;
@@ -558,7 +619,7 @@ export const useUserStore = defineStore('userStore', {
 
       if (row) {
         this.isAdmin = Boolean(row.is_admin);
-        this.profiles = row.profiles_data || [];
+        this.profiles = (row.profiles_data || []).map((item) => applyGrowthDefaults(item));
         this.currentProfileId = row.active_profile_id || (this.profiles[0]?.id || '');
         if (row.settings_data) {
           if (typeof row.settings_data.soundEnabled === 'boolean') this.soundEnabled = row.settings_data.soundEnabled;
@@ -603,6 +664,17 @@ export const useUserStore = defineStore('userStore', {
       } catch {}
     },
 
+    /** 等会话探测结束；可被路由守卫与 App 启动重复调用 */
+    async ensureAuthReady() {
+      if (this.authReady) return;
+      if (!authInitPromise) {
+        authInitPromise = this.initCloudSession().finally(() => {
+          this.authReady = true;
+        });
+      }
+      await authInitPromise;
+    },
+
     async initCloudSession() {
       if (!isSupabaseConfigured()) return;
       const client = getSupabaseClient();
@@ -616,13 +688,16 @@ export const useUserStore = defineStore('userStore', {
           this.clearCloudUser();
         }
 
-        client.auth.onAuthStateChange(async (event, session) => {
-          if (session && session.user) {
-            await this.setCloudUser(session.user.id, session.user.email || '');
-          } else if (event === 'SIGNED_OUT') {
-            this.clearCloudUser();
-          }
-        });
+        if (!cloudSessionListenerBound) {
+          cloudSessionListenerBound = true;
+          client.auth.onAuthStateChange(async (event, session) => {
+            if (session && session.user) {
+              await this.setCloudUser(session.user.id, session.user.email || '');
+            } else if (event === 'SIGNED_OUT') {
+              this.clearCloudUser();
+            }
+          });
+        }
       } catch (err) {
         console.warn('[Supabase Auth Init Warn]', err);
       }
@@ -693,7 +768,17 @@ export const useUserStore = defineStore('userStore', {
       );
     },
 
-    createProfile(nickname: string, avatar: string, gradeLevel: GradeLevel = 'g1_t1'): ChildProfile | null {
+    createProfile(
+      nickname: string,
+      avatar: string,
+      gradeLevel: GradeLevel = 'g1_t1',
+      tracks?: Partial<{
+        schoolTrack: EducationTrackId;
+        hometownTrack: EducationTrackId;
+        returnWindow: ReturnWindowId;
+        trackRole: TrackRole;
+      }>
+    ): ChildProfile | null {
       if (!this.isLoggedIn) {
         this.openAuthModal();
         return null;
@@ -705,12 +790,19 @@ export const useUserStore = defineStore('userStore', {
       }
       const newId = 'kid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
       const pickedAvatar = avatar || '🦁';
+      const resolvedTracks = resolveGrowthTracks(tracks);
       const newProfile: ChildProfile = {
         id: newId,
         nickname: trimmed,
         avatar: pickedAvatar,
         createdAt: Date.now(),
-        gradeLevel,
+        gradeLevel: resolveGradeLevel(gradeLevel),
+        schoolTrack: resolvedTracks.schoolTrack,
+        hometownTrack: resolvedTracks.hometownTrack,
+        returnWindow: resolvedTracks.returnWindow,
+        trackRole: resolvedTracks.trackRole,
+        togetherWeek: resolveTogetherWeek(null),
+        dayPlan: resolveDayPlan(null),
         progress: {},
         totalStars: 0,
         badges: [],
@@ -754,6 +846,60 @@ export const useUserStore = defineStore('userStore', {
       sound.playWinSound();
       sound.fireCelebrationConfetti();
       return newProfile;
+    },
+
+    updateGrowthTracks(
+      patch: Partial<{
+        gradeLevel: GradeLevel;
+        schoolTrack: EducationTrackId;
+        hometownTrack: EducationTrackId;
+        returnWindow: ReturnWindowId;
+        trackRole: TrackRole;
+      }>
+    ) {
+      const prof = this.profiles.find((item) => item.id === this.currentProfileId);
+      if (!prof) return;
+      if (patch.gradeLevel) prof.gradeLevel = resolveGradeLevel(patch.gradeLevel);
+      const next = resolveGrowthTracks({
+        schoolTrack: patch.schoolTrack ?? prof.schoolTrack,
+        hometownTrack: patch.hometownTrack ?? prof.hometownTrack,
+        returnWindow: patch.returnWindow ?? prof.returnWindow,
+        trackRole: patch.trackRole ?? prof.trackRole
+      });
+      prof.schoolTrack = next.schoolTrack;
+      prof.hometownTrack = next.hometownTrack;
+      prof.returnWindow = next.returnWindow;
+      prof.trackRole = next.trackRole;
+      this.touchSave();
+    },
+
+    toggleTogetherItem(itemId: TogetherItemId) {
+      const prof = this.profiles.find((item) => item.id === this.currentProfileId);
+      if (!prof) return;
+      const week = resolveTogetherWeek(prof.togetherWeek);
+      week.done[itemId] = !week.done[itemId];
+      prof.togetherWeek = week;
+      this.touchSave();
+    },
+
+    /** 更新「今天」页当日计划勾选；跨日自动重置 */
+    patchDayPlan(patch: Partial<Omit<DayPlanState, 'date'>>) {
+      const prof = this.profiles.find((item) => item.id === this.currentProfileId);
+      if (!prof) return;
+      const current = resolveDayPlan(prof.dayPlan);
+      prof.dayPlan = resolveDayPlan({ ...current, ...patch, date: current.date });
+      this.touchSave();
+    },
+
+    toggleDayHomework(itemId: string) {
+      const prof = this.profiles.find((item) => item.id === this.currentProfileId);
+      if (!prof) return;
+      const current = resolveDayPlan(prof.dayPlan);
+      const set = new Set(current.homeworkDoneIds);
+      if (set.has(itemId)) set.delete(itemId);
+      else set.add(itemId);
+      prof.dayPlan = resolveDayPlan({ ...current, homeworkDoneIds: Array.from(set) });
+      this.touchSave();
     },
 
     switchProfile(id: string) {

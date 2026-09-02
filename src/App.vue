@@ -10,7 +10,7 @@ const userStore = useUserStore();
 
 onMounted(() => {
   lockPortraitOrientation();
-  userStore.initCloudSession();
+  userStore.ensureAuthReady();
   preloadCoreRoutes();
 });
 </script>

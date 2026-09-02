@@ -31,46 +31,6 @@ export interface AdminStats {
 }
 
 /**
- * 注册新家长账号
- */
-export async function signUpWithEmail(email: string, password: string): Promise<AuthResult> {
-  const client = getSupabaseClient();
-  if (!client) {
-    return { success: false, error: '未配置云端数据库连接' };
-  }
-
-  try {
-    const { data, error } = await client.auth.signUp({
-      email: email.trim(),
-      password
-    });
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    // Ensure user profile record exists
-    if (data.user) {
-      await client.from('user_profiles').upsert({
-        id: data.user.id,
-        email: data.user.email,
-        is_admin: false,
-        profiles_data: [],
-        settings_data: { soundEnabled: true, volume: 0.8 },
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'id' });
-    }
-
-    return {
-      success: true,
-      user: data.user ? { id: data.user.id, email: data.user.email } : null
-    };
-  } catch (err: any) {
-    return { success: false, error: err?.message || '网络连接异常' };
-  }
-}
-
-/**
  * 登录家长账号
  */
 export async function signInWithEmail(email: string, password: string): Promise<AuthResult> {
@@ -211,7 +171,7 @@ export async function saveUserDataToCloud(
  * ========================================================= */
 
 /**
- * 管理员获取全站所有注册用户列表
+ * 管理员获取全站所有家庭账号列表
  */
 export async function fetchAdminUserList(): Promise<{ success: boolean; users: UserProfileRow[]; error?: string }> {
   const client = getSupabaseClient();
