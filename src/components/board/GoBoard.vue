@@ -171,10 +171,11 @@ const activeSelectedLiberties = computed<Point[]>(() => {
   return activeGame.value.getLibertiesOf(selectedStonePoint.value.r, selectedStonePoint.value.c);
 });
 
-// Territory evaluation map
+// Territory evaluation map (only evaluated when territory display is requested)
 const territoryMap = computed(() => {
   if (!props.showTerritory || !activeGame.value) return null;
   void boardVersion.value;
+  void activeGame.value.version;
   return activeGame.value.calculateScore().territoryMap;
 });
 

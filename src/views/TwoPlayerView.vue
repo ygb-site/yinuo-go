@@ -330,33 +330,37 @@ const handleMove = (point: Point) => {
 
   // 1. Check if game is immediately finished
   if (game.value.isGameFinished()) {
-    let reason = '双方双双停一手（Pass），棋局定型自动数子判定输赢！';
+    let reason = '双方连续停一手（Pass），棋局定型自动数子判定输赢！';
     if (game.value.isBoardFull()) {
       reason = '全盘交叉点已全部下满，自动进入终局点目结算！';
-    } else if (!game.value.hasLegalMoves('B') || !game.value.hasLegalMoves('W')) {
+    } else if (!game.value.hasLegalMoves('B') && !game.value.hasLegalMoves('W')) {
       reason = '双方均已无任何合法着法，自动终局数子判定胜负！';
+    } else if (!game.value.hasLegalMoves('B') || !game.value.hasLegalMoves('W')) {
+      reason = '一方已无合法落子点且棋局终局，自动数子判定胜负！';
     }
     triggerScoringSettlement(reason);
     return;
   }
 
-  // 2. Check if the next player has any legal moves left
-  const nextColor = game.value.turn;
-  if (!game.value.hasLegalMoves(nextColor)) {
-    game.value.pass(nextColor);
+  // 2. Check if the next player has any legal moves left, loop until legal move found or game finishes
+  let nextColor = game.value.turn;
+  while (!game.value.hasLegalMoves(nextColor) && !isGameOver.value) {
+    const passed = game.value.pass(nextColor);
     saveMatchState();
 
     const nextStones = game.value.getStoneCount(nextColor);
-    if (game.value.isGameFinished() || nextStones === 0) {
+    if (passed || game.value.isGameFinished() || nextStones === 0) {
       triggerScoringSettlement('一方棋子已无处可落且被完全包围，自动终局数子判定胜负！');
       return;
-    } else {
-      const nextName = nextColor === 'B' ? blackName.value : whiteName.value;
-      autoPassNotice.value = nextName + ' 当前已无合法落子点，已自动停一手 (Pass)';
-      setTimeout(() => {
-        autoPassNotice.value = '';
-      }, 3000);
     }
+
+    const nextName = nextColor === 'B' ? blackName.value : whiteName.value;
+    autoPassNotice.value = nextName + ' 当前已无合法落子点，已自动停一手 (Pass)';
+    setTimeout(() => {
+      autoPassNotice.value = '';
+    }, 3000);
+
+    nextColor = game.value.turn;
   }
 };
 
