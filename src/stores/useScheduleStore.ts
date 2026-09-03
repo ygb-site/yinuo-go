@@ -66,6 +66,10 @@ export const SCHEDULE_PERIODS: SchedulePeriod[] = [
   { id: 6, label: '第6节', time: '14:50', afternoon: true }
 ];
 
+/** 上午第 1–4 节 / 下午第 5–6 节（UI 分组用） */
+export const MORNING_PERIODS = SCHEDULE_PERIODS.filter((p) => !p.afternoon);
+export const AFTERNOON_PERIODS = SCHEDULE_PERIODS.filter((p) => !!p.afternoon);
+
 /** 人大附小京西分校 · 一年级 1.1 班科目（展示一律用全称，不用简写） */
 export const SCHEDULE_SUBJECTS: ScheduleSubject[] = [
   { id: 'yuwen1', name: '语文1', shortName: '语文1', emoji: '📖', tone: 'rose' },
@@ -201,7 +205,7 @@ export const SUBJECT_TONE_CLASS: Record<ScheduleSubject['tone'], string> = {
   lime: 'bg-lime-100 text-lime-800 border-lime-200'
 };
 
-/** 纸质课表格子：只用字色区分科目 */
+/** 纸质课表格子：只用字色区分科目（今日摘要等轻量场景） */
 export const SUBJECT_CELL_CLASS: Record<ScheduleSubject['tone'], string> = {
   rose: 'text-rose-800',
   sky: 'text-sky-800',
@@ -215,6 +219,22 @@ export const SUBJECT_CELL_CLASS: Record<ScheduleSubject['tone'], string> = {
   cyan: 'text-cyan-800',
   slate: 'text-slate-600',
   lime: 'text-lime-800'
+};
+
+/** 海报风格子：柔和底色 + 字色，适合贴墙打印 */
+export const SUBJECT_POSTER_CLASS: Record<ScheduleSubject['tone'], string> = {
+  rose: 'bg-rose-100/90 text-rose-800 border-rose-200/80',
+  sky: 'bg-sky-100/90 text-sky-800 border-sky-200/80',
+  indigo: 'bg-indigo-100/90 text-indigo-800 border-indigo-200/80',
+  amber: 'bg-amber-100/90 text-amber-900 border-amber-200/80',
+  emerald: 'bg-emerald-100/90 text-emerald-800 border-emerald-200/80',
+  orange: 'bg-orange-100/90 text-orange-800 border-orange-200/80',
+  violet: 'bg-violet-100/90 text-violet-800 border-violet-200/80',
+  pink: 'bg-pink-100/90 text-pink-800 border-pink-200/80',
+  teal: 'bg-teal-100/90 text-teal-800 border-teal-200/80',
+  cyan: 'bg-cyan-100/90 text-cyan-800 border-cyan-200/80',
+  slate: 'bg-slate-100/90 text-slate-600 border-slate-200/80',
+  lime: 'bg-lime-100/90 text-lime-800 border-lime-200/80'
 };
 
 /** 今日课程色点 */

@@ -1,10 +1,22 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { domToPng } from 'modern-screenshot';
-import { Cloud, Download, LoaderCircle, MoreHorizontal } from 'lucide-vue-next';
+import { Check, Cloud, Copy, Download, LoaderCircle, MoreHorizontal, Shapes } from 'lucide-vue-next';
 import { AppModal } from '../design-system';
+import ScheduleLayoutBoard from '../components/schedule/ScheduleLayoutBoard.vue';
 import { useUserStore } from '../stores/useUserStore';
 import { gradeYearLabel } from '../types/curriculum';
+import {
+  SCHEDULE_SKINS,
+  SCRAPBOOK_COLOR_SPLITS,
+  getScheduleSkin,
+  readStoredScheduleSkinId,
+  readStoredScrapbookSplit,
+  storeScheduleSkinId,
+  storeScrapbookSplit,
+  type ScheduleSkinId,
+  type ScrapbookColorSplit
+} from '../domain/schedule/scheduleSkins';
 import {
   useScheduleStore,
   WEEKDAYS,
@@ -12,6 +24,7 @@ import {
   SCHEDULE_SUBJECTS,
   SUBJECT_CELL_CLASS,
   SUBJECT_DOT_CLASS,
+  SUBJECT_POSTER_CLASS,
   getTodayWeekdayId,
   type WeekdayId,
   type SubjectId
@@ -21,15 +34,21 @@ const userStore = useUserStore();
 const scheduleStore = useScheduleStore();
 const todayId = computed(() => getTodayWeekdayId());
 
-/** 手机端按天查看；桌面看整周 */
 const mobileDay = ref<WeekdayId>(todayId.value || 1);
 const pickerOpen = ref(false);
 const moreOpen = ref(false);
 const exporting = ref(false);
 const previewOpen = ref(false);
 const previewDataUrl = ref('');
-/** 导出用离屏画布：页头 + 完整一周表 */
 const exportSheetRef = ref<HTMLElement | null>(null);
+const copying = ref(false);
+const copyDone = ref(false);
+let copyDoneTimer: ReturnType<typeof setTimeout> | null = null;
+
+const skinId = ref<ScheduleSkinId>(readStoredScheduleSkinId());
+const skin = computed(() => getScheduleSkin(skinId.value));
+const scrapbookSplit = ref<ScrapbookColorSplit>(readStoredScrapbookSplit());
+const isScrapbook = computed(() => skinId.value === 'scrapbook');
 
 const gradeLabel = computed(() => gradeYearLabel(userStore.currentProfile.gradeLevel));
 
@@ -60,10 +79,26 @@ const syncHint = computed(() => {
   return '已同步云端';
 });
 
+const darkChrome = computed(() => skinId.value === 'chalkboard');
+
+const selectSkin = (id: ScheduleSkinId) => {
+  skinId.value = id;
+  storeScheduleSkinId(id);
+};
+
+const selectScrapbookSplit = (id: ScrapbookColorSplit) => {
+  scrapbookSplit.value = id;
+  storeScrapbookSplit(id);
+};
+
 const openPicker = (day: WeekdayId, period: number) => {
   scheduleStore.selectCell(day, period);
   mobileDay.value = day;
   pickerOpen.value = true;
+};
+
+const onBoardPick = (day: WeekdayId, period: number) => {
+  openPicker(day, period);
 };
 
 const pickSubject = (subjectId: SubjectId) => {
@@ -89,7 +124,6 @@ const closeMoreMenu = () => {
   moreOpen.value = false;
 };
 
-/** 生成预览图，确认后再下载 */
 const openExportPreview = async () => {
   if (exporting.value) return;
   moreOpen.value = false;
@@ -101,7 +135,7 @@ const openExportPreview = async () => {
 
     previewDataUrl.value = await domToPng(sheet, {
       scale: 2,
-      backgroundColor: '#ffffff'
+      backgroundColor: skin.value.exportBgHex
     });
     previewOpen.value = true;
   } catch (err) {
@@ -118,12 +152,50 @@ const downloadPreviewImage = () => {
   link.download = exportFileName.value;
   link.href = previewDataUrl.value;
   link.click();
-  previewOpen.value = false;
+};
+
+/** 复制图片到剪贴板，方便微信直接粘贴发送 */
+const copyPreviewImage = async () => {
+  if (!previewDataUrl.value || copying.value) return;
+  copying.value = true;
+  copyDone.value = false;
+  try {
+    const response = await fetch(previewDataUrl.value);
+    const blob = await response.blob();
+    const pngBlob =
+      blob.type === 'image/png' ? blob : new Blob([await blob.arrayBuffer()], { type: 'image/png' });
+
+    if (!navigator.clipboard || typeof ClipboardItem === 'undefined') {
+      throw new Error('clipboard api unavailable');
+    }
+
+    await navigator.clipboard.write([
+      new ClipboardItem({ 'image/png': pngBlob })
+    ]);
+
+    copyDone.value = true;
+    if (copyDoneTimer) clearTimeout(copyDoneTimer);
+    copyDoneTimer = setTimeout(() => {
+      copyDone.value = false;
+    }, 2500);
+  } catch (err) {
+    console.error('ScheduleView.copyPreviewImage', err);
+    window.alert('复制失败了，请改用「下载图片」，或检查浏览器是否允许剪贴板权限');
+  } finally {
+    copying.value = false;
+  }
 };
 
 const onPreviewOpenUpdate = (open: boolean) => {
   previewOpen.value = open;
-  if (!open) previewDataUrl.value = '';
+  if (!open) {
+    previewDataUrl.value = '';
+    copyDone.value = false;
+    if (copyDoneTimer) {
+      clearTimeout(copyDoneTimer);
+      copyDoneTimer = null;
+    }
+  }
 };
 
 onMounted(() => {
@@ -131,6 +203,7 @@ onMounted(() => {
 });
 onBeforeUnmount(() => {
   document.removeEventListener('click', closeMoreMenu);
+  if (copyDoneTimer) clearTimeout(copyDoneTimer);
 });
 
 watch(
@@ -143,25 +216,47 @@ watch(
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-5rem)] bg-[#F4F1EA] py-5 md:py-8 px-3.5 sm:px-6 lg:px-8 select-none font-sans">
-    <div class="max-w-5xl mx-auto space-y-4">
+  <div
+    class="min-h-[calc(100vh-5rem)] py-5 md:py-8 px-3.5 sm:px-6 lg:px-8 select-none font-sans transition-colors duration-300"
+    :class="skin.pageBg"
+  >
+    <div class="max-w-6xl mx-auto space-y-4">
 
       <!-- 页头 -->
-      <header class="bg-white rounded-2xl border border-slate-200/70 px-5 sm:px-6 py-4 sm:py-5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+      <header
+        class="relative overflow-hidden rounded-2xl border px-5 sm:px-6 py-4 sm:py-5"
+        :class="
+          darkChrome
+            ? 'bg-[#14532D] border-emerald-900 text-emerald-50'
+            : 'bg-white/90 border-slate-200/70 shadow-[0_1px_0_rgba(15,23,42,0.04)]'
+        "
+      >
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0 space-y-1.5">
-            <p class="text-[11px] font-semibold text-slate-400 tracking-wide">
+            <p
+              class="text-[11px] font-semibold tracking-wide"
+              :class="darkChrome ? 'text-emerald-200/70' : 'text-slate-400'"
+            >
               京西校区 26-27 学年 · {{ gradeLabel }}
             </p>
-            <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            <h1
+              class="text-xl sm:text-2xl font-black tracking-tight"
+              :class="darkChrome ? 'text-amber-50' : 'text-slate-900'"
+            >
               {{ scheduleStore.displayStudentName }}的课程表
             </h1>
-            <p class="text-xs sm:text-sm font-medium text-slate-500">
+            <p
+              class="text-xs sm:text-sm font-medium"
+              :class="darkChrome ? 'text-emerald-100/70' : 'text-slate-500'"
+            >
               {{ scheduleStore.schoolName }}
-              <span class="mx-1.5 text-slate-300">|</span>
+              <span class="mx-1.5 opacity-40">|</span>
               {{ scheduleStore.className }}
             </p>
-            <p class="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+            <p
+              class="inline-flex items-center gap-1.5 text-[11px] font-medium"
+              :class="darkChrome ? 'text-emerald-200/50' : 'text-slate-400'"
+            >
               <Cloud class="w-3.5 h-3.5 shrink-0" />
               {{ syncHint }}
             </p>
@@ -170,7 +265,12 @@ watch(
           <div class="relative shrink-0" @click.stop>
             <button
               type="button"
-              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-500 hover:bg-slate-50 active:scale-95 transition cursor-pointer"
+              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-semibold active:scale-95 transition cursor-pointer"
+              :class="
+                darkChrome
+                  ? 'border-emerald-700 text-emerald-100 hover:bg-emerald-900/50'
+                  : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+              "
               :aria-expanded="moreOpen"
               @click="moreOpen = !moreOpen"
             >
@@ -200,23 +300,162 @@ watch(
         </div>
       </header>
 
-      <!-- 今日一行 -->
-      <section class="bg-white rounded-2xl border border-slate-200/70 px-4 sm:px-5 py-3.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+      <!-- 形态选择：强调「布局不同」 -->
+      <section
+        class="rounded-2xl border px-4 sm:px-5 py-3.5"
+        :class="
+          darkChrome
+            ? 'bg-[#166534]/40 border-emerald-800'
+            : 'bg-white/90 border-slate-200/70'
+        "
+      >
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <div class="min-w-0 flex items-center gap-2">
+            <Shapes
+              class="w-4 h-4 shrink-0"
+              :class="darkChrome ? 'text-emerald-200' : 'text-slate-500'"
+            />
+            <div class="min-w-0">
+              <h2
+                class="text-sm font-bold"
+                :class="darkChrome ? 'text-emerald-50' : 'text-slate-800'"
+              >课表形态</h2>
+              <p
+                class="text-[11px] font-medium mt-0.5"
+                :class="darkChrome ? 'text-emerald-200/60' : 'text-slate-400'"
+              >
+                每种长得都不一样 · 当前「{{ skin.name }}」
+              </p>
+            </div>
+          </div>
+          <span
+            class="text-[11px] font-medium shrink-0"
+            :class="darkChrome ? 'text-emerald-200/60' : 'text-slate-400'"
+          >10 种</span>
+        </div>
+
+        <div class="flex gap-2 overflow-x-auto pb-1 -mx-0.5 px-0.5 snap-x snap-mandatory">
+          <button
+            v-for="item in SCHEDULE_SKINS"
+            :key="item.id"
+            type="button"
+            class="snap-start shrink-0 w-[8.25rem] rounded-xl border px-2.5 py-2.5 text-left transition active:scale-95 cursor-pointer"
+            :class="
+              skinId === item.id
+                ? darkChrome
+                  ? 'border-amber-300 bg-emerald-950 ring-2 ring-amber-300/50'
+                  : 'border-slate-900 bg-slate-900 text-white ring-2 ring-slate-400/40'
+                : darkChrome
+                  ? 'border-emerald-700 bg-emerald-950/40 text-emerald-50 hover:border-emerald-500'
+                  : 'border-slate-200 bg-white hover:border-slate-400'
+            "
+            :aria-pressed="skinId === item.id"
+            @click="selectSkin(item.id)"
+          >
+            <div class="flex items-center gap-1 mb-1.5">
+              <span
+                v-for="(color, idx) in item.swatches"
+                :key="`${item.id}-${idx}`"
+                class="h-2.5 w-2.5 rounded-full border border-black/10"
+                :style="{ backgroundColor: color }"
+              />
+              <span
+                class="ml-auto text-[10px] font-black px-1.5 py-0.5 rounded"
+                :class="
+                  skinId === item.id
+                    ? darkChrome ? 'bg-amber-300 text-emerald-950' : 'bg-white text-slate-900'
+                    : darkChrome ? 'bg-emerald-900 text-emerald-100' : 'bg-slate-100 text-slate-500'
+                "
+              >{{ item.formLabel }}</span>
+            </div>
+            <p class="text-[12px] font-bold leading-tight">{{ item.name }}</p>
+            <p
+              class="text-[10px] font-medium mt-0.5 leading-snug line-clamp-2"
+              :class="
+                skinId === item.id
+                  ? darkChrome ? 'text-emerald-100/70' : 'text-white/70'
+                  : darkChrome ? 'text-emerald-200/50' : 'text-slate-400'
+              "
+            >
+              {{ item.tagline }}
+            </p>
+          </button>
+        </div>
+      </section>
+
+      <!-- 手账贴纸：粉蓝三种分色 Tab -->
+      <section
+        v-if="isScrapbook"
+        class="rounded-2xl border border-pink-200/70 bg-white/90 px-4 sm:px-5 py-3.5"
+      >
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <div class="min-w-0">
+            <h2 class="text-sm font-bold text-slate-800">粉蓝渐变</h2>
+            <p class="text-[11px] font-medium text-slate-400 mt-0.5">
+              粉色慢慢过渡到蓝色 · 三种方向都看看
+            </p>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <span class="w-2.5 h-2.5 rounded-full bg-pink-400" />
+            <span class="w-2.5 h-2.5 rounded-full bg-sky-400" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          <button
+            v-for="item in SCRAPBOOK_COLOR_SPLITS"
+            :key="item.id"
+            type="button"
+            class="rounded-xl border px-3 py-3 text-left transition active:scale-[0.99] cursor-pointer"
+            :class="
+              scrapbookSplit === item.id
+                ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
+                : 'border-pink-100 bg-gradient-to-r from-pink-50 to-sky-50 hover:border-pink-300'
+            "
+            :aria-pressed="scrapbookSplit === item.id"
+            @click="selectScrapbookSplit(item.id)"
+          >
+            <p class="text-[13px] font-black">{{ item.name }}</p>
+            <p
+              class="text-[11px] font-medium mt-0.5"
+              :class="scrapbookSplit === item.id ? 'text-white/70' : 'text-slate-500'"
+            >
+              {{ item.tagline }}
+            </p>
+          </button>
+        </div>
+      </section>
+
+      <!-- 今日课程 -->
+      <section
+        class="rounded-2xl border px-4 sm:px-5 py-3.5"
+        :class="
+          darkChrome
+            ? 'bg-[#166534]/40 border-emerald-800'
+            : 'bg-white/90 border-slate-200/70'
+        "
+      >
         <div class="flex items-center justify-between gap-2 mb-2.5">
-          <h2 class="text-sm font-bold text-slate-800">
+          <h2
+            class="text-sm font-bold"
+            :class="darkChrome ? 'text-emerald-50' : 'text-slate-800'"
+          >
             {{ todayId ? '今日课程' : '周末休息' }}
           </h2>
-          <span class="text-[11px] font-medium text-slate-400">
+          <span
+            class="text-[11px] font-medium"
+            :class="darkChrome ? 'text-emerald-200/60' : 'text-slate-400'"
+          >
             {{ todayId ? `${todayCourses.length} 节` : '好好放松' }}
           </span>
         </div>
 
-        <div v-if="todayId && todayCourses.length > 0" class="flex flex-wrap gap-x-4 gap-y-2">
+        <div v-if="todayId && todayCourses.length > 0" class="flex flex-wrap gap-2">
           <button
             v-for="row in todayCourses"
             :key="row.period.id"
             type="button"
-            class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-sky-700 transition cursor-pointer"
+            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[13px] font-semibold transition cursor-pointer active:scale-95"
+            :class="SUBJECT_POSTER_CLASS[row.subject.tone]"
             @click="openPicker(todayId, row.period.id)"
           >
             <span
@@ -225,16 +464,27 @@ watch(
               aria-hidden="true"
             />
             <span>{{ row.subject.name }}</span>
-            <span class="text-xs font-medium text-slate-400">{{ row.period.label }}</span>
+            <span class="text-[11px] font-medium opacity-60">{{ row.period.label }}</span>
           </button>
         </div>
-        <p v-else class="text-xs font-medium text-slate-400">
+        <p
+          v-else
+          class="text-xs font-medium"
+          :class="darkChrome ? 'text-emerald-200/50' : 'text-slate-400'"
+        >
           {{ todayId ? '今天还没填课，点下面格子选课' : '周一到周五的课表可以提前看' }}
         </p>
       </section>
 
-      <!-- 手机：星期切换 -->
-      <div class="lg:hidden flex gap-1 p-1 rounded-2xl bg-white border border-slate-200/70">
+      <!-- 手机星期切换（部分形态需要） -->
+      <div
+        class="lg:hidden flex gap-1 p-1 rounded-2xl border"
+        :class="
+          darkChrome
+            ? 'bg-[#166534]/40 border-emerald-800'
+            : 'bg-white/90 border-slate-200/70'
+        "
+      >
         <button
           v-for="day in WEEKDAYS"
           :key="day.id"
@@ -242,10 +492,16 @@ watch(
           class="flex-1 py-2 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer"
           :class="[
             mobileDay === day.id
-              ? 'bg-slate-900 text-white'
+              ? darkChrome
+                ? 'bg-amber-300 text-emerald-950'
+                : 'bg-slate-900 text-white'
               : todayId === day.id
-                ? 'text-sky-700 bg-sky-50'
-                : 'text-slate-500 hover:bg-slate-50'
+                ? darkChrome
+                  ? 'text-amber-200 bg-emerald-900/50'
+                  : 'text-sky-700 bg-sky-50'
+                : darkChrome
+                  ? 'text-emerald-100/70'
+                  : 'text-slate-500 hover:bg-slate-50'
           ]"
           @click="mobileDay = day.id"
         >
@@ -253,227 +509,96 @@ watch(
         </button>
       </div>
 
-      <!-- 一周课表：纸质表格 -->
-      <section class="bg-white rounded-2xl border border-slate-200/70 p-3 sm:p-5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+      <!-- 一周课表：真正换形态 -->
+      <section
+        class="rounded-2xl border p-3 sm:p-5"
+        :class="
+          darkChrome
+            ? 'bg-transparent border-emerald-800'
+            : 'bg-white/90 border-slate-200/70'
+        "
+      >
         <div class="mb-3 sm:mb-4 px-0.5 flex items-end justify-between gap-3">
           <div class="min-w-0">
-            <h2 class="text-sm sm:text-base font-bold text-slate-800">一周课表</h2>
-            <p class="text-[11px] text-slate-400 font-medium mt-0.5">点格子更换课程</p>
+            <h2
+              class="text-sm sm:text-base font-bold"
+              :class="darkChrome ? 'text-emerald-50' : 'text-slate-800'"
+            >一周课表</h2>
+            <p
+              class="text-[11px] font-medium mt-0.5"
+              :class="darkChrome ? 'text-emerald-200/60' : 'text-slate-400'"
+            >
+              {{ skin.formLabel }} · {{ skin.tagline }}
+            </p>
           </div>
           <button
             type="button"
-            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 active:scale-95 transition cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold active:scale-95 transition cursor-pointer disabled:opacity-60 disabled:cursor-wait shadow-sm"
+            :class="
+              darkChrome
+                ? 'bg-amber-300 text-emerald-950 hover:bg-amber-200'
+                : 'bg-slate-900 text-white hover:bg-slate-800'
+            "
             :disabled="exporting"
             @click="openExportPreview"
           >
             <LoaderCircle v-if="exporting" class="w-3.5 h-3.5 animate-spin" />
             <Download v-else class="w-3.5 h-3.5" />
-            {{ exporting ? '生成中…' : '导出图片' }}
+            {{ exporting ? '生成中…' : '导出贴墙' }}
           </button>
         </div>
 
-        <div class="hidden lg:block overflow-x-auto rounded-xl border border-slate-200">
-          <table class="w-full table-fixed border-collapse">
-            <colgroup>
-              <col class="w-[4.5rem]" />
-              <col v-for="day in WEEKDAYS" :key="`col-${day.id}`" />
-            </colgroup>
-            <thead>
-              <tr class="bg-slate-50/90">
-                <th class="h-11 px-2 text-[11px] font-bold text-slate-400 text-center border-b border-r border-slate-200">
-                  节次
-                </th>
-                <th
-                  v-for="day in WEEKDAYS"
-                  :key="day.id"
-                  class="h-11 px-1 text-center text-sm font-bold border-b border-slate-200"
-                  :class="[
-                    day.id < 5 ? 'border-r border-slate-200' : '',
-                    todayId === day.id ? 'bg-sky-50 text-sky-700' : 'text-slate-600'
-                  ]"
-                >
-                  <span class="inline-flex items-center gap-1.5">
-                    {{ day.name }}
-                    <span
-                      v-if="todayId === day.id"
-                      class="text-[10px] font-bold text-sky-600 bg-white border border-sky-200 px-1.5 py-0.5 rounded"
-                    >今天</span>
-                  </span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <template v-for="period in SCHEDULE_PERIODS" :key="period.id">
-                <tr v-if="period.id === 5">
-                  <td
-                    colspan="6"
-                    class="h-9 bg-[#FAFAF7] text-center text-[11px] font-semibold text-slate-400 border-y border-slate-200"
-                  >
-                    午 休
-                  </td>
-                </tr>
-                <tr>
-                  <td class="h-14 px-2 text-[11px] font-bold text-slate-400 text-center border-b border-r border-slate-200 bg-slate-50/50 align-middle">
-                    {{ period.label }}
-                  </td>
-                  <td
-                    v-for="day in WEEKDAYS"
-                    :key="`${day.id}-${period.id}`"
-                    class="h-14 p-0 border-b border-slate-200 align-middle"
-                    :class="[
-                      day.id < 5 ? 'border-r border-slate-200' : '',
-                      todayId === day.id ? 'bg-sky-50/40' : 'bg-white'
-                    ]"
-                  >
-                    <button
-                      type="button"
-                      class="w-full h-14 px-2 flex items-center justify-center text-[13px] font-semibold leading-tight text-center transition cursor-pointer hover:bg-slate-50/80 active:bg-slate-100"
-                      :class="
-                        scheduleStore.cellSubject(day.id, period.id).id === 'empty'
-                          ? 'text-slate-300 font-medium'
-                          : SUBJECT_CELL_CLASS[scheduleStore.cellSubject(day.id, period.id).tone]
-                      "
-                      :title="scheduleStore.cellSubject(day.id, period.id).name"
-                      @click="openPicker(day.id, period.id)"
-                    >
-                      {{
-                        scheduleStore.cellSubject(day.id, period.id).id === 'empty'
-                          ? '＋'
-                          : scheduleStore.cellSubject(day.id, period.id).name
-                      }}
-                    </button>
-                  </td>
-                </tr>
-              </template>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- 手机：单日列表，同纸质风格 -->
-        <div class="lg:hidden rounded-xl border border-slate-200 overflow-hidden">
-          <template v-for="period in SCHEDULE_PERIODS" :key="period.id">
-            <div
-              v-if="period.id === 5"
-              class="h-9 flex items-center justify-center text-[11px] font-semibold text-slate-400 bg-[#FAFAF7] border-y border-slate-200"
-            >
-              午 休
-            </div>
-            <button
-              type="button"
-              class="w-full flex items-stretch text-left transition active:bg-slate-50 cursor-pointer border-b border-slate-200 last:border-b-0"
-              @click="openPicker(mobileDay, period.id)"
-            >
-              <div class="w-14 shrink-0 flex items-center justify-center text-[11px] font-bold text-slate-400 bg-slate-50/80 border-r border-slate-200 py-3.5">
-                {{ period.label.replace('第', '').replace('节', '') }}
-              </div>
-              <div
-                class="flex-1 flex items-center px-3.5 py-3.5 text-sm font-semibold min-h-[3.25rem]"
-                :class="
-                  scheduleStore.cellSubject(mobileDay, period.id).id === 'empty'
-                    ? 'text-slate-300'
-                    : SUBJECT_CELL_CLASS[scheduleStore.cellSubject(mobileDay, period.id).tone]
-                "
-              >
-                {{
-                  scheduleStore.cellSubject(mobileDay, period.id).id === 'empty'
-                    ? '选择课程'
-                    : scheduleStore.cellSubject(mobileDay, period.id).name
-                }}
-              </div>
-            </button>
-          </template>
-        </div>
+        <ScheduleLayoutBoard
+          :skin-id="skinId"
+          :interactive="true"
+          :today-id="todayId"
+          :mobile-day="mobileDay"
+          :scrapbook-split="scrapbookSplit"
+          @pick="onBoardPick"
+        />
       </section>
     </div>
 
-    <!-- 离屏导出画布：页头信息 + 完整一周表（手机也能导出整周） -->
+    <!-- 离屏导出 -->
     <div
-      class="fixed top-0 -left-[9999px] w-[960px] pointer-events-none"
+      class="fixed top-0 -left-[9999px] w-[1100px] pointer-events-none"
       aria-hidden="true"
     >
       <div
         ref="exportSheetRef"
-        class="bg-white p-10 font-sans text-slate-900"
+        class="p-10 font-sans"
+        :class="darkChrome ? 'text-emerald-50' : 'text-slate-900'"
+        :style="{ backgroundColor: skin.exportBgHex }"
       >
-        <div class="mb-6 pb-5 border-b border-slate-200">
-          <p class="text-xs font-semibold text-slate-400 tracking-wide mb-2">
+        <div class="mb-6">
+          <p
+            class="text-sm font-bold tracking-wide mb-2"
+            :class="darkChrome ? 'text-emerald-200/70' : 'text-slate-400'"
+          >
             京西校区 26-27 学年 · {{ gradeLabel }}
           </p>
-          <h1 class="text-3xl font-black tracking-tight mb-2">
+          <h1 class="text-[2.1rem] font-black tracking-tight mb-2">
             {{ scheduleStore.displayStudentName }}的课程表
           </h1>
-          <p class="text-sm font-medium text-slate-500">
-            {{ scheduleStore.schoolName }}
-            <span class="mx-1.5 text-slate-300">|</span>
-            {{ scheduleStore.className }}
+          <p
+            class="text-[15px] font-medium"
+            :class="darkChrome ? 'text-emerald-100/70' : 'text-slate-500'"
+          >
+            {{ scheduleStore.schoolName }} · {{ scheduleStore.className }}
           </p>
         </div>
 
-        <div class="rounded-xl border border-slate-200 overflow-hidden">
-          <table class="w-full table-fixed border-collapse">
-            <colgroup>
-              <col class="w-[4.5rem]" />
-              <col v-for="day in WEEKDAYS" :key="`export-col-${day.id}`" />
-            </colgroup>
-            <thead>
-              <tr class="bg-slate-50">
-                <th class="h-12 px-2 text-xs font-bold text-slate-400 text-center border-b border-r border-slate-200">
-                  节次
-                </th>
-                <th
-                  v-for="day in WEEKDAYS"
-                  :key="`export-h-${day.id}`"
-                  class="h-12 px-1 text-center text-sm font-bold text-slate-600 border-b border-slate-200"
-                  :class="day.id < 5 ? 'border-r border-slate-200' : ''"
-                >
-                  {{ day.name }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <template v-for="period in SCHEDULE_PERIODS" :key="`export-p-${period.id}`">
-                <tr v-if="period.id === 5">
-                  <td
-                    colspan="6"
-                    class="h-10 bg-[#FAFAF7] text-center text-xs font-semibold text-slate-400 border-y border-slate-200"
-                  >
-                    午 休
-                  </td>
-                </tr>
-                <tr>
-                  <td class="h-14 px-2 text-xs font-bold text-slate-400 text-center border-b border-r border-slate-200 bg-slate-50/50 align-middle">
-                    {{ period.label }}
-                  </td>
-                  <td
-                    v-for="day in WEEKDAYS"
-                    :key="`export-${day.id}-${period.id}`"
-                    class="h-14 px-2 border-b border-slate-200 align-middle bg-white"
-                    :class="day.id < 5 ? 'border-r border-slate-200' : ''"
-                  >
-                    <div
-                      class="h-full min-h-[3.25rem] flex items-center justify-center text-[13px] font-semibold leading-tight text-center"
-                      :class="
-                        scheduleStore.cellSubject(day.id, period.id).id === 'empty'
-                          ? 'text-slate-300'
-                          : SUBJECT_CELL_CLASS[scheduleStore.cellSubject(day.id, period.id).tone]
-                      "
-                    >
-                      {{
-                        scheduleStore.cellSubject(day.id, period.id).id === 'empty'
-                          ? '—'
-                          : scheduleStore.cellSubject(day.id, period.id).name
-                      }}
-                    </div>
-                  </td>
-                </tr>
-              </template>
-            </tbody>
-          </table>
-        </div>
+        <ScheduleLayoutBoard
+          :skin-id="skinId"
+          :interactive="false"
+          :today-id="null"
+          :mobile-day="mobileDay"
+          :export-mode="true"
+          :scrapbook-split="scrapbookSplit"
+        />
       </div>
     </div>
 
-    <!-- 导出预览：先看图，再下载 -->
     <AppModal
       :open="previewOpen"
       size="lg"
@@ -482,14 +607,17 @@ watch(
     >
       <template #header>
         <div class="min-w-0 pr-2">
-          <h3 class="text-base font-bold text-slate-900 tracking-tight">导出预览</h3>
+          <h3 class="text-base font-bold text-slate-900 tracking-tight">贴墙预览</h3>
           <p class="text-[11px] text-slate-500 font-medium mt-0.5">
-            确认无误后再下载 · {{ exportFileName }}
+            {{ copyDone ? '已复制，去微信粘贴发送吧' : '可复制到微信，也可下载保存' }}
           </p>
         </div>
       </template>
 
-      <div class="rounded-xl border border-slate-200 bg-slate-50 overflow-auto max-h-[55vh]">
+      <div
+        class="rounded-xl border border-slate-200 overflow-auto max-h-[55vh]"
+        :style="{ backgroundColor: skin.exportBgHex }"
+      >
         <img
           v-if="previewDataUrl"
           :src="previewDataUrl"
@@ -508,11 +636,27 @@ watch(
         </button>
         <button
           type="button"
-          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 cursor-pointer active:scale-95 transition"
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-white cursor-pointer active:scale-95 transition"
           @click="downloadPreviewImage"
         >
           <Download class="w-3.5 h-3.5" />
-          下载图片
+          下载
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer active:scale-95 transition disabled:opacity-60"
+          :class="
+            copyDone
+              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+              : 'bg-slate-900 text-white hover:bg-slate-800'
+          "
+          :disabled="copying"
+          @click="copyPreviewImage"
+        >
+          <LoaderCircle v-if="copying" class="w-3.5 h-3.5 animate-spin" />
+          <Check v-else-if="copyDone" class="w-3.5 h-3.5" />
+          <Copy v-else class="w-3.5 h-3.5" />
+          {{ copying ? '复制中…' : copyDone ? '已复制' : '复制图片' }}
         </button>
       </template>
     </AppModal>
@@ -543,9 +687,9 @@ watch(
             type="button"
             class="flex items-center gap-2.5 px-3.5 py-3 text-left text-sm font-semibold border-b border-slate-100 sm:odd:border-r transition cursor-pointer active:scale-[0.99]"
             :class="[
-              subject.id === 'empty' ? 'text-slate-400' : SUBJECT_CELL_CLASS[subject.tone],
+              subject.id === 'empty' ? 'text-slate-400 bg-white' : SUBJECT_CELL_CLASS[subject.tone],
               selectedMeta.subject.id === subject.id
-                ? 'bg-sky-50'
+                ? 'bg-slate-50'
                 : 'bg-white hover:bg-slate-50'
             ]"
             @click="pickSubject(subject.id)"
@@ -558,7 +702,7 @@ watch(
             <span class="flex-1 leading-snug">{{ subject.name }}</span>
             <span
               v-if="selectedMeta.subject.id === subject.id"
-              class="text-[10px] font-bold text-sky-600 shrink-0"
+              class="text-[10px] font-bold text-slate-600 shrink-0"
             >当前</span>
           </button>
         </div>
