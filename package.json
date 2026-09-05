@@ -21,7 +21,7 @@
     "hanzi-writer": "^3.7.3",
     "hanzi-writer-data": "^2.0.1",
     "howler": "^2.2.4",
-    "katex": "^0.18.4",
+    "katex": "^0.18.5",
     "lucide-vue-next": "^1.0.0",
     "modern-screenshot": "^4.7.0",
     "pinia": "^4.0.3",
