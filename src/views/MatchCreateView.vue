@@ -21,12 +21,13 @@ import {
 
 const router = useRouter();
 
-type GameKind = 'gomoku' | 'checkers' | 'go';
+type GameKind = 'gomoku' | 'checkers' | 'xiangqi' | 'go';
 const selectedGame = ref<GameKind>('gomoku');
 
 const GAME_OPTIONS: { id: GameKind; icon: string; name: string }[] = [
   { id: 'gomoku', icon: '⚪', name: '欢乐五子棋' },
   { id: 'checkers', icon: '⭐', name: '快乐六角跳棋' },
+  { id: 'xiangqi', icon: '🐴', name: '中国象棋 · Xiangqi' },
   { id: 'go', icon: '♟️', name: '少儿经典围棋' }
 ];
 
@@ -88,6 +89,10 @@ const goToReplay = (rec: UnifiedGameRecord) => {
     router.push('/gomoku');
     return;
   }
+  if (rec.gameType === 'xiangqi') {
+    router.push('/xiangqi/play');
+    return;
+  }
   router.push('/two-player');
 };
 
@@ -115,6 +120,16 @@ const launchMatch = () => {
       query: {
         mode: 'twoPlayer',
         players: String(checkersPlayers.value)
+      }
+    });
+    return;
+  }
+
+  if (selectedGame.value === 'xiangqi') {
+    router.push({
+      path: '/xiangqi/play',
+      query: {
+        mode: 'twoPlayer'
       }
     });
     return;
@@ -277,6 +292,14 @@ const launchMatch = () => {
           <button
             type="button"
             class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer"
+            :class="filterGameType === 'xiangqi' ? 'bg-rose-600 text-white border-rose-600 shadow-2xs' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'"
+            @click="filterGameType = 'xiangqi'; sound.playButtonSound();"
+          >
+            🐴 中国象棋 · Xiangqi
+          </button>
+          <button
+            type="button"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer"
             :class="filterGameType === 'go' ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'"
             @click="filterGameType = 'go'; sound.playButtonSound();"
           >
@@ -293,7 +316,7 @@ const launchMatch = () => {
             >
               <div class="flex items-center gap-3 min-w-0">
                 <div class="w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-2xl shrink-0 shadow-2xs">
-                  {{ rec.gameType === 'checkers' ? '⭐' : rec.gameType === 'gomoku' ? '⚪' : '♟️' }}
+                  {{ rec.gameType === 'checkers' ? '⭐' : rec.gameType === 'gomoku' ? '⚪' : rec.gameType === 'xiangqi' ? '🐴' : '♟️' }}
                 </div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">

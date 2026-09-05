@@ -125,6 +125,39 @@ export const MODULE_INVENTORY: ModuleInventoryItem[] = [
     suggestDelete: false
   },
   {
+    id: 'xiangqi',
+    name: '中国象棋学堂 Xiangqi',
+    kind: 'page',
+    path: '/xiangqi',
+    file: 'src/views/XiangqiHubView.vue',
+    reachable: true,
+    entries: ['桌面侧栏', '手机/平板底栏', '今天·快捷入口'],
+    note: '象棋启蒙教程、残局与亲子同屏入口。',
+    suggestDelete: false
+  },
+  {
+    id: 'xiangqi-play',
+    name: '象棋亲子同屏',
+    kind: 'page',
+    path: '/xiangqi/play',
+    file: 'src/views/XiangqiView.vue',
+    reachable: true,
+    entries: ['创建对局', '象棋学堂'],
+    note: '中国象棋亲子同屏对弈。',
+    suggestDelete: false
+  },
+  {
+    id: 'xiangqi-endgame',
+    name: '象棋残局',
+    kind: 'page',
+    path: '/xiangqi/endgame',
+    file: 'src/views/XiangqiEndgameView.vue',
+    reachable: true,
+    entries: ['象棋学堂'],
+    note: '一步将死残局训练。',
+    suggestDelete: false
+  },
+  {
     id: 'two-player',
     name: '亲子同屏围棋',
     kind: 'page',

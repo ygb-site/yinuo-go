@@ -118,6 +118,22 @@ export const UNLOCK_FEATURES: UnlockFeature[] = [
     desc: '经典六角星中国跳棋！亲子同屏 2–6 人对坐，一键连跳起飞超好玩！'
   },
   {
+    id: 'xiangqi',
+    name: '中国象棋',
+    nameEn: 'Xiangqi (Chinese Chess)',
+    icon: '🐴',
+    badge: '亲子畅玩 · 始终开放',
+    badgeColor: 'bg-rose-500',
+    gradient: 'from-rose-400 via-orange-500 to-amber-500',
+    route: '/xiangqi',
+    category: 'learn',
+    lessonsRequired: 0,
+    chapterRequired: 0,
+    unlockTitle: '始终开放',
+    unlockTip: '始终开放，随时畅玩',
+    desc: '象棋学堂：8节走法教程、6道将死残局，学完再去亲子同屏对弈。'
+  },
+  {
     id: 'two-player',
     name: '亲子面对面',
     nameEn: 'Pass & Play Local',

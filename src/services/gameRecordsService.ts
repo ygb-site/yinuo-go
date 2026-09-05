@@ -1,7 +1,7 @@
 import { getSupabaseClient } from '../lib/supabase';
 import { useUserStore } from '../stores/useUserStore';
 
-export type GameType = 'go' | 'checkers' | 'gomoku';
+export type GameType = 'go' | 'checkers' | 'gomoku' | 'xiangqi';
 
 export interface WinRatePoint {
   stepIndex: number;

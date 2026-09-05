@@ -23,6 +23,10 @@ const TwoPlayerView = () => import('../views/TwoPlayerView.vue');
 const RhymesView = () => import('../views/RhymesView.vue');
 const ChineseCheckersView = () => import('../views/ChineseCheckersView.vue');
 const GomokuView = () => import('../views/GomokuView.vue');
+const XiangqiView = () => import('../views/XiangqiView.vue');
+const XiangqiHubView = () => import('../views/XiangqiHubView.vue');
+const XiangqiLessonView = () => import('../views/XiangqiLessonView.vue');
+const XiangqiEndgameView = () => import('../views/XiangqiEndgameView.vue');
 
 const MistakesView = () => import('../views/MistakesView.vue');
 const ShopView = () => import('../views/ShopView.vue');
@@ -99,6 +103,30 @@ const routes: RouteRecordRaw[] = [
     name: 'gomoku',
     component: GomokuView,
     meta: { mode: 'child', section: 'play', title: '欢乐五子棋', label: '五子棋对局' }
+  },
+  {
+    path: '/xiangqi',
+    name: 'xiangqi',
+    component: XiangqiHubView,
+    meta: { mode: 'child', section: 'xiangqi', title: '象棋学堂', label: 'Xiangqi · 中国象棋学堂' }
+  },
+  {
+    path: '/xiangqi/play',
+    name: 'xiangqi-play',
+    component: XiangqiView,
+    meta: { mode: 'child', section: 'xiangqi', title: '象棋对局', label: 'Xiangqi · 象棋亲子同屏' }
+  },
+  {
+    path: '/xiangqi/lesson/:id',
+    name: 'xiangqi-lesson',
+    component: XiangqiLessonView,
+    meta: { mode: 'child', section: 'xiangqi', title: '象棋教程', label: 'Xiangqi · 象棋启蒙关卡' }
+  },
+  {
+    path: '/xiangqi/endgame',
+    name: 'xiangqi-endgame',
+    component: XiangqiEndgameView,
+    meta: { mode: 'child', section: 'xiangqi', title: '象棋残局', label: 'Xiangqi Endgames · 象棋残局' }
   },
   {
     path: '/two-player',
@@ -261,6 +289,9 @@ export const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/tsumego": TsumegoView,
   "/checkers": ChineseCheckersView,
   "/gomoku": GomokuView,
+  "/xiangqi": XiangqiHubView,
+  "/xiangqi/play": XiangqiView,
+  "/xiangqi/endgame": XiangqiEndgameView,
   "/mistakes": MistakesView,
   "/two-player": TwoPlayerView
 };
@@ -280,6 +311,7 @@ export function preloadCoreRoutes() {
     ProfileView().catch(() => {});
     ChineseCheckersView().catch(() => {});
     GomokuView().catch(() => {});
+    XiangqiView().catch(() => {});
     MistakesView().catch(() => {});
   };
 

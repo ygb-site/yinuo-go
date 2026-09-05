@@ -18,7 +18,7 @@ const userStore = useUserStore();
 const scheduleStore = useScheduleStore();
 
 interface NavTab {
-  id: 'today' | 'schedule' | 'learn' | 'play' | 'me' | 'lab';
+  id: 'today' | 'schedule' | 'learn' | 'xiangqi' | 'play' | 'me' | 'lab';
   label: string;
   shortLabel: string;
   path: string;
@@ -33,6 +33,7 @@ const navTabs = computed<NavTab[]>(() => [
   { id: 'today', label: '今天', shortLabel: '今天', path: '/', icon: 'compass' },
   { id: 'schedule', label: '课程表', shortLabel: '课表', path: '/schedule', icon: 'calendar', badge: scheduleGradeBadge.value },
   { id: 'learn', label: '少儿围棋', shortLabel: '围棋', path: '/learn', icon: 'book', badge: '核心' },
+  { id: 'xiangqi', label: '象棋学堂', shortLabel: '象棋', path: '/xiangqi', icon: 'swords', badge: 'Xiangqi' },
   { id: 'play', label: '创建对局', shortLabel: '对局', path: '/match', icon: 'gamepad', badge: '热门' },
   { id: 'me', label: '成长档案', shortLabel: '我的', path: '/profile', icon: 'growth' },
   { id: 'lab', label: '模块清单', shortLabel: '模块', path: '/modules', icon: 'clipboard-list', badge: '整理', desktopOnly: true }
@@ -49,6 +50,7 @@ const currentSection = computed(() => {
   if (path === '/') return 'today';
   if (path.startsWith('/schedule')) return 'schedule';
   if (path.startsWith('/learn') || path.startsWith('/adventure') || path.startsWith('/lesson')) return 'learn';
+  if (path.startsWith('/xiangqi')) return 'xiangqi';
   if (path.startsWith('/match') || path.startsWith('/puzzle') || path.startsWith('/checkers') || path.startsWith('/gomoku') || path.startsWith('/two-player')) return 'play';
   if (path.startsWith('/profile') || path.startsWith('/shop') || path.startsWith('/mistakes')) return 'me';
   if (path.startsWith('/modules')) return 'lab';
@@ -56,13 +58,14 @@ const currentSection = computed(() => {
 });
 
 const isTopLevelTab = computed(() => {
-  return ['/', '/schedule', '/learn', '/match', '/puzzle', '/profile', '/modules'].includes(route.path);
+  return ['/', '/schedule', '/learn', '/xiangqi', '/match', '/puzzle', '/profile', '/modules'].includes(route.path);
 });
 
 const pageTitle = computed(() => {
   if (route.path === '/') return '今天';
   if (route.path.startsWith('/schedule')) return `${scheduleStore.displayStudentName}的课程表`;
   if (route.path.startsWith('/learn')) return '少儿围棋天地';
+  if (route.path === '/xiangqi') return 'Xiangqi · 中国象棋学堂';
   if (route.path.startsWith('/match') || route.path.startsWith('/puzzle')) return '创建对局中心';
   if (route.path.startsWith('/profile')) return '成长中心';
   if (route.path.startsWith('/modules')) return '模块清单';

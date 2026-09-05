@@ -187,6 +187,13 @@ const weekendExplorations = [
     route: '/gomoku'
   },
   {
+    title: '象棋学堂',
+    subtitle: 'Xiangqi · 教程与残局',
+    icon: '🐴',
+    iconBg: 'bg-orange-100 text-orange-800 border-orange-200',
+    route: '/xiangqi'
+  },
+  {
     title: '死活轻练',
     subtitle: '一道就好',
     icon: '🧩',
@@ -272,7 +279,7 @@ const weekendExplorations = [
               <span>🎲</span>
               <span>周末探索</span>
             </h2>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               <button
                 v-for="item in weekendExplorations"
                 :key="item.title"

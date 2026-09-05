@@ -43,6 +43,27 @@ export function getPuzzleNodes(): LearningNode[] {
       route: '/checkers',
       estimatedMinutes: 8,
       legacyIds: ['checkers_ai']
+    },
+    {
+      id: 'xiangqi:match:play',
+      domainId: 'xiangqi',
+      kind: 'match',
+      title: '中国象棋 · Xiangqi',
+      subtitle: '学堂教程 · 残局将死',
+      description: '象棋走法启蒙与将死残局（Chinese Chess）',
+      order: 3,
+      knowledgePointIds: ['象棋走法'],
+      skillIds: ['xiangqi.move'],
+      unlock: { type: 'always' },
+      reward: {
+        first: { coins: 30, exp: 60 },
+        repeat: { coins: 5, exp: 10 },
+        rewardDomain: 'xiangqi-match',
+        dailyCap: { capId: 'xiangqi', limit: 10 }
+      },
+      route: '/xiangqi',
+      estimatedMinutes: 10,
+      legacyIds: ['xiangqi_play']
     }
   ];
 }
