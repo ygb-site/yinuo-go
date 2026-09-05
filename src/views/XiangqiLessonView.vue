@@ -95,6 +95,10 @@ const onPointClick = (r: number, c: number) => {
     }
     sound.playErrorSound();
     mascotMood.value = 'comforting';
+    if (step.blockedTargets?.some((pt) => samePoint({ r, c }, pt))) {
+      mascotText.value = '红圈是飞不过去的格子，这一步先不用点它。请点挡住象眼或马腿的那枚棋子。';
+      return;
+    }
     mascotText.value = `还没点对哦。${step.hint}`;
     return;
   }
@@ -190,7 +194,13 @@ const nextButtonText = computed(() => {
           <div class="bg-white rounded-3xl p-4 border-2 border-slate-200 space-y-3">
             <p class="text-sm font-black text-slate-900">目标：{{ currentStep.goalText }}</p>
             <p
-              v-if="currentStep.blockedTargets?.length"
+              v-if="currentStep.action === 'click' && currentStep.blockedTargets?.length"
+              class="text-[11px] text-slate-500 leading-relaxed"
+            >
+              先点蓝圈里的棋子或交叉点。红圈加 × 是过不去的路，点对后才会出现「下一步」。
+            </p>
+            <p
+              v-else-if="currentStep.blockedTargets?.length"
               class="text-[11px] text-slate-500 leading-relaxed"
             >
               红圈加 × 是过不去的路；绿点是还能走的格子。

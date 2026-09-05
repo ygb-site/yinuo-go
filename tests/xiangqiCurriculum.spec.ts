@@ -19,6 +19,24 @@ describe('象棋教程与残局', () => {
     }
   });
 
+  it('塞眼和蹩马实例在堵死后没有可飞可跳的绿点', () => {
+    const stuck = [
+      { id: 'xq_l4', title: '找出象眼' },
+      { id: 'xq_l4', title: '塞眼飞不过' },
+      { id: 'xq_l4', title: '相不能过河' },
+      { id: 'xq_l5', title: '找出马腿' },
+      { id: 'xq_l5', title: '蹩住就跳不过' }
+    ];
+    for (const item of stuck) {
+      const lesson = XIANGQI_LESSONS.find((row) => row.id === item.id);
+      const step = lesson?.steps.find((row) => row.title === item.title);
+      expect(step?.selectAt, item.title).toBeTruthy();
+      const board = boardFromPieces(step!.pieces);
+      const legal = generateLegalMovesFrom(board, step!.selectAt!.r, step!.selectAt!.c);
+      expect(legal, `${item.id} ${item.title} 应被完全憋住`).toEqual([]);
+    }
+  });
+
   it('蹩马脚和塞象眼的红圈都是不合法着法', () => {
     for (const lesson of XIANGQI_LESSONS) {
       for (const step of lesson.steps) {

@@ -159,39 +159,61 @@ export const XIANGQI_LESSONS: XiangqiLesson[] = [
       },
       {
         title: '找出象眼',
-        dialogue: '同样是这只相，田字中心现在站着一枚卒。这个中心叫「象眼」。请先点出被堵住的象眼！',
-        goalText: '点出堵住象眼的卒',
-        hint: '看左相右前方、田字正中间那枚黑卒，点它。',
+        dialogue: '同样是这只相，左右两只田心现在都站着卒。田字正中心叫「象眼」，眼里有子就飞不出去。请点出其中一枚堵住象眼的卒！',
+        goalText: '点相左前方或右前方那枚黑卒，不要点红圈',
+        hint: '看左相左前方、右前方，田字正中间那两枚黑卒，点其中一枚。',
         explanation: '对！田字四个角是落点，正中心是象眼。眼里有棋子，就叫塞象眼。',
         pieces: [
           p(9, 4, 'king', 'red'),
           p(9, 2, 'elephant', 'red'),
+          p(8, 1, 'pawn', 'black'),
           p(8, 3, 'pawn', 'black'),
           p(0, 3, 'king', 'black')
         ],
         action: 'click',
         selectAt: { r: 9, c: 2 },
         target: { r: 8, c: 3 },
-        highlights: [{ r: 8, c: 3 }],
-        blockedTargets: [{ r: 7, c: 4 }]
+        targets: [
+          { r: 8, c: 3 },
+          { r: 8, c: 1 }
+        ],
+        highlights: [
+          { r: 8, c: 3 },
+          { r: 8, c: 1 }
+        ],
+        blockedTargets: [
+          { r: 7, c: 4 },
+          { r: 7, c: 0 }
+        ]
       },
       {
         title: '塞眼飞不过',
-        dialogue: '象眼被堵住了。请点出相本来想飞、现在飞不过去的那个交叉点。',
+        dialogue: '两只象眼都被卒堵住了，这只相现在哪边都飞不出去。请点出它本来想飞、现在飞不过去的格子。',
         goalText: '点出被塞眼、飞不过去的格子',
-        hint: '从左相再往右上飞一个田字，那个空交叉点就是。红圈标出来了。',
+        hint: '从左相往左上或右上再飞一个田字，红圈就是。绿点没有了，因为飞不了。',
         explanation: '田心有子就不能斜着飞过去。己方、对方的棋子堵在象眼，都不行。',
         pieces: [
           p(9, 4, 'king', 'red'),
           p(9, 2, 'elephant', 'red'),
+          p(8, 1, 'pawn', 'black'),
           p(8, 3, 'pawn', 'black'),
           p(0, 3, 'king', 'black')
         ],
         action: 'click',
         selectAt: { r: 9, c: 2 },
         target: { r: 7, c: 4 },
-        highlights: [{ r: 8, c: 3 }],
-        blockedTargets: [{ r: 7, c: 4 }]
+        targets: [
+          { r: 7, c: 4 },
+          { r: 7, c: 0 }
+        ],
+        highlights: [
+          { r: 8, c: 3 },
+          { r: 8, c: 1 }
+        ],
+        blockedTargets: [
+          { r: 7, c: 4 },
+          { r: 7, c: 0 }
+        ]
       },
       {
         title: '换一边飞',
@@ -214,13 +236,15 @@ export const XIANGQI_LESSONS: XiangqiLesson[] = [
       },
       {
         title: '相不能过河',
-        dialogue: '相还有一个规矩：永远不能过河。这只相已经站到河边了。请点出河对岸它飞不过去的格子。',
+        dialogue: '相还有一个规矩：永远不能过河。身后两只眼也被卒堵住了，往回飞不了；往前飞又过河。请点出河对岸它到不了的格子。',
         goalText: '点出过了河、相到不了的格子',
         hint: '从河边的相再往前飞一个田字，就掉到楚河汉界那边了。红圈就是。',
-        explanation: '象眼空着也不行——相是守家的，不能过楚河汉界。',
+        explanation: '身后塞眼飞不回来，往前就算象眼空着也不能过河。相是守家的。',
         pieces: [
           p(9, 4, 'king', 'red'),
           p(5, 2, 'elephant', 'red'),
+          p(6, 1, 'pawn', 'black'),
+          p(6, 3, 'pawn', 'black'),
           p(0, 3, 'king', 'black')
         ],
         action: 'click',
@@ -263,35 +287,45 @@ export const XIANGQI_LESSONS: XiangqiLesson[] = [
       },
       {
         title: '找出马腿',
-        dialogue: '马往前跳，要先经过正前方这一格。这一格叫「马腿」。现在马腿上站着一枚卒。请点出这枚挡路的卒！',
-        goalText: '点出挡住马腿的卒',
-        hint: '看马头顶上贴着的那枚黑卒，点它。',
+        dialogue: '马往前跳，要先经过正前方这一格。这一格叫「马腿」。现在前面和右边的马腿都站着卒，这匹马跳不出去。请点出其中一枚挡路的卒！',
+        goalText: '点马前方或右边那枚黑卒，不要点红圈',
+        hint: '看马头顶上、或紧贴右边的黑卒，点其中一枚。',
         explanation: '对！马先直一格、再斜一格。直的那一格就是马腿。腿上有棋子，叫蹩马脚。',
         pieces: [
           p(9, 4, 'king', 'red'),
           p(9, 1, 'horse', 'red'),
           p(8, 1, 'pawn', 'black'),
+          p(9, 2, 'pawn', 'black'),
           p(0, 3, 'king', 'black')
         ],
         action: 'click',
         selectAt: { r: 9, c: 1 },
         target: { r: 8, c: 1 },
-        highlights: [{ r: 8, c: 1 }],
+        targets: [
+          { r: 8, c: 1 },
+          { r: 9, c: 2 }
+        ],
+        highlights: [
+          { r: 8, c: 1 },
+          { r: 9, c: 2 }
+        ],
         blockedTargets: [
           { r: 7, c: 0 },
-          { r: 7, c: 2 }
+          { r: 7, c: 2 },
+          { r: 8, c: 3 }
         ]
       },
       {
         title: '蹩住就跳不过',
-        dialogue: '马腿被堵住了。前面两条日字路都跳不过去。请点出马本来想去、现在去不了的格子。',
+        dialogue: '前面和右边的马腿都被堵住了，这匹马现在跳不出去。请点出它本来想去、现在去不了的格子。',
         goalText: '点出被蹩住、跳不过去的格子',
-        hint: '看马左前方或右前方再隔一格的空交叉点，红圈标出来了。',
-        explanation: '这就是蹩马脚：马腿上有子，经过这条腿的日字路就被卡死。别的方向还能跳。',
+        hint: '看马前面或右上方那些空交叉点，红圈标出来了。',
+        explanation: '这就是蹩马脚：马腿上有子，经过这条腿的日字路就被卡死。',
         pieces: [
           p(9, 4, 'king', 'red'),
           p(9, 1, 'horse', 'red'),
           p(8, 1, 'pawn', 'black'),
+          p(9, 2, 'pawn', 'black'),
           p(0, 3, 'king', 'black')
         ],
         action: 'click',
@@ -299,12 +333,17 @@ export const XIANGQI_LESSONS: XiangqiLesson[] = [
         target: { r: 7, c: 2 },
         targets: [
           { r: 7, c: 2 },
-          { r: 7, c: 0 }
+          { r: 7, c: 0 },
+          { r: 8, c: 3 }
         ],
-        highlights: [{ r: 8, c: 1 }],
+        highlights: [
+          { r: 8, c: 1 },
+          { r: 9, c: 2 }
+        ],
         blockedTargets: [
           { r: 7, c: 0 },
-          { r: 7, c: 2 }
+          { r: 7, c: 2 },
+          { r: 8, c: 3 }
         ]
       },
       {

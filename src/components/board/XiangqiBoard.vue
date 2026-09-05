@@ -160,6 +160,15 @@ const handleSvgBoardClick = (e: MouseEvent) => {
     </g>
 
     <g v-for="(pt, idx) in highlights" :key="'hl_' + idx" fill="#38bdf8" fill-opacity="0.32" pointer-events="none">
+      <circle
+        :cx="getSvgCoord(pt.r, pt.c).cx"
+        :cy="getSvgCoord(pt.r, pt.c).cy"
+        r="26"
+        fill="none"
+        stroke="#0284c7"
+        stroke-width="3"
+        class="animate-pulse"
+      />
       <circle :cx="getSvgCoord(pt.r, pt.c).cx" :cy="getSvgCoord(pt.r, pt.c).cy" r="22" />
     </g>
 
