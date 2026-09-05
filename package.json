@@ -30,7 +30,7 @@
     "postcss": "^8.5.26",
     "tailwindcss": "^3.4.19",
     "vue": "^3.5.40",
-    "vue-router": "^5.2.0"
+    "vue-router": "^5.3.0"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
