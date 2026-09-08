@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Sun, Sunset } from 'lucide-vue-next';
+import { Sun, Sunset, Snowflake } from 'lucide-vue-next';
 import {
   WEEKDAYS,
-  MORNING_PERIODS,
-  AFTERNOON_PERIODS,
   SUBJECT_CELL_CLASS,
   SUBJECT_POSTER_CLASS,
   useScheduleStore,
@@ -41,11 +39,83 @@ const scheduleStore = useScheduleStore();
 /** 贴墙导出不带「今天」选中高亮，五天一视同仁 */
 const highlightTodayId = computed(() => (props.exportMode ? null : props.todayId));
 
-const morningPeriods = MORNING_PERIODS;
-const afternoonPeriods = AFTERNOON_PERIODS;
-const allPeriods = [...MORNING_PERIODS, ...AFTERNOON_PERIODS];
+type PeriodSlotType = "morning_read" | "morning" | "afternoon" | "evening";
+
+interface PeriodSection {
+  type: PeriodSlotType;
+  title: string;
+  periods: SchedulePeriod[];
+  rail: string;
+  banner: string;
+  icon: 'sun' | 'sunset' | 'moon' | 'sparkles';
+  iconName: 'sun' | 'sunset' | 'moon' | 'sparkles';
+}
+
+const morningPeriods = computed(() => scheduleStore.periods.filter((p) => p.slotType === 'morning' || p.slotType === 'morning_read'));
+const afternoonPeriods = computed(() => scheduleStore.periods.filter((p) => p.slotType === 'afternoon' || p.slotType === 'evening'));
+const allPeriods = computed(() => scheduleStore.periods);
+
+const activeSections = computed<PeriodSection[]>(() => {
+  const periods = scheduleStore.periods;
+  const sections: PeriodSection[] = [];
+
+  const morningRead = periods.filter((p) => p.slotType === "morning_read");
+  if (morningRead.length > 0) {
+    sections.push({
+      type: "morning_read",
+      title: "早读",
+      periods: morningRead,
+      rail: "from-amber-100/90 to-rose-50 text-amber-900",
+      banner: "bg-amber-50 text-amber-900",
+      icon: "sparkles",
+      iconName: "sparkles"
+    });
+  }
+
+  const morning = periods.filter((p) => p.slotType === "morning");
+  if (morning.length > 0) {
+    sections.push({
+      type: "morning",
+      title: "上午",
+      periods: morning,
+      rail: "from-amber-100 to-orange-50 text-amber-800",
+      banner: "bg-amber-50 text-amber-800",
+      icon: "sun",
+      iconName: "sun"
+    });
+  }
+
+  const afternoon = periods.filter((p) => p.slotType === "afternoon");
+  if (afternoon.length > 0) {
+    sections.push({
+      type: "afternoon",
+      title: "下午",
+      periods: afternoon,
+      rail: "from-sky-100 to-cyan-50 text-sky-800",
+      banner: "bg-sky-50 text-sky-800",
+      icon: "sunset",
+      iconName: "sunset"
+    });
+  }
+
+  const evening = periods.filter((p) => p.slotType === "evening");
+  if (evening.length > 0) {
+    sections.push({
+      type: "evening",
+      title: "晚自习",
+      periods: evening,
+      rail: "from-indigo-100 to-violet-50 text-indigo-900",
+      banner: "bg-indigo-50 text-indigo-900",
+      icon: "moon",
+      iconName: "moon"
+    });
+  }
+
+  return sections;
+});
 
 const cellOf = (day: WeekdayId, period: number) => scheduleStore.cellSubject(day, period);
+const teacherOf = (day: WeekdayId, period: number) => scheduleStore.cellTeacher(day, period);
 
 const periodShort = (period: SchedulePeriod) =>
   period.label.replace('第', '').replace('节', '');
@@ -231,10 +301,7 @@ const scrapbookBoardStyle = computed(() => {
             </tr>
           </thead>
           <tbody>
-            <template v-for="section in [
-              { title: '上午', periods: morningPeriods, rail: 'from-amber-100 to-orange-50 text-amber-800', icon: 'sun' },
-              { title: '下午', periods: afternoonPeriods, rail: 'from-sky-100 to-cyan-50 text-sky-800', icon: 'sunset' }
-            ]" :key="section.title">
+            <template v-for="section in activeSections" :key="section.title">
               <tr v-for="(period, index) in section.periods" :key="`p-${period.id}`">
                 <td
                   v-if="index === 0"
@@ -242,9 +309,10 @@ const scrapbookBoardStyle = computed(() => {
                   class="align-middle border-b border-r border-amber-200/50 px-1 bg-gradient-to-b"
                   :class="section.rail"
                 >
-                  <div class="flex flex-col items-center gap-1 py-3">
-                    <Sun v-if="section.icon === 'sun'" class="w-4 h-4 opacity-80" />
-                    <Sunset v-else class="w-4 h-4 opacity-80" />
+                  <div class="flex flex-col items-center gap-1.5 py-3">
+                    <Sun v-if="section.icon === 'sun'" class="w-4 h-4 opacity-85 text-amber-600" />
+                    <Snowflake v-else-if="section.type === 'afternoon'" class="w-4 h-4 opacity-85 text-sky-600" />
+                    <Sunset v-else class="w-4 h-4 opacity-85" />
                     <span class="text-[13px] font-black" style="writing-mode: vertical-rl; letter-spacing: 0.18em;">{{ section.title }}</span>
                   </div>
                 </td>
@@ -259,16 +327,22 @@ const scrapbookBoardStyle = computed(() => {
                 >
                   <button
                     type="button"
-                    class="w-full h-full min-h-[3.1rem] rounded-xl flex items-center justify-center px-1.5 border text-[13px] font-bold"
+                    class="w-full h-full min-h-[3.2rem] rounded-2xl flex items-center justify-center px-1.5 border font-bold transition active:scale-95 cursor-pointer shadow-2xs"
                     :class="
                       cellOf(day.id, period.id).id === 'empty'
-                        ? 'border-dashed border-amber-200 text-amber-300'
+                        ? 'border-dashed border-amber-300/80 bg-white/90 hover:bg-amber-50/50 hover:border-amber-400 text-amber-400'
                         : SUBJECT_POSTER_CLASS[cellOf(day.id, period.id).tone]
                     "
                     :disabled="!interactive"
                     @click="onPick(day.id, period.id)"
                   >
-                    {{ cellOf(day.id, period.id).id === 'empty' ? (exportMode ? '—' : '＋') : cellOf(day.id, period.id).name }}
+                    <div v-if="cellOf(day.id, period.id).id !== 'empty'" class="flex flex-col items-center justify-center py-1 leading-tight">
+                      <span class="text-[13px]">{{ cellOf(day.id, period.id).name }}</span>
+                      <span v-if="teacherOf(day.id, period.id)" class="text-[11px] font-normal opacity-75 mt-0.5">
+                        {{ teacherOf(day.id, period.id) }}
+                      </span>
+                    </div>
+                    <span v-else class="text-base font-light">{{ exportMode ? '—' : '+' }}</span>
                   </button>
                 </td>
               </tr>
@@ -280,10 +354,7 @@ const scrapbookBoardStyle = computed(() => {
       <!-- 手机：海报列表 -->
       <div v-if="!exportMode" class="lg:hidden space-y-3">
         <div
-          v-for="section in [
-            { title: '上午', periods: morningPeriods, banner: 'bg-amber-50 text-amber-800' },
-            { title: '下午', periods: afternoonPeriods, banner: 'bg-sky-50 text-sky-800' }
-          ]"
+          v-for="section in activeSections"
           :key="`pm-${section.title}`"
           class="rounded-2xl border border-amber-200/55 overflow-hidden bg-white/70"
         >
@@ -301,9 +372,14 @@ const scrapbookBoardStyle = computed(() => {
             <div class="flex-1 px-3 py-2.5 flex items-center min-h-[3.4rem]">
               <span
                 v-if="cellOf(mobileDay, period.id).id !== 'empty'"
-                class="inline-flex px-2.5 py-1.5 rounded-xl border text-sm font-bold"
+                class="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-sm font-bold"
                 :class="SUBJECT_POSTER_CLASS[cellOf(mobileDay, period.id).tone]"
-              >{{ cellOf(mobileDay, period.id).name }}</span>
+              >
+                <span>{{ cellOf(mobileDay, period.id).name }}</span>
+                <span v-if="teacherOf(mobileDay, period.id)" class="text-xs font-normal opacity-75">
+                  {{ teacherOf(mobileDay, period.id) }}
+                </span>
+              </span>
               <span v-else class="text-sm text-amber-300 font-medium">选择课程</span>
             </div>
           </button>
@@ -345,12 +421,16 @@ const scrapbookBoardStyle = computed(() => {
               >
                 <button
                   type="button"
-                  class="w-full h-12 text-[13px] font-bold"
+                  class="w-full h-12 flex flex-col items-center justify-center py-0.5 leading-tight font-bold"
                   :class="cellOf(day.id, period.id).id === 'empty' ? 'text-slate-300' : SUBJECT_CELL_CLASS[cellOf(day.id, period.id).tone]"
                   :disabled="!interactive"
                   @click="onPick(day.id, period.id)"
                 >
-                  {{ cellOf(day.id, period.id).id === 'empty' ? (exportMode ? '' : '·') : cellOf(day.id, period.id).name }}
+                  <span v-if="cellOf(day.id, period.id).id !== 'empty'" class="text-[13px]">{{ cellOf(day.id, period.id).name }}</span>
+                  <span v-if="cellOf(day.id, period.id).id !== 'empty' && teacherOf(day.id, period.id)" class="text-[10px] font-normal text-slate-500">
+                    {{ teacherOf(day.id, period.id) }}
+                  </span>
+                  <span v-else-if="cellOf(day.id, period.id).id === 'empty'">{{ exportMode ? '' : '·' }}</span>
                 </button>
               </td>
             </tr>
@@ -369,12 +449,16 @@ const scrapbookBoardStyle = computed(() => {
               >
                 <button
                   type="button"
-                  class="w-full h-12 text-[13px] font-bold"
+                  class="w-full h-12 flex flex-col items-center justify-center py-0.5 leading-tight font-bold"
                   :class="cellOf(day.id, period.id).id === 'empty' ? 'text-slate-300' : SUBJECT_CELL_CLASS[cellOf(day.id, period.id).tone]"
                   :disabled="!interactive"
                   @click="onPick(day.id, period.id)"
                 >
-                  {{ cellOf(day.id, period.id).id === 'empty' ? (exportMode ? '' : '·') : cellOf(day.id, period.id).name }}
+                  <span v-if="cellOf(day.id, period.id).id !== 'empty'" class="text-[13px]">{{ cellOf(day.id, period.id).name }}</span>
+                  <span v-if="cellOf(day.id, period.id).id !== 'empty' && teacherOf(day.id, period.id)" class="text-[10px] font-normal text-slate-500">
+                    {{ teacherOf(day.id, period.id) }}
+                  </span>
+                  <span v-else-if="cellOf(day.id, period.id).id === 'empty'">{{ exportMode ? '' : '·' }}</span>
                 </button>
               </td>
             </tr>
@@ -542,7 +626,13 @@ const scrapbookBoardStyle = computed(() => {
                     :disabled="!interactive"
                     @click="onPick(day.id, period.id)"
                   >
-                    {{ cellOf(day.id, period.id).id === 'empty' ? (exportMode ? '—' : '＋') : cellOf(day.id, period.id).name }}
+                    <div v-if="cellOf(day.id, period.id).id !== 'empty'" class="flex flex-col items-center justify-center leading-tight">
+                    <span class="text-xs">{{ cellOf(day.id, period.id).name }}</span>
+                    <span v-if="teacherOf(day.id, period.id)" class="text-[10px] font-normal opacity-75 mt-0.5">
+                      {{ teacherOf(day.id, period.id) }}
+                    </span>
+                  </div>
+                  <span v-else>{{ exportMode ? '—' : '＋' }}</span>
                   </button>
                 </td>
               </tr>
@@ -586,7 +676,13 @@ const scrapbookBoardStyle = computed(() => {
               >
                 <p class="text-[10px] font-bold opacity-50">{{ period.label }}</p>
                 <p class="text-[13px] font-black leading-snug mt-1">
-                  {{ cellOf(day.id, period.id).id === 'empty' ? (exportMode ? '—' : '空白') : cellOf(day.id, period.id).name }}
+                  <div v-if="cellOf(day.id, period.id).id !== 'empty'" class="flex flex-col items-center justify-center leading-tight">
+                    <span>{{ cellOf(day.id, period.id).name }}</span>
+                    <span v-if="teacherOf(day.id, period.id)" class="text-[10px] font-normal opacity-75 mt-0.5">
+                      {{ teacherOf(day.id, period.id) }}
+                    </span>
+                  </div>
+                  <span v-else>{{ exportMode ? '—' : '空白' }}</span>
                 </p>
               </button>
             </div>
@@ -656,7 +752,13 @@ const scrapbookBoardStyle = computed(() => {
                   :disabled="!interactive"
                   @click="onPick(day.id, period.id)"
                 >
-                  {{ cellOf(day.id, period.id).id === 'empty' ? (exportMode ? '' : '·') : cellOf(day.id, period.id).name }}
+                  <div v-if="cellOf(day.id, period.id).id !== 'empty'" class="flex flex-col items-center justify-center leading-tight">
+                    <span>{{ cellOf(day.id, period.id).name }}</span>
+                    <span v-if="teacherOf(day.id, period.id)" class="text-[10px] font-normal opacity-75 mt-0.5">
+                      {{ teacherOf(day.id, period.id) }}
+                    </span>
+                  </div>
+                  <span v-else>{{ exportMode ? '' : '·' }}</span>
                 </button>
               </td>
             </tr>
@@ -673,7 +775,13 @@ const scrapbookBoardStyle = computed(() => {
                   :disabled="!interactive"
                   @click="onPick(day.id, period.id)"
                 >
-                  {{ cellOf(day.id, period.id).id === 'empty' ? (exportMode ? '' : '·') : cellOf(day.id, period.id).name }}
+                  <div v-if="cellOf(day.id, period.id).id !== 'empty'" class="flex flex-col items-center justify-center leading-tight">
+                    <span>{{ cellOf(day.id, period.id).name }}</span>
+                    <span v-if="teacherOf(day.id, period.id)" class="text-[10px] font-normal opacity-75 mt-0.5">
+                      {{ teacherOf(day.id, period.id) }}
+                    </span>
+                  </div>
+                  <span v-else>{{ exportMode ? '' : '·' }}</span>
                 </button>
               </td>
             </tr>
@@ -752,7 +860,13 @@ const scrapbookBoardStyle = computed(() => {
                 :class="cellOf(day.id, period.id).id === 'empty' ? 'text-slate-300' : SUBJECT_CELL_CLASS[cellOf(day.id, period.id).tone]"
               >
                 <span v-if="cellOf(day.id, period.id).id !== 'empty'" class="mr-1">{{ cellOf(day.id, period.id).emoji }}</span>
-                {{ cellOf(day.id, period.id).id === 'empty' ? (exportMode ? '—' : '贴一张') : cellOf(day.id, period.id).name }}
+                <div v-if="cellOf(day.id, period.id).id !== 'empty'" class="flex flex-col items-center justify-center leading-tight">
+                  <span class="text-xs">{{ cellOf(day.id, period.id).name }}</span>
+                  <span v-if="teacherOf(day.id, period.id)" class="text-[10px] font-normal opacity-75 mt-0.5">
+                    {{ teacherOf(day.id, period.id) }}
+                  </span>
+                </div>
+                <span v-else>{{ exportMode ? '—' : '贴一张' }}</span>
               </p>
             </button>
           </div>
@@ -815,7 +929,13 @@ const scrapbookBoardStyle = computed(() => {
               >
                 <p class="text-[10px] font-bold opacity-50">{{ period.label }}</p>
                 <p class="text-[12px] font-black leading-snug mt-0.5">
-                  {{ cellOf(day.id, period.id).id === 'empty' ? (exportMode ? '—' : '＋') : cellOf(day.id, period.id).name }}
+                  <div v-if="cellOf(day.id, period.id).id !== 'empty'" class="flex flex-col items-center justify-center leading-tight">
+                    <span class="text-xs">{{ cellOf(day.id, period.id).name }}</span>
+                    <span v-if="teacherOf(day.id, period.id)" class="text-[10px] font-normal opacity-75 mt-0.5">
+                      {{ teacherOf(day.id, period.id) }}
+                    </span>
+                  </div>
+                  <span v-else>{{ exportMode ? '—' : '＋' }}</span>
                 </p>
               </div>
             </button>

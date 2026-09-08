@@ -1,3 +1,4 @@
+import type { ChildScheduleData } from './useScheduleStore';
 import type {
   SubjectId,
   MistakeRecord,
@@ -131,14 +132,8 @@ export interface ChildProfile {
   rewardLedger?: Record<string, number>;
   /** 每日封顶计数：`<capId>:<yyyy-mm-dd>` -> 当日已发放次数 */
   rewardDailyCounters?: Record<string, number>;
-  /** 当前年级课表（随档案上云，多端一致） */
-  schedule?: {
-    grid: Record<string, string>;
-    schoolName: string;
-    className: string;
-    studentName?: string;
-    version?: string;
-  };
+  /** 当前年级课表（随档案上云，多端一致，含所有历史版本归档与自定义科目） */
+  schedule?: ChildScheduleData;
   stats: {
     gamesPlayed: number;
     gamesWon: number;

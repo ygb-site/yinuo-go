@@ -32,6 +32,7 @@ const MistakesView = () => import('../views/MistakesView.vue');
 const ShopView = () => import('../views/ShopView.vue');
 const ParentDashboardView = () => import('../views/ParentDashboardView.vue');
 const AdminView = () => import('../views/AdminView.vue');
+const SilverOrderView = () => import('../views/SilverOrderView.vue');
 
 const routes: RouteRecordRaw[] = [
   {
@@ -161,6 +162,12 @@ const routes: RouteRecordRaw[] = [
     meta: { mode: 'child', section: 'me', title: '智能错题本', label: '全科智能错题本' }
   },
   {
+    path: '/silver',
+    name: 'silver',
+    component: SilverOrderView,
+    meta: { mode: 'child', section: 'silver', title: '家庭赏罚令', label: '家庭赏罚令 · 银票钱庄' }
+  },
+  {
     path: '/shop',
     name: 'shop',
     component: ShopView,
@@ -210,7 +217,7 @@ router.beforeEach(async (to) => {
   const userStore = useUserStore();
   await userStore.ensureAuthReady();
 
-  const isPublicHome = to.path === '/' || to.name === 'home';
+  const isPublicHome = to.path === '/' || to.name === 'home' || to.path === '/silver' || to.name === 'silver';
   if (!userStore.isLoggedIn && !isPublicHome) {
     userStore.openAuthModal();
     return '/';
@@ -293,6 +300,7 @@ export const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/xiangqi/play": XiangqiView,
   "/xiangqi/endgame": XiangqiEndgameView,
   "/mistakes": MistakesView,
+  "/silver": SilverOrderView,
   "/two-player": TwoPlayerView
 };
 

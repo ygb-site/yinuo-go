@@ -34,3 +34,4 @@
 4. **不用装饰堆砌高级感。** 层级、一致性、间距、字体、动效、信息架构、内容质量才是高级感来源。
 5. **安全优先于功能。** 特别是 AI：用户输入到语音播报之间必须有安全层，不允许直连。
 6. **家庭私有。** 不开放注册；只用现有家庭账号登录。见 [supabase/README.md](../supabase/README.md)。
+7. **全站严禁原生系统弹窗（UI 体验红线）。** 严禁在任何页面或组件中调用 `alert()`、`confirm()`、`prompt()`。所有用户提示、校验报错与危险操作确认必须统一使用 `@/utils/alert` 的 `showAlert()` / `showConfirm()` 或 Design System 的 `<AppModal>`，确保少儿视觉友好与全站体验一致。工程中配有自动化测试 `tests/uiDialogAudit.spec.ts` 实时防护拦截。
