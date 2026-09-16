@@ -89,7 +89,7 @@ export const NOTE_THEME_PRESETS: NoteThemePresetInfo[] = [
   { id: 'pink', name: '粉黛桃花', tagColor: '#DB2777', desc: '如沐春风 灵动活泼' }
 ];
 
-const STORAGE_KEY = 'yinuo_family_silver_v1';
+const STORAGE_KEY = 'yinuo_family_silver_v2';
 
 function getInitialMembers(): FamilyMember[] {
   return [
@@ -99,9 +99,9 @@ function getInitialMembers(): FamilyMember[] {
       role: '长子',
       avatar: '👦',
       title: '自律小状元',
-      balance: 78,
-      totalReward: 120,
-      totalPenalty: 42,
+      balance: 0,
+      totalReward: 0,
+      totalPenalty: 0,
       customNote: {
         enabled: true,
         bankName: '诺宝宝库',
@@ -120,9 +120,9 @@ function getInitialMembers(): FamilyMember[] {
       role: '大掌柜',
       avatar: '👩',
       title: '规约督察官',
-      balance: 135,
-      totalReward: 150,
-      totalPenalty: 15,
+      balance: 0,
+      totalReward: 0,
+      totalPenalty: 0,
       customNote: {
         enabled: true,
         bankName: '慈母银号',
@@ -141,9 +141,9 @@ function getInitialMembers(): FamilyMember[] {
       role: '总账房',
       avatar: '👨',
       title: '家风巡抚',
-      balance: 62,
-      totalReward: 95,
-      totalPenalty: 33,
+      balance: 0,
+      totalReward: 0,
+      totalPenalty: 0,
       customNote: {
         enabled: true,
         bankName: '慎独银庄',
@@ -311,118 +311,7 @@ function getInitialOrders(): FamilyOrder[] {
 }
 
 function getInitialTransactions(): SilverTransaction[] {
-  const now = new Date();
-  const d = (daysAgo: number, hoursAgo = 0) => {
-    const t = new Date(now.getTime() - (daysAgo * 86400000) - (hoursAgo * 3600000));
-    return t.toISOString();
-  };
-
-  return [
-    {
-      id: 'tx_demo_1',
-      memberId: 'm_nuobao',
-      memberName: '诺宝',
-      orderId: 'ord_homework_neat',
-      orderTitle: '按时保质完成作业且字迹工整',
-      type: 'reward',
-      amount: 10,
-      balanceAfter: 78,
-      timestamp: d(0, 2),
-      note: '数学作业与围棋打卡全对，字迹格外漂亮',
-      operator: '妈妈'
-    },
-    {
-      id: 'tx_demo_2',
-      memberId: 'm_baba',
-      memberName: '爸爸',
-      orderId: 'ord_clean_room',
-      orderTitle: '主动收纳玩具与整理个人书桌',
-      type: 'reward',
-      amount: 5,
-      balanceAfter: 62,
-      timestamp: d(0, 4),
-      note: '协助收拾全屋书架与阳台植物',
-      operator: '妈妈'
-    },
-    {
-      id: 'tx_demo_3',
-      memberId: 'm_nuobao',
-      memberName: '诺宝',
-      orderId: 'ord_meal_delay',
-      orderTitle: '就餐拖延超40分钟或看电视吃饭',
-      type: 'penalty',
-      amount: 5,
-      balanceAfter: 68,
-      timestamp: d(1, 1),
-      note: '午饭边看拼图边磨蹭，提醒两次才吃完',
-      operator: '爸爸'
-    },
-    {
-      id: 'tx_demo_4',
-      memberId: 'm_mama',
-      memberName: '妈妈',
-      orderId: 'ord_week_perfect',
-      orderTitle: '整周全勤达标无严重违规',
-      type: 'reward',
-      amount: 50,
-      balanceAfter: 135,
-      timestamp: d(2, 3),
-      note: '本周作息自律兼顾全家营养膳食规划',
-      operator: '总账房'
-    },
-    {
-      id: 'tx_demo_5',
-      memberId: 'm_nuobao',
-      memberName: '诺宝',
-      orderId: 'ord_read_30m',
-      orderTitle: '专注早读/自主阅读30分钟',
-      type: 'reward',
-      amount: 5,
-      balanceAfter: 73,
-      timestamp: d(3, 2),
-      note: '晨起自主朗读诗词与儿童文学',
-      operator: '爸爸'
-    },
-    {
-      id: 'tx_demo_6',
-      memberId: 'm_nuobao',
-      memberName: '诺宝',
-      orderId: 'ord_go_practice',
-      orderTitle: '棋艺专精：完成5道死活题或复盘',
-      type: 'reward',
-      amount: 5,
-      balanceAfter: 68,
-      timestamp: d(5, 5),
-      note: '挑战死活大师关卡一次通关',
-      operator: '爸爸'
-    },
-    {
-      id: 'tx_demo_7',
-      memberId: 'm_baba',
-      memberName: '爸爸',
-      orderId: 'ord_screen_overtime',
-      orderTitle: '使用电子设备/游戏超时未主动归还',
-      type: 'penalty',
-      amount: 10,
-      balanceAfter: 57,
-      timestamp: d(6, 1),
-      note: '晚上打手机游戏超过约定20分钟被抓',
-      operator: '大掌柜'
-    },
-    {
-      id: 'tx_demo_8',
-      memberId: 'm_nuobao',
-      memberName: '诺宝',
-      orderId: 'ord_week_perfect',
-      orderTitle: '整周全勤达标无严重违规',
-      type: 'reward',
-      amount: 50,
-      balanceAfter: 63,
-      timestamp: d(12, 4),
-      note: '上上周生活起居自理标兵',
-      operator: '全家公评'
-    }
-  ];
+  return [];
 }
 
 export const useSilverStore = defineStore('silverStore', {

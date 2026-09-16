@@ -56,6 +56,11 @@ const route = useRoute();
 const router = useRouter();
 
 const STORAGE_KEY = 'yinuo_active_xiangqi';
+type XiangqiPlayMode = 'twoPlayer' | 'ai';
+const currentMode = ref<XiangqiPlayMode>('twoPlayer');
+const aiDifficulty = ref<'easy' | 'medium' | 'hard'>('easy');
+const isAiThinking = ref<boolean>(false);
+
 
 const board = ref<XiangqiBoardState>(createInitialXiangqiBoard());
 const currentTurn = ref<XiangqiSide>('red');
@@ -118,6 +123,8 @@ const saveXiangqiState = () => {
     moveHistory: moveHistory.value,
     winRateHistory: winRateHistory.value,
     gameStartTime: gameStartTime.value,
+    currentMode: currentMode.value,
+    aiDifficulty: aiDifficulty.value,
     status: status.value
   };
   try {
@@ -146,6 +153,10 @@ const restoreXiangqiState = (): boolean => {
     status.value = data.status === 'check' ? 'check' : 'playing';
     selected.value = null;
     hintMove.value = null;
+    currentMode.value = data.currentMode === 'ai' ? 'ai' : 'twoPlayer';
+    if (data.aiDifficulty === 'easy' || data.aiDifficulty === 'medium' || data.aiDifficulty === 'hard') {
+      aiDifficulty.value = data.aiDifficulty;
+    }
     return true;
   } catch {
     return false;
@@ -176,6 +187,9 @@ const initGame = (isFresh = false) => {
       type: 'success',
       confirmText: '继续对弈 🚀'
     });
+    if (currentMode.value === 'ai' && currentTurn.value === 'black') {
+      scheduleXiangqiAiTurn();
+    }
     return;
   }
 
@@ -196,6 +210,26 @@ const initGame = (isFresh = false) => {
   }];
   gameStartTime.value = Date.now();
   refreshHistory();
+};
+
+
+const scheduleXiangqiAiTurn = () => {
+  if (winner.value || isReplayMode.value) return;
+  isAiThinking.value = true;
+  setTimeout(() => {
+    if (winner.value || isReplayMode.value) {
+      isAiThinking.value = false;
+      return;
+    }
+    const bestMove = chooseXiangqiAiMove(board.value, 'black', aiDifficulty.value);
+    isAiThinking.value = false;
+    if (bestMove) {
+      executeMove(bestMove.fromR, bestMove.fromC, bestMove.toR, bestMove.toC);
+    } else {
+      winner.value = 'red';
+      triggerVictory('red', 'stalemate');
+    }
+  }, 500);
 };
 
 const executeMove = (fromR: number, fromC: number, toR: number, toC: number) => {
@@ -250,6 +284,10 @@ const executeMove = (fromR: number, fromC: number, toR: number, toC: number) => 
 
   currentTurn.value = nextSide;
   saveXiangqiState();
+
+  if (currentMode.value === 'ai' && nextSide === 'black' && !winner.value) {
+    scheduleXiangqiAiTurn();
+  }
 };
 
 const triggerVictory = (side: XiangqiSide, endStatus: 'checkmate' | 'stalemate') => {
@@ -267,14 +305,14 @@ const triggerVictory = (side: XiangqiSide, endStatus: 'checkmate' | 'stalemate')
 
   const now = new Date();
   const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  const winnerName = side === 'red' ? '红方' : '黑方';
+  const winnerName = side === 'red' ? (currentMode.value === 'ai' ? '红方 (你)' : '红方') : (currentMode.value === 'ai' ? '象棋AI' : '黑方');
 
   const record: UnifiedGameRecord = {
     id: 'xiangqi_' + Date.now(),
     gameType: 'xiangqi',
     gameTypeName: '中国象棋',
-    mode: 'twoPlayer',
-    modeName: '亲子同屏',
+    mode: currentMode.value,
+    modeName: currentMode.value === 'ai' ? ('人机对弈 · ' + (aiDifficulty.value === 'easy' ? '简单' : aiDifficulty.value === 'medium' ? '中等' : '困难')) : '亲子同屏',
     title: `${dateStr} · 中国象棋`,
     playedAt: dateStr,
     createdAt: Date.now(),
@@ -294,7 +332,8 @@ const triggerVictory = (side: XiangqiSide, endStatus: 'checkmate' | 'stalemate')
 };
 
 const onPointClick = (r: number, c: number) => {
-  if (winner.value || isReplayMode.value) return;
+  if (winner.value || isReplayMode.value || isAiThinking.value) return;
+  if (currentMode.value === 'ai' && currentTurn.value === 'black') return;
 
   const cell = board.value[r][c];
   if (selected.value) {
@@ -478,7 +517,7 @@ onUnmounted(() => {
               class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap"
               :class="isReplayMode ? 'bg-cyan-100 text-cyan-800 animate-pulse' : 'bg-rose-50 text-rose-800 border border-rose-200'"
             >
-              {{ isReplayMode ? ('复盘 (' + replayStepIndex + '/' + ((currentReplayGame?.moves as XiangqiMove[])?.length || 0) + ')') : '亲子同屏' }}
+              {{ isReplayMode ? ('复盘 (' + replayStepIndex + '/' + ((currentReplayGame?.moves as XiangqiMove[])?.length || 0) + ')') : (currentMode === 'ai' ? ('人机对弈 · ' + (aiDifficulty === 'easy' ? '简单' : aiDifficulty === 'medium' ? '中等' : '困难')) : '亲子同屏') }}
             </span>
           </div>
         </div>
@@ -622,9 +661,10 @@ onUnmounted(() => {
             </div>
 
             <div class="bg-white rounded-2xl py-2 px-1 border-2 border-slate-200/90 shadow-2xs">
-              <div class="py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 bg-purple-600 text-white shadow-xs">
-                <Users class="w-4 h-4" />
-                <span>亲子同屏</span>
+              <div class="py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-xs" :class="currentMode === 'ai' ? 'bg-amber-500 text-slate-950' : 'bg-purple-600 text-white'">
+                <Users v-if="currentMode !== 'ai'" class="w-4 h-4" />
+                <span v-if="currentMode === 'ai'">🤖 人机对弈 · {{ aiDifficulty === 'easy' ? '简单启蒙' : aiDifficulty === 'medium' ? '中等少侠' : '大师巅峰' }}</span>
+                <span v-else>亲子同屏</span>
               </div>
             </div>
 
@@ -636,9 +676,10 @@ onUnmounted(() => {
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2.5">
                     <span class="w-5 h-5 rounded-full border-2" :class="currentTurn === 'red' ? 'bg-rose-600 border-white' : 'bg-slate-800 border-slate-400'" />
-                    <span class="font-black text-sm">{{ currentTurn === 'red' ? '红方回合 (先行)' : '黑方回合' }}</span>
+                    <span class="font-black text-sm">{{ currentTurn === 'red' ? (currentMode === 'ai' ? '红方回合 (你先行)' : '红方回合 (先行)') : (currentMode === 'ai' ? '黑方回合 (AI思考中)' : '黑方回合') }}</span>
                   </div>
-                  <span class="text-xs font-mono opacity-80">已下 {{ moveHistory.length }} 手</span>
+                  <span v-if="isAiThinking" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-bold animate-pulse">AI计算中...</span>
+                  <span v-else class="text-xs font-mono opacity-80">已下 {{ moveHistory.length }} 手</span>
                 </div>
                 <p v-if="status === 'check'" class="text-xs font-bold mt-2 text-amber-700">正在被将军，必须应将！</p>
               </div>

@@ -17,7 +17,8 @@ describe('SilverOrder Store & Family Points System', () => {
 
     expect(store.members.length).toBeGreaterThanOrEqual(3);
     expect(store.orders.length).toBeGreaterThan(0);
-    expect(store.transactions.length).toBeGreaterThan(0);
+    expect(store.transactions.length).toBe(0);
+    expect(store.members.every(m => m.balance === 0)).toBe(true);
   });
 
   it('should correctly break down balance into banknote counts', () => {

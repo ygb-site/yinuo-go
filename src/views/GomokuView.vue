@@ -150,7 +150,7 @@ const restoreGomokuState = (): boolean => {
     if (!Array.isArray(data.moveHistory) || data.moveHistory.length === 0) return false;
     if (!Array.isArray(data.board) || data.board.length !== 15) return false;
 
-    currentMode.value = 'twoPlayer';
+    currentMode.value = data.currentMode === 'ai' ? 'ai' : 'twoPlayer';
     if (data.aiDifficulty === 'easy' || data.aiDifficulty === 'medium' || data.aiDifficulty === 'hard') {
       aiDifficulty.value = data.aiDifficulty;
     }
@@ -368,7 +368,7 @@ const triggerVictory = (p: StoneColor) => {
     gameType: 'gomoku',
     gameTypeName: '五子棋',
     mode: currentMode.value,
-    modeName: currentMode.value === 'twoPlayer' ? '亲子同屏' : '杀法闯关',
+    modeName: currentMode.value === 'twoPlayer' ? '亲子同屏' : ('人机对弈 · ' + (aiDifficulty.value === 'easy' ? '简单' : aiDifficulty.value === 'medium' ? '中等' : '困难')),
     title: `${dateStr} · 经典五子棋 (双人对战)`,
     playedAt: dateStr,
     createdAt: Date.now(),
@@ -553,7 +553,8 @@ const getWinRatePoints = computed(() => {
 onMounted(() => {
   const qMode = route.query.mode as Mode;
   const qDiff = route.query.diff as 'easy' | 'medium' | 'hard';
-  if (qMode && ['ai', 'twoPlayer'].includes(qMode)) currentMode.value = 'twoPlayer';
+  if (qMode === 'ai') currentMode.value = 'ai';
+  else if (qMode === 'twoPlayer') currentMode.value = 'twoPlayer';
   if (qDiff && ['easy', 'medium', 'hard'].includes(qDiff)) aiDifficulty.value = qDiff;
   initGame();
 });
@@ -577,7 +578,7 @@ onUnmounted(() => {
           <div class="flex items-center gap-1.5 min-w-0 truncate">
             <h2 class="text-sm sm:text-base font-black text-slate-900 truncate">经典五子棋</h2>
             <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap" :class="isReplayMode ? 'bg-cyan-100 text-cyan-800 animate-pulse' : 'bg-blue-50 text-blue-800 border border-blue-200'">
-              {{ isReplayMode ? ('复盘 (' + replayStepIndex + '/' + (currentReplayGame?.moves as any[])?.length + ')') : '亲子同屏' }}
+              {{ isReplayMode ? ('复盘 (' + replayStepIndex + '/' + (currentReplayGame?.moves as any[])?.length + ')') : (currentMode === 'ai' ? ('人机对弈 · ' + (aiDifficulty === 'easy' ? '简单' : aiDifficulty === 'medium' ? '中等' : '困难')) : '亲子同屏') }}
             </span>
           </div>
         </div>
@@ -750,7 +751,7 @@ onUnmounted(() => {
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2.5">
                     <span class="w-5 h-5 rounded-full border-2" :class="currentTurn === 1 ? 'bg-black border-white/60' : 'bg-white border-slate-400'"></span>
-                    <span class="font-black text-sm">{{ currentTurn === 1 ? '黑方回合 (先行)' : '白方回合' }}</span>
+                    <span class="font-black text-sm">{{ currentTurn === 1 ? (currentMode === 'ai' ? '黑方回合 (你先行)' : '黑方回合 (先行)') : (currentMode === 'ai' ? '白方回合 (AI思考中)' : '白方回合') }}</span>
                   </div>
                   <span v-if="isAiThinking" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-bold animate-pulse">
                     AI计算中...

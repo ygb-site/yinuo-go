@@ -42,7 +42,7 @@ watch(
         role.value = '家庭成员';
         avatar.value = '👦';
         title.value = '自律新星';
-        initialBalance.value = 10;
+        initialBalance.value = 0;
       }
     }
   },

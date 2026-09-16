@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { GoGame } from '../engine/GoGame';
+import { chooseGoAiMove, type GoAiDifficulty } from '../engine/goAi';
 import {
   GO_MATCH_BOARD_SIZES,
   isGoMatchBoardSize,
@@ -52,6 +53,22 @@ const route = useRoute();
 const userStore = useUserStore();
 
 const isZenMode = ref(false);
+type GoPlayMode = 'twoPlayer' | 'ai';
+const currentMode = ref<GoPlayMode>('twoPlayer');
+const aiDifficulty = ref<GoAiDifficulty>('easy');
+const isAiThinking = ref<boolean>(false);
+
+const updatePlayerNames = () => {
+  if (currentMode.value === 'ai') {
+    blackName.value = '你 (黑方先手)';
+    const diffLabel = aiDifficulty.value === 'easy' ? '简单启蒙' : aiDifficulty.value === 'medium' ? '中等少侠' : '大师巅峰';
+    whiteName.value = '小诺AI · ' + diffLabel + ' (白方)';
+  } else {
+    blackName.value = '黑方 (玩家1)';
+    whiteName.value = '白方 (玩家2)';
+  }
+};
+
 
 const goBack = async () => {
   if (!isGameOver.value && game.value.history.length > 0) {
@@ -122,8 +139,8 @@ const saveCurrentGameToHistory = () => {
   if (game.value.history.length === 0) return;
   const durSec = blackSeconds.value + whiteSeconds.value;
   saveGoGame({
-    mode: 'twoplayer',
-    modeLabel: '双人面对面对弈',
+    mode: currentMode.value === 'ai' ? 'aimatch' : 'twoplayer',
+    modeLabel: currentMode.value === 'ai' ? ('人机对弈 (' + (aiDifficulty.value === 'easy' ? '简单' : aiDifficulty.value === 'medium' ? '中等' : '困难') + ')') : '双人面对面对弈',
     boardSize: boardSize.value,
     komi: komi.value,
     blackName: blackName.value,
@@ -205,7 +222,9 @@ const saveMatchState = () => {
     whiteSeconds: whiteSeconds.value,
     blackName: blackName.value,
     whiteName: whiteName.value,
-    lastMove: lastMove.value
+    lastMove: lastMove.value,
+    currentMode: currentMode.value,
+    aiDifficulty: aiDifficulty.value
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 };
@@ -237,6 +256,11 @@ const restoreMatchState = (): boolean => {
     }
     game.value = g;
     lastMove.value = data.lastMove || null;
+    currentMode.value = data.currentMode === 'ai' ? 'ai' : 'twoPlayer';
+    if (data.aiDifficulty === 'easy' || data.aiDifficulty === 'medium' || data.aiDifficulty === 'hard') {
+      aiDifficulty.value = data.aiDifficulty;
+    }
+    updatePlayerNames();
     return true;
   } catch {
     return false;
@@ -254,6 +278,9 @@ const initGame = (isFresh = false) => {
       type: 'success',
       confirmText: '继续对局 🚀'
     });
+    if (currentMode.value === 'ai' && currentTurn.value === 'W') {
+      scheduleGoAiTurn();
+    }
     return;
   }
 
@@ -280,6 +307,13 @@ onMounted(() => {
   if (isGoMatchBoardSize(qSize)) {
     boardSize.value = qSize;
   }
+  const qMode = route.query.mode as GoPlayMode;
+  const qDiff = route.query.diff as GoAiDifficulty;
+  if (qMode === 'ai') currentMode.value = 'ai';
+  else if (qMode === 'twoPlayer') currentMode.value = 'twoPlayer';
+  if (qDiff && ['easy', 'medium', 'hard'].includes(qDiff)) aiDifficulty.value = qDiff;
+  updatePlayerNames();
+
   initGame(false);
 
   if (timer) clearInterval(timer);
@@ -305,8 +339,28 @@ const formatTime = (secs: number) => {
   return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
 };
 
-const handleMove = (point: Point) => {
+
+const scheduleGoAiTurn = () => {
   if (isGameOver.value) return;
+  isAiThinking.value = true;
+  setTimeout(() => {
+    if (isGameOver.value) {
+      isAiThinking.value = false;
+      return;
+    }
+    const move = chooseGoAiMove(game.value, 'W', aiDifficulty.value);
+    isAiThinking.value = false;
+    if (move) {
+      handleMove(move);
+    } else {
+      handlePass();
+    }
+  }, 500);
+};
+
+const handleMove = (point: Point) => {
+  if (isGameOver.value || isAiThinking.value) return;
+  if (currentMode.value === 'ai' && game.value.turn === 'W' && !point) return;
 
   const { r, c } = point;
   const res = game.value.playMove(r, c);
@@ -362,10 +416,14 @@ const handleMove = (point: Point) => {
 
     nextColor = game.value.turn;
   }
+
+  if (currentMode.value === 'ai' && game.value.turn === 'W' && !isGameOver.value) {
+    scheduleGoAiTurn();
+  }
 };
 
 const handlePass = () => {
-  if (isGameOver.value) return;
+  if (isGameOver.value || isAiThinking.value) return;
 
   const ends = game.value.pass();
   playButtonSound();
@@ -381,6 +439,10 @@ const handlePass = () => {
     game.value.pass(nextColor);
     saveMatchState();
     triggerScoringSettlement('停一手后对方亦无合法落子点，自动终局数子判定胜负！');
+  }
+
+  if (currentMode.value === 'ai' && game.value.turn === 'W' && !isGameOver.value) {
+    scheduleGoAiTurn();
   }
 };
 
@@ -455,9 +517,12 @@ const handleResign = (color: StoneColor) => {
 };
 
 const handleUndo = () => {
-  if (isGameOver.value) return;
+  if (isGameOver.value || isAiThinking.value) return;
   if (game.value.history.length > 0) {
-    game.value.undo();
+    const undoCount = currentMode.value === 'ai' ? (game.value.history.length >= 2 ? 2 : 1) : 1;
+    for (let i = 0; i < undoCount; i++) {
+      game.value.undo();
+    }
     lastMove.value = game.value.history.length > 0 ? game.value.history[game.value.history.length - 1].point : null;
     playButtonSound();
     saveMatchState();
@@ -657,7 +722,7 @@ const toggleZenMode = () => {
             </div>
             <div class="flex items-center gap-1.5 min-w-0 truncate">
               <h2 class="text-sm sm:text-base font-black text-slate-900 truncate">少儿围棋</h2>
-              <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap bg-purple-50 text-purple-800 border border-purple-200">亲子同屏</span>
+              <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap" :class="currentMode === 'ai' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-purple-50 text-purple-800 border border-purple-200'">{{ currentMode === 'ai' ? ('人机对弈 · ' + (aiDifficulty === 'easy' ? '简单' : aiDifficulty === 'medium' ? '中等' : '困难')) : '亲子同屏' }}</span>
             </div>
           </div>
           <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -760,9 +825,10 @@ const toggleZenMode = () => {
           <div class="order-2 lg:col-span-4 space-y-3.5 sm:space-y-4 w-full">
 
             <div class="bg-white rounded-2xl p-1.5 border-2 border-slate-200/90 shadow-2xs">
-              <div class="py-2 px-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1 bg-purple-600 text-white shadow-xs">
-                <Users class="w-4 h-4" />
-                <span>亲子同屏</span>
+              <div class="py-2 px-1 rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-xs" :class="currentMode === 'ai' ? 'bg-amber-500 text-slate-950' : 'bg-purple-600 text-white'">
+                <Users v-if="currentMode !== 'ai'" class="w-4 h-4" />
+                <span v-if="currentMode === 'ai'">🤖 人机对弈 · {{ aiDifficulty === 'easy' ? '简单启蒙' : aiDifficulty === 'medium' ? '中等少侠' : '大师巅峰' }}</span>
+                <span v-else>亲子同屏</span>
               </div>
             </div>
 
@@ -808,7 +874,7 @@ const toggleZenMode = () => {
                   v-else-if="currentTurn === 'W' && !isGameOver"
                   class="text-[10px] font-black bg-indigo-500 text-white px-2 py-0.5 rounded-full animate-pulse"
                 >
-                  当前走棋
+                  {{ isAiThinking ? 'AI思考中...' : '当前走棋' }}
                 </span>
               </div>
 

@@ -239,6 +239,10 @@ const HUMAN_LABELS: Record<number, { name: string; avatar: string }> = {
 
 const matchModeLabel = computed(() => {
   if (currentMode.value === 'puzzle') return '连跳闯关';
+  if (currentMode.value === 'ai') {
+    const diffName = aiDifficulty.value === 'easy' ? '简单' : aiDifficulty.value === 'medium' ? '中等' : '困难';
+    return '人机对弈 · ' + playerCount.value + '人 (' + diffName + ')';
+  }
   return '亲子同屏 · ' + playerCount.value + '人';
 });
 
@@ -366,7 +370,7 @@ const restoreCheckersState = (): boolean => {
     if (!Array.isArray(data.liveMoveLogs) || data.liveMoveLogs.length === 0) return false;
     if (!data.boardState || typeof data.boardState !== 'object') return false;
 
-    currentMode.value = 'twoPlayer';
+    currentMode.value = data.currentMode === 'ai' ? 'ai' : 'twoPlayer';
     playerCount.value = parseCheckersPlayerCount(data.playerCount);
     if (data.aiDifficulty === 'easy' || data.aiDifficulty === 'medium' || data.aiDifficulty === 'hard') {
       aiDifficulty.value = data.aiDifficulty;
@@ -974,7 +978,10 @@ const switchPlayerCount = (count: CheckersPlayerCount) => {
 onMounted(() => {
   const qMode = String(route.query.mode || '');
   const qDiff = route.query.diff as 'easy' | 'medium' | 'hard';
-  if (qMode === 'threePlayer') {
+  if (qMode === 'ai') {
+    currentMode.value = 'ai';
+    playerCount.value = parseCheckersPlayerCount(route.query.players);
+  } else if (qMode === 'threePlayer') {
     currentMode.value = 'twoPlayer';
     playerCount.value = 3;
   } else if (qMode === 'multiPlayer') {

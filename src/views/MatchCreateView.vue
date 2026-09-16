@@ -21,6 +21,23 @@ import {
 
 const router = useRouter();
 
+type MatchMode = 'twoPlayer' | 'ai';
+const matchMode = ref<MatchMode>('twoPlayer');
+
+type AiDifficulty = 'easy' | 'medium' | 'hard';
+const aiDifficulty = ref<AiDifficulty>('easy');
+
+const matchModeOptions: AppSelectOption<MatchMode>[] = [
+  { value: 'twoPlayer', icon: '👨‍👩‍👧', label: '亲子对弈 · 同屏对战' },
+  { value: 'ai', icon: '🤖', label: '人机对弈 · 智斗AI' }
+];
+
+const aiDifficultyOptions: AppSelectOption<AiDifficulty>[] = [
+  { value: 'easy', icon: '🟢', label: '简单 · 萌宝启蒙 (初学试炼，轻松上手)' },
+  { value: 'medium', icon: '🟡', label: '中等 · 少侠进阶 (攻守均衡，实力切磋)' },
+  { value: 'hard', icon: '🔴', label: '困难 · 大师挑战 (推演严密，全力争胜)' }
+];
+
 type GameKind = 'gomoku' | 'checkers' | 'xiangqi' | 'go';
 const selectedGame = ref<GameKind>('gomoku');
 
@@ -104,11 +121,15 @@ const handleDeleteRecord = (id: string) => {
 const launchMatch = () => {
   sound.playButtonSound();
 
+  const isAi = matchMode.value === 'ai';
+  const diff = isAi ? aiDifficulty.value : undefined;
+
   if (selectedGame.value === 'gomoku') {
     router.push({
       path: '/gomoku',
       query: {
-        mode: 'twoPlayer'
+        mode: matchMode.value,
+        ...(diff ? { diff } : {})
       }
     });
     return;
@@ -118,8 +139,9 @@ const launchMatch = () => {
     router.push({
       path: '/checkers',
       query: {
-        mode: 'twoPlayer',
-        players: String(checkersPlayers.value)
+        mode: matchMode.value,
+        players: String(checkersPlayers.value),
+        ...(diff ? { diff } : {})
       }
     });
     return;
@@ -129,7 +151,8 @@ const launchMatch = () => {
     router.push({
       path: '/xiangqi/play',
       query: {
-        mode: 'twoPlayer'
+        mode: matchMode.value,
+        ...(diff ? { diff } : {})
       }
     });
     return;
@@ -138,7 +161,9 @@ const launchMatch = () => {
   router.push({
     path: '/two-player',
     query: {
-      size: String(goSize.value)
+      mode: matchMode.value,
+      size: String(goSize.value),
+      ...(diff ? { diff } : {})
     }
   });
 };
@@ -165,7 +190,7 @@ const launchMatch = () => {
             </h1>
 
             <p class="text-xs sm:text-sm text-white/95 font-medium max-w-xl leading-relaxed">
-              选好棋种，需要时再选人数或路数，一键开始亲子同屏对局。
+              选好棋种与对弈模式（亲子同屏或人机对弈），自选AI难度级别，一键开启精彩博弈！
             </p>
           </div>
 
@@ -190,7 +215,7 @@ const launchMatch = () => {
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="min-w-0">
             <h2 class="text-base sm:text-lg font-black text-slate-900">创建对局面板</h2>
-            <p class="text-xs text-slate-500 mt-1 font-medium">选好棋种就能开，只开亲子同屏。</p>
+            <p class="text-xs text-slate-500 mt-1 font-medium">自由选择亲子同屏或人机对弈，支持分级AI智趣对决。</p>
           </div>
           <button
             type="button"
@@ -200,6 +225,32 @@ const launchMatch = () => {
             <Play class="w-4 h-4 fill-white" />
             <span>开始对局</span>
           </button>
+        </div>
+
+                <div class="space-y-2.5">
+          <label class="text-xs sm:text-sm font-black text-slate-800" for="match-mode">🎮 对弈模式</label>
+          <AppSelect
+            id="match-mode"
+            v-model="matchMode"
+            :options="matchModeOptions"
+            variant="emphasis"
+            aria-label="对弈模式"
+            @change="onSelectChange"
+          />
+        </div>
+
+        <div v-if="matchMode === 'ai'" class="space-y-2.5 animate-fade-in p-4 rounded-2xl bg-amber-50/70 border-2 border-amber-200">
+          <div class="flex items-center justify-between">
+            <label class="text-xs sm:text-sm font-black text-amber-950" for="ai-difficulty">🤖 AI 难度级别</label>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900">分级智能对弈</span>
+          </div>
+          <AppSelect
+            id="ai-difficulty"
+            v-model="aiDifficulty"
+            :options="aiDifficultyOptions"
+            aria-label="AI 难度级别"
+            @change="onSelectChange"
+          />
         </div>
 
         <div class="space-y-2.5">
