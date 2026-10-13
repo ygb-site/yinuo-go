@@ -17,7 +17,7 @@ const userStore = useUserStore();
 const scheduleStore = useScheduleStore();
 
 interface NavTab {
-  id: 'today' | 'schedule' | 'learn' | 'xiangqi' | 'play' | 'silver' | 'me' | 'lab';
+  id: 'today' | 'schedule' | 'piano' | 'learn' | 'xiangqi' | 'play' | 'silver' | 'me' | 'lab';
   label: string;
   shortLabel: string;
   path: string;
@@ -33,6 +33,7 @@ const scheduleGradeBadge = computed(() => {
 
 const navTabs = computed<NavTab[]>(() => [
   { id: 'today', label: '今天', shortLabel: '今天', path: '/', icon: 'compass' },
+  { id: 'piano', label: '钢琴识谱', shortLabel: '钢琴', path: '/piano', icon: 'music', badge: '小汤·拜厄' },
   { id: 'schedule', label: '课程表', shortLabel: '课表', path: '/schedule', icon: 'calendar', badge: scheduleGradeBadge.value },
   { id: 'learn', label: '少儿围棋', shortLabel: '围棋', path: '/learn', icon: 'book', badge: '核心' },
   { id: 'xiangqi', label: '象棋学堂', shortLabel: '象棋', path: '/xiangqi', icon: 'swords', badge: 'Xiangqi' },
@@ -54,7 +55,8 @@ const currentSection = computed(() => {
   if (path.startsWith('/schedule')) return 'schedule';
   if (path.startsWith('/learn') || path.startsWith('/adventure') || path.startsWith('/lesson')) return 'learn';
   if (path.startsWith('/xiangqi')) return 'xiangqi';
-  if (path.startsWith('/match') || path.startsWith('/puzzle') || path.startsWith('/checkers') || path.startsWith('/gomoku') || path.startsWith('/two-player')) return 'play';
+  if (path.startsWith('/piano')) return 'piano';
+  if (path.startsWith('/match') || path.startsWith('/puzzle') || path.startsWith('/gomoku') || path.startsWith('/two-player')) return 'play';
   if (path.startsWith('/silver')) return 'silver';
   if (path.startsWith('/profile') || path.startsWith('/shop') || path.startsWith('/mistakes')) return 'me';
   if (path.startsWith('/modules')) return 'lab';
@@ -62,7 +64,7 @@ const currentSection = computed(() => {
 });
 
 const isTopLevelTab = computed(() => {
-  return ['/', '/schedule', '/learn', '/xiangqi', '/match', '/puzzle', '/profile', '/modules'].includes(route.path);
+  return ['/', '/schedule', '/piano', '/learn', '/xiangqi', '/match', '/puzzle', '/profile', '/modules'].includes(route.path);
 });
 
 const pageTitle = computed(() => {
@@ -74,6 +76,7 @@ const pageTitle = computed(() => {
   if (route.path === '/xiangqi') return 'Xiangqi · 中国象棋学堂';
   if (route.path.startsWith('/match') || route.path.startsWith('/puzzle')) return '创建对局中心';
   if (route.path.startsWith('/profile')) return '成长中心';
+  if (route.path.startsWith('/piano')) return '钢琴识谱乐园';
   if (route.path.startsWith('/modules')) return '模块清单';
   return (route.meta.label as string) || (route.meta.title as string) || '一诺未来学堂';
 });
@@ -148,9 +151,9 @@ watch(
               :key="tab.id"
               type="button"
               :class="[
-                'w-full flex items-center justify-between px-3.5 lg:px-4 py-2.5 lg:py-3 rounded-2xl text-xs lg:text-sm font-bold transition-all duration-200 cursor-pointer text-left',
+                'w-full flex items-center justify-between px-3.5 lg:px-4 py-2.5 lg:py-3 rounded-2xl text-xs lg:text-sm font-bold border border-transparent cursor-pointer text-left transition-colors duration-150 outline-none focus:outline-none select-none',
                 currentSection === tab.id
-                  ? 'bg-amber-100/90 text-amber-950 shadow-xs border border-amber-300/80'
+                  ? 'bg-amber-100/90 text-amber-950 border-amber-300/80 shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
               ]"
               @click="navigateTo(tab.path)"
@@ -263,4 +266,3 @@ watch(
     </nav>
   </div>
 </template>
-

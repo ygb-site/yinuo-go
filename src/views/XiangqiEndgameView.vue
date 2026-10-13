@@ -16,7 +16,7 @@ import {
 import { XIANGQI_ENDGAMES, type XiangqiEndgame } from '../data/xiangqiCurriculum';
 import { useXiangqiLearnStore } from '../stores/xiangqiLearnStore';
 import { useUserStore } from '../stores/useUserStore';
-import { checkersAudio } from '../engine/checkers/checkersAudio';
+import { boardAudio } from '../utils/boardAudio';
 import { sound } from '../utils/sound';
 
 const route = useRoute();
@@ -80,7 +80,7 @@ const triggerSolve = () => {
   mascotMood.value = 'cheering';
   mascotText.value = `🎉 ${puzzle.value.explanation}`;
   learnStore.completeEndgame(puzzle.value.id);
-  checkersAudio.playVictory();
+  boardAudio.playVictory();
   sound.fireCelebrationConfetti();
 };
 
@@ -100,7 +100,7 @@ const onPointClick = (r: number, c: number) => {
       board.value = applied.board;
       lastMove.value = { fromR: dest.fromR, fromC: dest.fromC, toR: dest.toR, toC: dest.toC };
       selected.value = null;
-      checkersAudio.playStep();
+      boardAudio.playStep();
       const status = getPositionStatus(board.value, oppositeSide(puzzle.value.side));
       if (status === 'checkmate') {
         triggerSolve();
@@ -115,7 +115,7 @@ const onPointClick = (r: number, c: number) => {
     }
     if (cell && cell.side === puzzle.value.side) {
       selected.value = { r, c };
-      checkersAudio.playSelect();
+      boardAudio.playSelect();
       return;
     }
     selected.value = null;
@@ -124,7 +124,7 @@ const onPointClick = (r: number, c: number) => {
 
   if (!cell || cell.side !== puzzle.value.side) return;
   selected.value = { r, c };
-  checkersAudio.playSelect();
+  boardAudio.playSelect();
 };
 
 const showHint = () => {

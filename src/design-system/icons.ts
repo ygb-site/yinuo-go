@@ -65,7 +65,8 @@ import {
   LogIn,
   LogOut,
   GraduationCap,
-  Sparkle
+  Sparkle,
+  Music
 } from 'lucide-vue-next';
 
 export const ICON_MAP: Record<string, Component> = {
@@ -130,6 +131,8 @@ export const ICON_MAP: Record<string, Component> = {
   printer: Printer,
 
   // 🌟 Domain / Gamification / Learning
+  music: Music,
+  piano: Music,
   'play-circle': PlayCircle,
   'play-action': Play,
   star: Star,

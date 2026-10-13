@@ -35,17 +35,6 @@ export interface AiTutorConfig {
  */
 export function getDefaultContextForSubject(subjectId: SubjectId = 'go'): AiTutorStudentContext {
 
-  if (subjectId === 'checkers') {
-    return {
-      subjectId: 'checkers',
-      questionPrompt: '六角跳棋：借助相邻棋子连续跳跃，争先占领对角目标阵地！',
-      userAnswer: '未作答',
-      correctAnswer: '搭建连续跳跃桥梁',
-      knowledgePointTitle: '跳棋跳跃与搭桥手筋',
-      lessonTitle: '跳棋步法策略',
-      errorReason: '前方有相邻棋子且其正后方为空位时，可以直接跳过去！提前搭好“连环跳桥”可以一步千里。'
-    };
-  }
   if (subjectId === 'gomoku') {
     return {
       subjectId: 'gomoku',
@@ -72,7 +61,6 @@ export function getDefaultContextForSubject(subjectId: SubjectId = 'go'): AiTuto
 export function detectActiveSubjectFromRoute(): SubjectId {
   if (typeof window === 'undefined') return 'go';
   const path = window.location.pathname || '';
-  if (path.includes('/checkers')) return 'checkers';
   if (path.includes('/gomoku')) return 'gomoku';
   return 'go';
 }

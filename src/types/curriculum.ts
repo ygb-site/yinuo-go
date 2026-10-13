@@ -1,6 +1,6 @@
 import type { StoneColor, Point, BoardSize } from '../engine/types';
 
-export type SubjectId = 'go' | 'checkers' | 'gomoku';
+export type SubjectId = 'go' | 'gomoku';
 
 export type GradeLevel =
   | 'g1_t1' | 'g1_t2'

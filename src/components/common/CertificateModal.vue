@@ -7,7 +7,7 @@ import {
   Printer
 } from 'lucide-vue-next';
 
-export type CertificateType = 'go' | 'checkers' | 'gomoku';
+export type CertificateType = 'go' | 'gomoku';
 
 const props = withDefaults(
   defineProps<{
@@ -33,20 +33,6 @@ const currentCertType = ref<CertificateType>(props.certType);
 const certConfig = computed(() => {
   switch (currentCertType.value) {
 
-    case 'checkers':
-      return {
-        id: 'checkers',
-        title: '快乐六角跳棋小棋圣荣誉证书',
-        enTitle: 'YINUO ACADEMY · CHINESE CHECKERS CHAMPION',
-        sealTitle: '一诺跳棋',
-        sealSubtitle: '连跳冠军',
-        awardTitle: '🏅 六角跳棋步法策略·卓越棋艺之星',
-        desc: '在【一诺六角跳棋乐园】完成多局博弈对决与连环跳步法推演，运筹帷幄，身手矫捷，特授予：',
-        themeBorder: 'border-amber-500',
-        goldBorder: 'border-amber-600',
-        textGold: 'text-amber-900',
-        gradient: 'from-[#FFFDF5] via-[#FFF9E6] to-[#FFF3CC]'
-      };
     case 'gomoku':
       return {
         id: 'gomoku',
@@ -132,7 +118,6 @@ const printCert = () => {
           <button
             v-for="tab in [
               { id: 'go', name: '♟️ 围棋考级证书' },
-              { id: 'checkers', name: '⭐ 六角跳棋证书' },
               { id: 'gomoku', name: '⚪ 五子连珠证书' }
             ]"
             :key="tab.id"

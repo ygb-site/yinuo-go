@@ -89,10 +89,6 @@ export class LocalRuleAIProvider implements AIProvider {
       return '🌟 小诺助教点拨：真眼是四周都有己方棋子保护、对方不能直接落子的禁入点！两只完整的独立真眼才能永远活棋哦！👁️';
     }
 
-    if (q.includes('跳棋') || q.includes('搭桥')) {
-      return '🌟 小诺助教点拨：跳棋小秘诀：前方紧挨着一颗棋子、且其后方是空位时，可以直接跳过去！如果连着排好几个，就能像彩虹桥一样连续大跳跃啦！⭐';
-    }
-
     if (q.includes('五子棋') || q.includes('连珠')) {
       return '🌟 小诺助教点拨：五子棋制胜要诀：先手抢占中心，时刻盯紧对方有没有连续三子（活三）。构造“双三”或者“四三”就能让对手防不胜防！⚪';
     }
@@ -249,10 +245,8 @@ export class AiTutorService {
 
     const cleanMsg = verdict.text;
     if (!cleanMsg) {
-      const subjectName = ctx.subjectId === 'go' ? '围棋' : ctx.subjectId === 'checkers' ? '跳棋' : '五子棋';
-      const tip = ctx.subjectId === 'checkers'
-        ? '观察前方相邻棋子，寻找连续搭桥跳跃的机会'
-        : ctx.subjectId === 'gomoku'
+      const subjectName = ctx.subjectId === 'go' ? '围棋' : '五子棋';
+      const tip = ctx.subjectId === 'gomoku'
         ? '注意防守对方活三，抢先构造四三胜势'
         : '从围棋的“气”、死活和连接入手';
       return `🌟 小诺助教点拨：你好呀，${ctx.studentNickname || '小棋手'}！我是小诺 🐼。在${subjectName}练习中遇到难题别担心，试着${tip}吧！`;

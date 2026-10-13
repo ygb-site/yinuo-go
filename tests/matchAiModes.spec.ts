@@ -5,7 +5,6 @@ import { GoGame } from '../src/engine/GoGame';
 import { chooseGoAiMove } from '../src/engine/goAi';
 import { createEmptyBoard, chooseGomokuAiMove } from '../src/engine/gomoku/gomokuEngine';
 import { createInitialXiangqiBoard, chooseXiangqiAiMove } from '../src/engine/xiangqi/xiangqiEngine';
-import { chooseAiMove, type PlayerConfig, CAMPS } from '../src/engine/checkers/checkersEngine';
 
 describe('Silver Note Zero Initialization & All Board Games AI Modes', () => {
   beforeEach(() => {
@@ -67,27 +66,4 @@ describe('Silver Note Zero Initialization & All Board Games AI Modes', () => {
     }
   });
 
-  it('verifies Chinese Checkers AI supports easy, medium, and hard levels', () => {
-    const aiPlayer: PlayerConfig = {
-      id: 2,
-      campId: 0,
-      targetCampId: 3,
-      name: '萌宝小贝',
-      avatar: '🐼',
-      colorName: '蓝宝石',
-      colorHex: '#3b82f6',
-      darkColorHex: '#1e40af',
-      glowColor: '#93c5fd',
-      isAi: true
-    };
-    const boardState: Record<string, number> = {};
-    for (const nodeId of CAMPS[0]) {
-      boardState[nodeId] = 2;
-    }
-
-    for (const diff of ['easy', 'medium', 'hard'] as const) {
-      const move = chooseAiMove({ ...aiPlayer, aiDifficulty: diff }, boardState);
-      expect(move).not.toBeNull();
-    }
-  });
 });

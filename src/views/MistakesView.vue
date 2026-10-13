@@ -46,7 +46,7 @@ const searchQuery = ref('');
 onMounted(() => {
   userStore.purgeDemoMistakes();
   const qSub = route.query.subject as SubjectId | undefined;
-  if (qSub && ['go', 'checkers', 'gomoku'].includes(qSub)) {
+  if (qSub && ['go', 'gomoku'].includes(qSub)) {
     activeSubjectTab.value = qSub;
   }
   if (route.query.quiz === 'true') {
@@ -590,7 +590,6 @@ const openDailyParentReport = () => {
               v-for="sub in [
                 { id: 'all', name: '📚 全部记录', count: getPendingCountBySubject('all') },
                 { id: 'go', name: '♟️ 围棋死活', count: getPendingCountBySubject('go') },
-                { id: 'checkers', name: '⭐ 六角跳棋', count: getPendingCountBySubject('checkers') },
                 { id: 'gomoku', name: '⚪ 欢乐五子棋', count: getPendingCountBySubject('gomoku') }
               ]"
               :key="sub.id"
@@ -709,12 +708,11 @@ const openDailyParentReport = () => {
                 <span
                   class="text-[10px] font-black px-2 py-0.5 rounded-full"
                   :class="
-                    item.subjectId === 'checkers' ? 'bg-amber-100 text-amber-800' :
                     item.subjectId === 'gomoku' ? 'bg-teal-100 text-teal-800' :
                     'bg-emerald-100 text-emerald-800'
                   "
                 >
-                  {{ item.subjectId === 'checkers' ? '⭐ 跳棋' : item.subjectId === 'gomoku' ? '⚪ 五子棋' : '♟️ 围棋' }}
+                  {{ item.subjectId === 'gomoku' ? '⚪ 五子棋' : '♟️ 围棋' }}
                 </span>
                 <span class="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
                   {{ item.knowledgePointTitle }}

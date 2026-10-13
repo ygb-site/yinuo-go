@@ -55,7 +55,7 @@ export const MODULE_INVENTORY: ModuleInventoryItem[] = [
     file: 'src/views/MatchCreateView.vue',
     reachable: true,
     entries: ['桌面侧栏', '手机/平板底栏'],
-    note: '跳棋 / 五子棋 / 围棋亲子同屏开局。',
+    note: '五子棋 / 围棋 / 象棋亲子同屏开局。',
     suggestDelete: false
   },
   {
@@ -103,14 +103,14 @@ export const MODULE_INVENTORY: ModuleInventoryItem[] = [
     suggestDelete: false
   },
   {
-    id: 'checkers',
-    name: '六角跳棋',
+    id: 'piano',
+    name: '钢琴识谱乐园',
     kind: 'page',
-    path: '/checkers',
-    file: 'src/views/ChineseCheckersView.vue',
+    path: '/piano',
+    file: 'src/views/PianoHubView.vue',
     reachable: true,
-    entries: ['创建对局', '今天·快捷入口'],
-    note: '2–6 人亲子同屏跳棋。',
+    entries: ['今天·快捷探索', '对弈大厅'],
+    note: '五线谱高低音谱表几线几间速成与ABCD识谱小游戏。',
     suggestDelete: false
   },
   {

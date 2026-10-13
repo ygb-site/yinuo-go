@@ -21,8 +21,8 @@ const TsumegoView = () => import('../views/TsumegoView.vue');
 const DictionaryView = () => import('../views/DictionaryView.vue');
 const TwoPlayerView = () => import('../views/TwoPlayerView.vue');
 const RhymesView = () => import('../views/RhymesView.vue');
-const ChineseCheckersView = () => import('../views/ChineseCheckersView.vue');
 const GomokuView = () => import('../views/GomokuView.vue');
+const PianoHubView = () => import('../views/PianoHubView.vue');
 const XiangqiView = () => import('../views/XiangqiView.vue');
 const XiangqiHubView = () => import('../views/XiangqiHubView.vue');
 const XiangqiLessonView = () => import('../views/XiangqiLessonView.vue');
@@ -94,10 +94,10 @@ const routes: RouteRecordRaw[] = [
   },
 
   {
-    path: '/checkers',
-    name: 'checkers',
-    component: ChineseCheckersView,
-    meta: { mode: 'child', section: 'play', title: '六角跳棋', label: '跳棋对局' }
+    path: '/piano',
+    name: 'piano',
+    component: PianoHubView,
+    meta: { mode: 'child', section: 'piano', title: '钢琴识谱', label: '钢琴识谱乐园' }
   },
   {
     path: '/gomoku',
@@ -294,7 +294,7 @@ export const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/profile": ProfileView,
   "/adventure": AdventureView,
   "/tsumego": TsumegoView,
-  "/checkers": ChineseCheckersView,
+  "/piano": PianoHubView,
   "/gomoku": GomokuView,
   "/xiangqi": XiangqiHubView,
   "/xiangqi/play": XiangqiView,
@@ -317,7 +317,6 @@ export function preloadCoreRoutes() {
   const trigger = () => {
     GoHubView().catch(() => {});
     ProfileView().catch(() => {});
-    ChineseCheckersView().catch(() => {});
     GomokuView().catch(() => {});
     XiangqiView().catch(() => {});
     MistakesView().catch(() => {});

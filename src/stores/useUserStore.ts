@@ -458,7 +458,6 @@ export const useUserStore = defineStore('userStore', {
 
       const subjectTotals: Record<SubjectId, { sum: number; n: number }> = {
         go: { sum: 0, n: 0 },
-        checkers: { sum: 0, n: 0 },
         gomoku: { sum: 0, n: 0 }
       };
 
@@ -486,7 +485,6 @@ export const useUserStore = defineStore('userStore', {
 
       const subjectMastery: Record<SubjectId, number> = {
         go: scoreOf(subjectTotals.go),
-        checkers: scoreOf(subjectTotals.checkers),
         gomoku: scoreOf(subjectTotals.gomoku)
       };
 

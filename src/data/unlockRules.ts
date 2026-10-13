@@ -102,20 +102,20 @@ export const UNLOCK_FEATURES: UnlockFeature[] = [
 
   // 3. 对弈竞技 (Battle)
   {
-    id: 'checkers',
-    name: '快乐六角跳棋',
-    nameEn: 'Chinese Checkers Fun',
-    icon: '⭐',
-    badge: '亲子畅玩 · 始终开放',
-    badgeColor: 'bg-amber-500',
-    gradient: 'from-amber-400 via-pink-500 to-indigo-600',
-    route: '/checkers',
+    id: 'piano',
+    name: '钢琴识谱乐园',
+    nameEn: 'Piano Sight-Reading Playground',
+    icon: '🎹',
+    badge: '识谱闯关 · 始终开放',
+    badgeColor: 'bg-indigo-500',
+    gradient: 'from-indigo-500 via-purple-500 to-pink-500',
+    route: '/piano',
     category: 'battle',
     lessonsRequired: 0,
     chapterRequired: 0,
     unlockTitle: '始终开放',
     unlockTip: '始终开放，随时畅玩',
-    desc: '经典六角星中国跳棋！亲子同屏 2–6 人对坐，一键连跳起飞超好玩！'
+    desc: '五线谱高低音谱表几线几间趣味口诀，ABCD 猜音符小游戏与弹奏体验！'
   },
   {
     id: 'xiangqi',

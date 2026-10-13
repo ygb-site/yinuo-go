@@ -24,34 +24,13 @@ export function getPuzzleNodes(): LearningNode[] {
       legacyIds: ['gomoku_ai']
     },
     {
-      id: 'checkers:match:ai',
-      domainId: 'checkers',
-      kind: 'match',
-      title: '快乐六角跳棋 · 亲子畅玩',
-      subtitle: '搭桥连跳 · 空间规划',
-      description: '经典六角星跳棋，搭桥连续大跳跃',
-      order: 2,
-      knowledgePointIds: ['跳棋连续跳跃'],
-      skillIds: ['checkers.hop'],
-      unlock: { type: 'always' },
-      reward: {
-        first: { coins: 30, exp: 60 },
-        repeat: { coins: 5, exp: 10 },
-        rewardDomain: 'checkers-match',
-        dailyCap: { capId: 'checkers', limit: 10 }
-      },
-      route: '/checkers',
-      estimatedMinutes: 8,
-      legacyIds: ['checkers_ai']
-    },
-    {
       id: 'xiangqi:match:play',
       domainId: 'xiangqi',
       kind: 'match',
       title: '中国象棋 · Xiangqi',
       subtitle: '学堂教程 · 残局将死',
       description: '象棋走法启蒙与将死残局（Chinese Chess）',
-      order: 3,
+      order: 2,
       knowledgePointIds: ['象棋走法'],
       skillIds: ['xiangqi.move'],
       unlock: { type: 'always' },

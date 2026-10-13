@@ -166,18 +166,18 @@ const answerShadow = (index: number) => {
 
 const weekendExplorations = [
   {
+    title: '钢琴识谱',
+    subtitle: '几线几间 · ABCD闯关',
+    icon: '🎹',
+    iconBg: 'bg-indigo-100 text-indigo-900 border-indigo-200',
+    route: '/piano'
+  },
+  {
     title: '亲子围棋',
     subtitle: '同屏下一盘',
     icon: '👥',
     iconBg: 'bg-blue-100 text-blue-800 border-blue-200',
     route: '/two-player'
-  },
-  {
-    title: '六角跳棋',
-    subtitle: '搭桥连跳',
-    icon: '⭐',
-    iconBg: 'bg-amber-100 text-amber-800 border-amber-200',
-    route: '/checkers'
   },
   {
     title: '欢乐五子棋',

@@ -1,7 +1,7 @@
-// Web Audio Synthesized Sound Engine for Chinese Checkers
-// Zero external assets required, crystal-clear cartoon & glass marble sounds!
+// Web Audio Synthesized Sound Engine for Board Games (Gomoku, Xiangqi, etc.)
+// Zero external assets required, crystal-clear cartoon & stone/marble sounds!
 
-class CheckersSoundEngine {
+export class BoardSoundEngine {
   private ctx: AudioContext | null = null;
   public isMuted: boolean = false;
 
@@ -41,7 +41,7 @@ class CheckersSoundEngine {
     osc.stop(now + 0.09);
   }
 
-  // Play single-step movement sound (glass marble clink)
+  // Play single-step movement sound
   playStep() {
     if (this.isMuted) return;
     this.initCtx();
@@ -49,7 +49,6 @@ class CheckersSoundEngine {
 
     const now = this.ctx.currentTime;
 
-    // High clink
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'triangle';
@@ -74,16 +73,13 @@ class CheckersSoundEngine {
 
     const now = this.ctx.currentTime;
 
-    // Musical scale for combo jumps: C5, D5, E5, G5, A5, C6, D6, E6, G6
     const scale = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.51, 1567.98];
     const baseFreq = scale[Math.min(hopIndex - 1, scale.length - 1)] || 523.25;
 
-    // Spring / Boing oscillator
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sine';
 
-    // Slide up frequency like a cute cartoon bounce
     osc.frequency.setValueAtTime(baseFreq * 0.7, now);
     osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.3, now + 0.06);
     osc.frequency.exponentialRampToValueAtTime(baseFreq, now + 0.14);
@@ -154,7 +150,6 @@ class CheckersSoundEngine {
     this.initCtx();
     if (!this.ctx) return;
 
-    // Joyful trumpet fanfare: G4 -> C5 -> E5 -> G5 -> C6!
     const melody = [
       { f: 392.0, d: 0.12 },
       { f: 523.25, d: 0.12 },
@@ -211,5 +206,5 @@ class CheckersSoundEngine {
   }
 }
 
-export const checkersAudio = new CheckersSoundEngine();
+export const boardAudio = new BoardSoundEngine();
 

@@ -20,7 +20,7 @@ import {
   type XiangqiMove,
   type XiangqiSide
 } from '../engine/xiangqi/xiangqiEngine';
-import { checkersAudio } from '../engine/checkers/checkersAudio';
+import { boardAudio } from '../utils/boardAudio';
 import {
   saveUnifiedGameRecord,
   getLocalGameRecords,
@@ -87,10 +87,10 @@ const showHistoryModal = ref(false);
 const showMoveListDrawer = ref(false);
 const historyRecords = ref<UnifiedGameRecord[]>([]);
 
-const isMuted = ref(checkersAudio.isMuted);
+const isMuted = ref(boardAudio.isMuted);
 const toggleAudio = () => {
   isMuted.value = !isMuted.value;
-  checkersAudio.isMuted = isMuted.value;
+  boardAudio.isMuted = isMuted.value;
 };
 
 const currentWinRate = computed(() => evaluateXiangqiWinRate(board.value));
@@ -244,7 +244,7 @@ const executeMove = (fromR: number, fromC: number, toR: number, toC: number) => 
   lastMove.value = { fromR, fromC, toR, toC };
   selected.value = null;
   hintMove.value = null;
-  checkersAudio.playStep();
+  boardAudio.playStep();
 
   const wrCurrent = evaluateXiangqiWinRate(board.value);
   const wrAfter = wrCurrent.redWinRate;
@@ -293,7 +293,7 @@ const executeMove = (fromR: number, fromC: number, toR: number, toC: number) => 
 const triggerVictory = (side: XiangqiSide, endStatus: 'checkmate' | 'stalemate') => {
   localStorage.removeItem(STORAGE_KEY);
   showVictoryModal.value = true;
-  checkersAudio.playVictory();
+  boardAudio.playVictory();
 
   try {
     confetti({
@@ -345,7 +345,7 @@ const onPointClick = (r: number, c: number) => {
     if (cell && cell.side === currentTurn.value) {
       selected.value = { r, c };
       hintMove.value = null;
-      checkersAudio.playSelect();
+      boardAudio.playSelect();
       return;
     }
     selected.value = null;
@@ -355,13 +355,13 @@ const onPointClick = (r: number, c: number) => {
   if (!cell || cell.side !== currentTurn.value) return;
   selected.value = { r, c };
   hintMove.value = null;
-  checkersAudio.playSelect();
+  boardAudio.playSelect();
 };
 
 const undoMove = () => {
   if (isReplayMode.value || moveHistory.value.length === 0 || winner.value) return;
 
-  checkersAudio.playUndo();
+  boardAudio.playUndo();
   const undoCount = 1;
   const remain = moveHistory.value.slice(0, -undoCount);
   moveHistory.value = remain;
@@ -383,7 +383,7 @@ const provideHint = () => {
   if (winner.value || isReplayMode.value) return;
   const best = chooseXiangqiAiMove(board.value, currentTurn.value, 'hard');
   if (!best) return;
-  checkersAudio.playSelect();
+  boardAudio.playSelect();
   selected.value = { r: best.fromR, c: best.fromC };
   hintMove.value = best;
 };
@@ -400,7 +400,7 @@ const startReplay = (rec: UnifiedGameRecord) => {
   winner.value = null;
   board.value = createInitialXiangqiBoard();
   lastMove.value = null;
-  checkersAudio.playSelect();
+  boardAudio.playSelect();
 };
 
 const seekReplayStep = (step: number) => {
@@ -413,7 +413,7 @@ const seekReplayStep = (step: number) => {
   lastMove.value = cur
     ? { fromR: cur.fromR, fromC: cur.fromC, toR: cur.toR, toC: cur.toC }
     : null;
-  if (clamped > 0) checkersAudio.playStep();
+  if (clamped > 0) boardAudio.playStep();
 };
 
 const toggleReplayAutoPlay = () => {
@@ -455,7 +455,7 @@ const forkPlayFromHere = () => {
     : null;
   selected.value = null;
   hintMove.value = null;
-  checkersAudio.playSelect();
+  boardAudio.playSelect();
 };
 
 const exitReplayMode = () => {

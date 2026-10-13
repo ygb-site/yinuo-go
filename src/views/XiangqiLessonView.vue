@@ -13,7 +13,7 @@ import {
 import { getXiangqiLesson, XIANGQI_LESSONS } from '../data/xiangqiCurriculum';
 import { useXiangqiLearnStore } from '../stores/xiangqiLearnStore';
 import { useUserStore } from '../stores/useUserStore';
-import { checkersAudio } from '../engine/checkers/checkersAudio';
+import { boardAudio } from '../utils/boardAudio';
 import { sound } from '../utils/sound';
 
 const route = useRoute();
@@ -71,7 +71,7 @@ const completeStep = () => {
   stepDone.value = true;
   mascotMood.value = 'cheering';
   mascotText.value = currentStep.value.explanation;
-  checkersAudio.playVictory();
+  boardAudio.playVictory();
   sound.fireMiniSparkles();
 
   if (stepIndex.value >= lesson.value.steps.length - 1) {
@@ -124,14 +124,14 @@ const onPointClick = (r: number, c: number) => {
     board.value = applied.board;
     lastMove.value = { fromR: selected.value.r, fromC: selected.value.c, toR: r, toC: c };
     selected.value = null;
-    checkersAudio.playStep();
+    boardAudio.playStep();
     completeStep();
     return;
   }
 
   if (step.selectAt && samePoint({ r, c }, step.selectAt)) {
     selected.value = { r, c };
-    checkersAudio.playSelect();
+    boardAudio.playSelect();
     return;
   }
 

@@ -1,7 +1,7 @@
 import type { AbilityDimensionId } from '../ability/types';
 
 export type DomainId = string;
-export type LegacySubjectId = 'go' | 'checkers' | 'gomoku';
+export type LegacySubjectId = 'go' | 'gomoku';
 
 export interface Domain {
   id: DomainId;

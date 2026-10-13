@@ -13,7 +13,7 @@ import {
   type StoneColor,
   type GomokuMove
 } from '../engine/gomoku/gomokuEngine';
-import { checkersAudio } from '../engine/checkers/checkersAudio';
+import { boardAudio } from '../utils/boardAudio';
 import {
   saveUnifiedGameRecord,
   getLocalGameRecords,
@@ -92,10 +92,10 @@ const puzzleCompleted = ref<boolean>(false);
 const historyRecords = ref<UnifiedGameRecord[]>([]);
 
 // Audio Mute
-const isMuted = ref(checkersAudio.isMuted);
+const isMuted = ref(boardAudio.isMuted);
 const toggleAudio = () => {
   isMuted.value = !isMuted.value;
-  checkersAudio.isMuted = isMuted.value;
+  boardAudio.isMuted = isMuted.value;
 };
 
 // Current Win Rate
@@ -264,7 +264,7 @@ const handleSvgBoardClick = (e: MouseEvent) => {
 const executeMove = (r: number, c: number, player: StoneColor) => {
   board.value[r][c] = player;
   lastMove.value = { r, c };
-  checkersAudio.playStep();
+  boardAudio.playStep();
 
   // Evaluate Win Rate after this move
   const wrBefore = winRateHistory.value[winRateHistory.value.length - 1]?.player1WinRate || 50;
@@ -342,7 +342,7 @@ const scheduleAiTurn = () => {
 const triggerVictory = (p: StoneColor) => {
   localStorage.removeItem(STORAGE_KEY);
   showVictoryModal.value = true;
-  checkersAudio.playVictory();
+  boardAudio.playVictory();
 
   try {
     confetti({
@@ -390,7 +390,7 @@ const triggerVictory = (p: StoneColor) => {
 const undoMove = () => {
   if (isAiThinking.value || isReplayMode.value || moveHistory.value.length === 0) return;
 
-  checkersAudio.playUndo();
+  boardAudio.playUndo();
   winner.value = null;
   winningLine.value = null;
 
@@ -425,7 +425,7 @@ const provideHint = () => {
   if (isAiThinking.value || winner.value || isReplayMode.value) return;
   const best = chooseGomokuAiMove(board.value, currentTurn.value, 'hard');
   if (best) {
-    checkersAudio.playSelect();
+    boardAudio.playSelect();
     lastMove.value = { r: best.r, c: best.c };
   }
 };
@@ -442,7 +442,7 @@ const startReplay = (rec: UnifiedGameRecord) => {
   board.value = createEmptyBoard();
   lastMove.value = null;
   winningLine.value = null;
-  checkersAudio.playSelect();
+  boardAudio.playSelect();
 };
 
 // Seek Replay Step
@@ -463,7 +463,7 @@ const seekReplayStep = (step: number) => {
   lastMove.value = curM ? { r: curM.r, c: curM.c } : null;
 
   if (clamped > 0) {
-    checkersAudio.playStep();
+    boardAudio.playStep();
   }
 };
 
@@ -508,7 +508,7 @@ const forkPlayFromHere = () => {
   moveHistory.value = [...moves];
   winRateHistory.value = (currentReplayGame.value.winRateHistory as WinRatePoint[]).slice(0, replayStepIndex.value + 1);
   currentTurn.value = (moves.length % 2 === 0 ? 1 : 2) as StoneColor;
-  checkersAudio.playSelect();
+  boardAudio.playSelect();
 };
 
 const exitReplayMode = () => {

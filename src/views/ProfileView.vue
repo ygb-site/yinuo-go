@@ -286,9 +286,8 @@ const mistakeMasteryPercent = computed(() => {
 
 const mistakesBySubject = computed(() => {
   const go = pendingMistakes.value.filter(m => m.subjectId === 'go').length;
-  const checkers = pendingMistakes.value.filter(m => m.subjectId === 'checkers').length;
   const gomoku = pendingMistakes.value.filter(m => m.subjectId === 'gomoku').length;
-  return { go, checkers, gomoku };
+  return { go, gomoku };
 });
 
 const goToMistakes = (subject?: string, autoQuiz = false) => {
@@ -543,7 +542,7 @@ const confirmReset = async () => {
             </div>
 
             <!-- Subject Progress Bars -->
-            <div class="grid grid-cols-3 gap-2 text-xs font-bold">
+            <div class="grid grid-cols-2 gap-2 text-xs font-bold">
               <div class="bg-emerald-50/60 rounded-xl p-2.5 border border-emerald-200">
                 <div class="flex justify-between text-[11px] text-emerald-900 font-black mb-1">
                   <span>♟️ 围棋死活度</span>
@@ -551,16 +550,6 @@ const confirmReset = async () => {
                 </div>
                 <div class="w-full bg-emerald-200 h-1.5 rounded-full overflow-hidden">
                   <div class="bg-emerald-500 h-full rounded-full" :style="{ width: studentProfile.subjectMastery.go + '%' }"></div>
-                </div>
-              </div>
-
-              <div class="bg-amber-50/60 rounded-xl p-2.5 border border-amber-200">
-                <div class="flex justify-between text-[11px] text-amber-900 font-black mb-1">
-                  <span>⭐ 六角跳棋度</span>
-                  <span>{{ studentProfile.subjectMastery.checkers }}%</span>
-                </div>
-                <div class="w-full bg-amber-200 h-1.5 rounded-full overflow-hidden">
-                  <div class="bg-amber-500 h-full rounded-full" :style="{ width: studentProfile.subjectMastery.checkers + '%' }"></div>
                 </div>
               </div>
 
@@ -619,8 +608,8 @@ const confirmReset = async () => {
           </div>
         </div>
 
-        <!-- 3 Games Quick Filter Badges & Summary -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <!-- 2 Games Quick Filter Badges & Summary -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div
             @click="goToMistakes('go')"
             class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-100 hover:border-emerald-300 hover:bg-emerald-50 transition cursor-pointer flex items-center justify-between group"
@@ -633,20 +622,6 @@ const confirmReset = async () => {
               </div>
             </div>
             <span class="text-base font-black text-emerald-700">{{ mistakesBySubject.go }} 道</span>
-          </div>
-
-          <div
-            @click="goToMistakes('checkers')"
-            class="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-100 hover:border-amber-300 hover:bg-amber-50 transition cursor-pointer flex items-center justify-between group"
-          >
-            <div class="flex items-center gap-2">
-              <span class="text-xl group-hover:scale-110 transition-transform">⭐</span>
-              <div>
-                <div class="text-xs font-black text-amber-900">跳棋对决</div>
-                <div class="text-[10px] text-amber-600 font-bold">连环跳步法</div>
-              </div>
-            </div>
-            <span class="text-base font-black text-amber-700">{{ mistakesBySubject.checkers }} 道</span>
           </div>
 
           <div

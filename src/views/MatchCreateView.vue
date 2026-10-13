@@ -8,7 +8,6 @@ import {
   type UnifiedGameRecord,
   type GameType
 } from '../services/gameRecordsService';
-import type { CheckersPlayerCount } from '../engine/checkers/checkersEngine';
 import type { GoMatchBoardSize } from '../engine/types';
 import { AppSelect, type AppSelectOption } from '../design-system';
 import {
@@ -38,12 +37,11 @@ const aiDifficultyOptions: AppSelectOption<AiDifficulty>[] = [
   { value: 'hard', icon: '🔴', label: '困难 · 大师挑战 (推演严密，全力争胜)' }
 ];
 
-type GameKind = 'gomoku' | 'checkers' | 'xiangqi' | 'go';
+type GameKind = 'gomoku' | 'xiangqi' | 'go';
 const selectedGame = ref<GameKind>('gomoku');
 
 const GAME_OPTIONS: { id: GameKind; icon: string; name: string }[] = [
   { id: 'gomoku', icon: '⚪', name: '欢乐五子棋' },
-  { id: 'checkers', icon: '⭐', name: '快乐六角跳棋' },
   { id: 'xiangqi', icon: '🐴', name: '中国象棋 · Xiangqi' },
   { id: 'go', icon: '♟️', name: '少儿经典围棋' }
 ];
@@ -53,14 +51,6 @@ const gameSelectOptions: AppSelectOption<GameKind>[] = GAME_OPTIONS.map((g) => (
   icon: g.icon,
   label: g.name
 }));
-
-const checkersPlayerOptions: AppSelectOption<CheckersPlayerCount>[] = [
-  { value: 2, label: '2 人 · 南北对坐' },
-  { value: 3, label: '3 人 · 隔座三角' },
-  { value: 4, label: '4 人 · 两对对坐' },
-  { value: 5, label: '5 人 · 空出一角' },
-  { value: 6, label: '6 人 · 全星开局' }
-];
 
 const goSizeOptions: AppSelectOption<GoMatchBoardSize>[] = [
   { value: 7, icon: '🟢', label: '7×7 路 · 入门小盘' },
@@ -73,7 +63,6 @@ const onSelectChange = () => {
   sound.playButtonSound();
 };
 
-const checkersPlayers = ref<CheckersPlayerCount>(2);
 const goSize = ref<GoMatchBoardSize>(9);
 
 const showRecordsModal = ref<boolean>(false);
@@ -98,10 +87,6 @@ const openRecordsModal = () => {
 const goToReplay = (rec: UnifiedGameRecord) => {
   showRecordsModal.value = false;
   sound.playButtonSound();
-  if (rec.gameType === 'checkers') {
-    router.push('/checkers');
-    return;
-  }
   if (rec.gameType === 'gomoku') {
     router.push('/gomoku');
     return;
@@ -129,18 +114,6 @@ const launchMatch = () => {
       path: '/gomoku',
       query: {
         mode: matchMode.value,
-        ...(diff ? { diff } : {})
-      }
-    });
-    return;
-  }
-
-  if (selectedGame.value === 'checkers') {
-    router.push({
-      path: '/checkers',
-      query: {
-        mode: matchMode.value,
-        players: String(checkersPlayers.value),
         ...(diff ? { diff } : {})
       }
     });
@@ -265,17 +238,6 @@ const launchMatch = () => {
           />
         </div>
 
-        <div v-if="selectedGame === 'checkers'" class="space-y-2.5 animate-fade-in pt-4 border-t border-slate-100">
-          <label class="text-xs sm:text-sm font-black text-slate-800" for="checkers-players">👥 对战人数</label>
-          <AppSelect
-            id="checkers-players"
-            v-model="checkersPlayers"
-            :options="checkersPlayerOptions"
-            aria-label="对战人数"
-            @change="onSelectChange"
-          />
-        </div>
-
         <div v-if="selectedGame === 'go'" class="space-y-2.5 animate-fade-in pt-4 border-t border-slate-100">
           <label class="text-xs sm:text-sm font-black text-slate-800" for="go-size">📐 棋盘路数</label>
           <AppSelect
@@ -335,14 +297,6 @@ const launchMatch = () => {
           <button
             type="button"
             class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer"
-            :class="filterGameType === 'checkers' ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-2xs' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'"
-            @click="filterGameType = 'checkers'; sound.playButtonSound();"
-          >
-            ⭐ 六角跳棋
-          </button>
-          <button
-            type="button"
-            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer"
             :class="filterGameType === 'xiangqi' ? 'bg-rose-600 text-white border-rose-600 shadow-2xs' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'"
             @click="filterGameType = 'xiangqi'; sound.playButtonSound();"
           >
@@ -367,7 +321,7 @@ const launchMatch = () => {
             >
               <div class="flex items-center gap-3 min-w-0">
                 <div class="w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-2xl shrink-0 shadow-2xs">
-                  {{ rec.gameType === 'checkers' ? '⭐' : rec.gameType === 'gomoku' ? '⚪' : rec.gameType === 'xiangqi' ? '🐴' : '♟️' }}
+                  {{ rec.gameType === 'gomoku' ? '⚪' : rec.gameType === 'xiangqi' ? '🐴' : '♟️' }}
                 </div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">

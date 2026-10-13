@@ -53,7 +53,6 @@ const isMobile = computed(() => {
 const subjectName = computed(() => {
   const s = tutorStore.currentContext?.subjectId;
   if (s === 'go') return '围棋';
-  if (s === 'checkers') return '跳棋';
   if (s === 'gomoku') return '五子棋';
   return '棋艺学堂';
 });
@@ -61,7 +60,6 @@ const subjectName = computed(() => {
 const subjectIcon = computed(() => {
   const s = tutorStore.currentContext?.subjectId;
   if (s === 'go') return '♟️';
-  if (s === 'checkers') return '⭐';
   if (s === 'gomoku') return '⚪';
   return '♟️';
 });
@@ -69,14 +67,6 @@ const subjectIcon = computed(() => {
 // 少儿免打字场景化快捷提问卡片
 const kidQuickCards = computed(() => {
   const s = tutorStore.currentContext?.subjectId;
-  if (s === 'checkers') {
-    return [
-      { text: '怎么搭桥才能连续跳跃？', icon: '⭐' },
-      { text: '哪颗棋子应该先出发？', icon: '🏃' },
-      { text: '怎么防守不让对方借跳？', icon: '🛡️' },
-      { text: '小诺夸夸我，给我加加油！', icon: '🌟' }
-    ];
-  }
   if (s === 'gomoku') {
     return [
       { text: '对方要连成四子了怎么办？', icon: '🚨' },

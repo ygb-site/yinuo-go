@@ -19,15 +19,6 @@ export const DOMAINS_REGISTRY: Record<string, Domain> = {
     accent: 'challenge',
     primaryAbilities: ['spatial', 'calculation', 'logic']
   },
-  checkers: {
-    id: 'checkers',
-    name: '六角跳棋',
-    shortName: '跳棋',
-    isPrimary: false,
-    hasContent: true,
-    accent: 'growth',
-    primaryAbilities: ['spatial', 'logic']
-  },
   xiangqi: {
     id: 'xiangqi',
     name: '中国象棋',
